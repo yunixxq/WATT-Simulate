@@ -1,8 +1,9 @@
 #!/bin/python3
 
 import matplotlib.pyplot as plt
-from scipy.stats import zipfian
+from scipy.stats import distributions, zipfian
 import time
+import pandas
 
 # x = random.zipf(a=2, size=1000)
 
@@ -25,7 +26,10 @@ def simulate(discrete_elements, simulation_length, zipf_factor=2):
     return distribution
 
 writes_to_total_fraction = 0.3
-total_access = 1000
+total_access = 100000
+
+write_zipf = 0.5
+read_zipf = 1.0
 
 total_pages = 100
 writes_to_total_pages = 0.4
@@ -41,10 +45,25 @@ read_pages = total_pages - write_pages
 read_access = total_access - write_access
 
 timer = startTime()
+csv_name = "Distribution_{}_{}_{}_{}_{}.csv".format(total_access, write_access, write_pages, write_zipf, read_zipf)
 
-write_distribution = simulate(write_pages, write_access, 0.5)
-timer = printTime(timer)
-read_distribution =  simulate(read_pages, read_access, 1.0)
+write_distribution, read_distribution = ([], [])
+try:
+    print("try read from cache")
+    df = pandas.read_csv(csv_name)
+    dists = list(df["distribution"])
+    write_distribution = dists[:write_pages]
+    read_distribution = dists[write_pages:]
+except:
+    print("Simulating")
+    write_distribution = simulate(write_pages, write_access, write_zipf)
+    timer = printTime(timer)
+    read_distribution =  simulate(read_pages, read_access, read_zipf)
+
+    d = {'distribution': write_distribution + read_distribution}
+    df = pandas.DataFrame(data=d)
+
+    df.to_csv(csv_name)
 
 timer = printTime(timer)
 
@@ -72,6 +91,7 @@ write_per_access = list(map(lambda x: x/total_access, write_misses))
 total_per_access = list(map(lambda x: x/total_access, total_misses))
 
 timer = printTime(timer)
+
 
 plt.plot(range(0, buffer_size + 1), read_per_access, label="Read_per_access")
 plt.plot(range(0, buffer_size + 1), write_per_access, label="Write_per_access")
