@@ -259,6 +259,26 @@ def printFiles(zugriffe, name, heatUp=0, all=False, quick=False):
         plt.savefig(file)
         plt.clf()
     
+    def save_csv(xList, yHitLists, yMissLists, names, name):
+        data = {}
+        data["xList"] = xList
+        data["yHitLists"] = yHitLists
+        data["yMissLists"] = yMissLists
+        data["names"] = names
+        with open(name + ".json", 'w') as outfile:
+            json.dump(data, outfile, indent=4)
+        with open(name + '.csv', 'w', newline='') as csvfile:
+            csvwriter = csv.writer(csvfile)
+            csvwriter.writerow(["X"] + list(map(lambda x: x+ "_hits" ,names)) + list(map(lambda x: x + "_misses", names)))
+            for row in range(0, len(xList)):
+                x = [xList[row]]
+                y1 = [column[row] for column in yHitLists]
+                y2 = [column[row] for column in yMissLists]
+                csvwriter.writerow(x+y1+y2)
+
+
+    save_csv(xList, yHitLists, yMissLists, names, name)
+
     if(all):
         print("Evaluate Files")
         (file_x, file_miss, file_hit) = createFileList(max(xList))
@@ -274,21 +294,6 @@ def printFiles(zugriffe, name, heatUp=0, all=False, quick=False):
         plotGraph(xList, yHitLists, names, "Hitrate", "Hits", name + "_hits.pdf")
 
         plotGraph(xList, yMissLists, names, "Missrate", "Misses", name + "_misses.pdf")
-    data = {}
-    data["xList"] = xList
-    data["yHitLists"] = yHitLists
-    data["yMissLists"] = yMissLists
-    data["names"] = names
-    with open(name + ".json", 'w') as outfile:
-        json.dump(data, outfile, indent=4)
-    with open(name + '.csv', 'w', newline='') as csvfile:
-        csvwriter = csv.writer(csvfile)
-        csvwriter.writerow(["X"] + list(map(lambda x: x+ "_hits" ,names)) + list(map(lambda x: x + "_misses", names)))
-        for row in range(0, len(xList)):
-            x = [xList[row]]
-            y1 = [column[row] for column in yHitLists]
-            y2 = [column[row] for column in yMissLists]
-            csvwriter.writerow(x+y1+y2)
 
 def doOneRun(heatUp, all, data, name):
     elements= len(data)-heatUp
@@ -343,7 +348,11 @@ def createFileList(UpperBound):
 
     outlist = [];
     for buffer_size_name in [x for x in file_name_list if x < UpperBound]:
-        outlist.append((buffer_size_name-11, evaluateFile("./access_lists/{}.txt".format(buffer_size_name))))
+        try:
+            outlist.append((buffer_size_name-11, evaluateFile("./access_lists/{}.txt".format(buffer_size_name))))
+        except FileNotFoundError:
+            print("File {} not found".format(buffer_size_name))
+            pass
 
     (x, miss_hit) = zip(*outlist)
     (miss,hit) = zip(*miss_hit)
