@@ -63,7 +63,7 @@ except:
     d = {'distribution': write_distribution + read_distribution}
     df = pandas.DataFrame(data=d)
 
-    df.to_csv(csv_name)
+    df.to_csv(csv_name, index=False)
 
 timer = printTime(timer)
 
