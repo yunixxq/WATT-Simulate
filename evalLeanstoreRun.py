@@ -3,6 +3,7 @@
 import matplotlib.pyplot as plt
 import os, shutil, random, time, json, csv
 from joblib import Parallel, delayed
+import pandas
 
 
 def getWorker(zugriff):
@@ -36,17 +37,14 @@ def getOnlyCoolSwip(zugriffe):
 def executeStrategy(pidAndNext, ramSize, flagFunction, evictFinder, heatUp= 0):
     currentRam = {}
     pageMisses = 0
-    pageHits = 0
     for pos in range(0, len(pidAndNext)):
         if pos == heatUp: # Heatup, ignore previous accesses
             pageMisses = 0
-            pageHits = 0
             
         (pid, nextZugriff) = pidAndNext[pos]
         flag = flagFunction([pos, nextZugriff])
         if pid in currentRam:
             currentRam[pid] = flag
-            pageHits +=1
         else:
             if len(currentRam) < ramSize:
                 currentRam[pid] = flag
@@ -58,7 +56,7 @@ def executeStrategy(pidAndNext, ramSize, flagFunction, evictFinder, heatUp= 0):
                 assert(len(currentRam) < ramSize)
                 currentRam[pid] = flag
             pageMisses +=1
-    return (pageMisses, pageHits)
+    return pageMisses
 
 def belady(pidAndNext, ramSize, heatUp=0, opt=False, minMiss=0, maxHit=0):
     global lastHit, lastMiss
@@ -101,15 +99,12 @@ def lruStack(pidAndNext, heatUp=0):
     return stackDist
 
 def evalStack(stack, ramSize):
-    hitrate = 0
     missrate = 0
     for pos in stack:
         value = stack[pos]
-        if pos < ramSize and pos >= 0:
-            hitrate += value
-        else:
+        if not (pos < ramSize and pos >= 0):
             missrate += value
-    return (missrate, hitrate)
+    return missrate
 
 
 def getNextAcces(pids, pos):
@@ -158,7 +153,7 @@ def runner(pidAndNext, size):
     return ran(pidAndNext, size)
 
 
-def printFiles(zugriffe, name, heatUp=0, all=False, quick=False):
+def generateCSV(zugriffe, name, heatUp=0, all=False, quick=False):
     global lastHit, lastMiss
     elements = len(zugriffe) - heatUp
 
@@ -177,7 +172,6 @@ def printFiles(zugriffe, name, heatUp=0, all=False, quick=False):
     range7 = 5000000
     xList = list(range(range0, range1, 1)) + list(range(range1, range2, 10)) + list(range(range2, range3, 100)) + list(range(range3, range4, 1000)) + list(range(range4, range5, 10000)) + list(range(range5, range6, 100000)) + list(range(range6, range7+1, 1000000))
     names = []
-    yHitLists = []
     yMissLists = []
 
     post = time.time()
@@ -195,14 +189,12 @@ def printFiles(zugriffe, name, heatUp=0, all=False, quick=False):
     print("Buffers to calculate: {}".format(len(xList)))
 
     print("Stacksize: " + str(max(stackDist)))
-    (lruMissList, lruHitList) = zip(*list(map(lambda size: evalStack(stackDist, size), xList)))
+    lruMissList = list(map(lambda size: evalStack(stackDist, size), xList))
     minMiss = lruMissList[-1]
-    maxHit = lruHitList[-1]
 
-    lruHitList = list(map(lambda x: float(x)/elements, lruHitList))
     lruMissList = list(map(lambda x: float(x)/elements, lruMissList))
+
     names.append("lru")
-    yHitLists.append(lruHitList)
     yMissLists.append(lruMissList)
 
     post = time.time()
@@ -211,14 +203,11 @@ def printFiles(zugriffe, name, heatUp=0, all=False, quick=False):
     
     if not quick:
         print("rand")
-        results = Parallel(n_jobs=8)(delayed(ran)(pidAndNext, size, heatUp=heatUp) for size in xList)
+        ranMissList = Parallel(n_jobs=8)(delayed(ran)(pidAndNext, size, heatUp=heatUp) for size in xList)
         #results = map(lambda size: ran(pidAndNext, size, heatUp=heatUp), xList))
 
-        (ranMissList, ranHitList) = zip(*list(results))
-        ranHitList = list(map(lambda x: float(x)/elements, ranHitList))
         ranMissList = list(map(lambda x: float(x)/elements, ranMissList))
         names.append("ran")
-        yHitLists.append(ranHitList)
         yMissLists.append(ranMissList)
         
         post = time.time()
@@ -226,27 +215,39 @@ def printFiles(zugriffe, name, heatUp=0, all=False, quick=False):
         pre=post
 
         print("opt")
-        lastHit = 0
         lastMiss = 0
         # results = (map(lambda size: belady(pidAndNext, size, heatUp=heatUp, opt=True, minMiss=minMiss, maxHit=maxHit), xList))
-        results = Parallel(n_jobs=8)(delayed(belady)(pidAndNext, size, heatUp=heatUp) for size in xList)
+        optMissList = Parallel(n_jobs=8)(delayed(belady)(pidAndNext, size, heatUp=heatUp) for size in xList)
 
-        (optMissList, optHitList) = zip(*list(results))
-        optHitList = list(map(lambda x: float(x)/elements, optHitList))
         optMissList = list(map(lambda x: float(x)/elements, optMissList))
         names.append("opt")
-        yHitLists.append(optHitList)
         yMissLists.append(optMissList)
 
         post = time.time()
         print(post-pre)
         pre=post
 
+    def save_csv(xList, yMissLists, names, name):
+        d = {"X": xList}
+        for x in range(0, len(names)):
+            d[names[x]] = yMissLists[x]
+        df = pandas.DataFrame(data=d)
+        df.to_csv(name+".csv", index=False)
+
+    save_csv(xList, yMissLists, names, name)
     
-    def plotGraph(xList, lists, labels, title, ylabel, file, file_data=[]):
-        assert(len(lists) == len(labels))
-        for pos in range(0, len(lists)):
-            plt.plot(xList, lists[pos], label=labels[pos])
+
+def plotGraph(name, all=False):
+    df = pandas.read_csv(name+".csv")
+    def plotGraphInner(df, title, ylabel, file, file_data=[], miss=True):
+        labels = list(df.head())
+        labels.remove("X")
+        for pos in range(0, len(labels)):
+            misses = df[labels[pos]]
+            label= labels[pos]
+            if not miss:
+                misses = list(map(lambda x: 1-x, misses))
+            plt.plot(df["X"], misses, label=label)
 
         if len(file_data) == 2:
             plt.plot(file_data[0], file_data[1], label="Leanstore", linewidth=1)
@@ -258,42 +259,19 @@ def printFiles(zugriffe, name, heatUp=0, all=False, quick=False):
         plt.title(title)
         plt.savefig(file)
         plt.clf()
-    
-    def save_csv(xList, yHitLists, yMissLists, names, name):
-        data = {}
-        data["xList"] = xList
-        data["yHitLists"] = yHitLists
-        data["yMissLists"] = yMissLists
-        data["names"] = names
-        with open(name + ".json", 'w') as outfile:
-            json.dump(data, outfile, indent=4)
-        with open(name + '.csv', 'w', newline='') as csvfile:
-            csvwriter = csv.writer(csvfile)
-            csvwriter.writerow(["X"] + list(map(lambda x: x+ "_hits" ,names)) + list(map(lambda x: x + "_misses", names)))
-            for row in range(0, len(xList)):
-                x = [xList[row]]
-                y1 = [column[row] for column in yHitLists]
-                y2 = [column[row] for column in yMissLists]
-                csvwriter.writerow(x+y1+y2)
-
-
-    save_csv(xList, yHitLists, yMissLists, names, name)
 
     if(all):
         print("Evaluate Files")
-        (file_x, file_miss, file_hit) = createFileList(max(xList))
-        
-        post = time.time()
-        print(post-pre)
-        pre=post
-        plotGraph(xList, yHitLists, names, "Hitrate", "Hits", name + "_hits.pdf", file_data=[file_x, file_hit])
+        (file_x, file_miss, file_hit) = createFileList(max(df["X"]))
 
-        plotGraph(xList, yMissLists, names, "Missrate", "Misses", name + "_misses.pdf", file_data=[file_x, file_miss])
+        plotGraphInner(df, "Hitrate", "Hits", name + "_hits.pdf", file_data=[file_x, file_hit], miss=False)
+
+        plotGraphInner(df, "Missrate", "Misses", name + "_misses.pdf", file_data=[file_x, file_miss])
 
     else:
-        plotGraph(xList, yHitLists, names, "Hitrate", "Hits", name + "_hits.pdf")
+        plotGraphInner(df, "Hitrate", "Hits", name + "_hits.pdf", miss=False)
 
-        plotGraph(xList, yMissLists, names, "Missrate", "Misses", name + "_misses.pdf")
+        plotGraphInner(df, "Missrate", "Misses", name + "_misses.pdf")
 
 def doOneRun(heatUp, all, data, name):
     elements= len(data)-heatUp
@@ -301,12 +279,20 @@ def doOneRun(heatUp, all, data, name):
     if all:
         dirpath = "./ALL_heatUp_" + str(heatUp)
     
-    if os.path.exists(dirpath) and os.path.isdir(dirpath):
-        shutil.rmtree(dirpath)
-    os.mkdir(dirpath)
+    try:
+        os.mkdir(dirpath)
+    except:
+        pass
 
     print("Length data {}: {}".format(name, len(data)))
-    printFiles(data, dirpath + name, heatUp=heatUp, all=all)
+    try:
+        print("try to load from cache")
+        plotGraph(dirpath + name, all=all)
+    except:
+        print("Failed to load from cache")
+        generateCSV(data, dirpath + name, heatUp=heatUp, all=all)
+        plotGraph(dirpath + name, all=all)
+
 
 def do_run():
     elementList = [10000, 100000, 1000000, -1]
@@ -315,10 +301,10 @@ def do_run():
     data = None
 
     if -1 in elementList:
-        data_file = getSwips("./access_lists/500011.txt", 0, all=True)
+        data_file = getSwips("./access_lists/10000011.txt", 0, all=True)
     else:
         elements = max(elementList) + max(heatUpList)
-        data_file = getSwips("./access_lists/500011.txt", elements)
+        data_file = getSwips("./access_lists/10000011.txt", elements)
 
     for (data, name) in [(data_file, "/Data")]:
         for elements in [-1]: # elementList:
@@ -344,7 +330,7 @@ def createFileList(UpperBound):
         # print("Missrate: {}, Hitrate: {}".format(float(cold)/total, float(hot + cool)/total))
         return (float(cold)/total, float(hot + cool)/total)
 
-    file_name_list = list(range(21, 111, 10)) + list(range(111, 1011, 100)) + list(range(1011, 10011, 1000)) + list(range(10011, 100011, 10000)) + list(range(100011, 500011, 100000))
+    file_name_list = list(range(21, 111, 10)) + list(range(111, 1011, 100)) + list(range(1011, 10011, 1000)) + list(range(10011, 100011, 10000)) + list(range(100011, 1000011, 100000)) + list(range(1000011, 10000011, 1000000))
 
     outlist = [];
     for buffer_size_name in [x for x in file_name_list if x < UpperBound]:
