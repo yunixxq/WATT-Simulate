@@ -4,7 +4,7 @@ import gurobipy as gp
 from gurobipy import GRB, tupledict, tuplelist
 
 
-def calcCost(accesses, is_write, ramsize):
+def calcCost(accesses, is_write, ramsize, write_cost):
     try:
         access_len = len(accesses)
         pages = set(accesses)
@@ -50,7 +50,7 @@ def calcCost(accesses, is_write, ramsize):
         model.update()
 
         # $\min \sum_{s,t} (\delta d_{s,t} \cdot \alpha + \delta p_{s,t})$
-        model.setObjective(delta_ram.sum() + 2* delta_dirty.sum(), GRB.MINIMIZE)
+        model.setObjective(delta_ram.sum() + write_cost * delta_dirty.sum(), GRB.MINIMIZE)
         model.optimize()
 
         pagesInRam = []
@@ -78,6 +78,7 @@ def calcCost(accesses, is_write, ramsize):
         print('Encountered an attribute error')
 
 ramsize = 3
+write_cost = 10
 accesses = [12, 10, 20, 12, 14, 13, 12, 14, 42]
 is_write = [False, False, True, False, True, True, False, True, False]
-calcCost(accesses, is_write, ramsize)
+calcCost(accesses, is_write, ramsize, write_cost)
