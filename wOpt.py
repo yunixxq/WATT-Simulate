@@ -67,7 +67,15 @@ def calcCost(accesses, is_write, ramsize, write_cost):
             currentDirty = [page for (page, time2) in dirtyInRam if time == time2]
             ram_time += [(time, currentInRam, currentDirty)]
         for timestep in ram_time:
-            print(timestep)
+            time = timestep[0]
+            if(is_write[time]):
+                print("w", end="(")
+            else:
+                print("r", end="(")
+            print(accesses[time], end=") ")
+            pagesstrings = [str(page) for page in timestep[1] if page not in timestep[2]]
+            pagesstrings += [str(page) + "x" for page in timestep[2]]
+            print(pagesstrings)
 
         print('Obj: %g' % model.objVal)
 
