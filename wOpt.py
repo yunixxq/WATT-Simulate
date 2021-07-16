@@ -1,5 +1,6 @@
 #!/bin/python3
 
+from os import write
 import gurobipy as gp
 from gurobipy import GRB, tupledict, tuplelist
 
@@ -8,7 +9,10 @@ def calcCost(accesses, is_write, ramsize, write_cost):
     try:
         access_len = len(accesses)
         pages = set(accesses)
-        assert(len(accesses) == len(is_write))
+        if len(accesses) != len(is_write):
+            print(len(accesses))
+            print(len(is_write))
+            assert(len(accesses) == len(is_write))
 
 
         pageTimes: tuplelist = gp.tuplelist([(p,t) for p in pages for t in range(-1,access_len+1)])
@@ -45,7 +49,7 @@ def calcCost(accesses, is_write, ramsize, write_cost):
         model.addConstrs((ram[(p,t)] == 1 for t,p in enumerate(accesses)), name="read")
 
         # $d_{s,t} \geq 1$ wenn geschrieben, $\geq 0$ sonst
-        model.addConstrs((dirty[(p,t)] == 1 for t,p in enumerate(accesses) if(is_write[t])), name="read")
+        model.addConstrs((dirty[(p,t)] == 1 for t,p in enumerate(accesses) if(is_write[t])), name="write")
 
         model.update()
 
@@ -77,9 +81,14 @@ def calcCost(accesses, is_write, ramsize, write_cost):
             pagesstrings += [str(page) + "x" for page in timestep[2]]
             print(pagesstrings)
 
-        print('Obj: {:n}'.format(model.objVal))
+        writes = delta_dirty.sum().getValue()
+        if write_cost == 0:
+            writes = 0
+            for time in range(access_len-1):
+                writes += sum([1 for x in ram_time[time][2] if x not in ram_time[time+1][2]])
 
-        print("Reads: {:n}, Writes: {:n}".format(delta_ram.sum().getValue(), delta_dirty.sum().getValue()))
+        print('Obj: {:n}'.format(model.objVal))
+        print("Reads: {:n}, Writes: {:n}".format(delta_ram.sum().getValue(), writes))
 
     except gp.GurobiError as e:
         print('Error code ' + str(e.errno) + ': ' + str(e))
@@ -89,6 +98,6 @@ def calcCost(accesses, is_write, ramsize, write_cost):
 
 ramsize = 3
 write_cost = 10
-accesses = [12, 10, 20, 12, 14, 13, 12, 14, 42]
-is_write = [False, False, True, False, True, True, False, True, False]
+accesses = [2, 2, 2, 4, 7, 1, 10, 10, 3, 1, 7, 3, 7, 7, 2, 2, 6, 1, 5, 5, 7, 5, 8, 4, 5, 9, 1, 3, 3, 7, 7, 6, 3, 3, 7, 6, 3, 4, 6, 5, 2, 1, 10, 8, 5, 1, 1, 1, 2, 7, 1, 5, 5, 9, 8, 1, 7, 10, 8, 2]
+is_write = [False, False, True, False, True, True, False, True, False, False, False, True, False, True, True, False, True, False, False, False, True, False, True, True, False, True, False, False, False, True, False, True, True, False, True, False, False, False, True, False, True, True, False, True, False, False, False, True, False, True, True, False, True, False, False, False, True, True, True, False]
 calcCost(accesses, is_write, ramsize, write_cost)
