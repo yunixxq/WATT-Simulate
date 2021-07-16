@@ -77,7 +77,9 @@ def calcCost(accesses, is_write, ramsize, write_cost):
             pagesstrings += [str(page) + "x" for page in timestep[2]]
             print(pagesstrings)
 
-        print('Obj: %g' % model.objVal)
+        print('Obj: {:n}'.format(model.objVal))
+
+        print("Reads: {:n}, Writes: {:n}".format(delta_ram.sum().getValue(), delta_dirty.sum().getValue()))
 
     except gp.GurobiError as e:
         print('Error code ' + str(e.errno) + ': ' + str(e))
