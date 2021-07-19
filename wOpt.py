@@ -23,25 +23,26 @@ def calcCost(accesses, is_write, ramsize, write_cost):
             last = len(accesses) -1 - accesses[::-1].index(page)
             return (first, last)
         
-        start = {}
-        end = {}
+        first = {}
+        last = {}
         for p in pages:
-            (first, last) = getValidTimesForPage(accesses, p)
-            start[p] = first
-            end[p] = last +1
+            (start, end) = getValidTimesForPage(accesses, p)
+            first[p] = start
+            last[p] = end
 
 
 
-        pageTimes: tuplelist = gp.tuplelist([(p,t) for p in pages for t in range(start[p]-1, end[p] +1)])
+        pageTimesPost: tuplelist = gp.tuplelist([(p,t) for p in pages for t in range(first[p], last[p] + 2)])
+        
         print("Building model")
 
         model = gp.Model("writeOpt")
 
         print("Adding Variables")
-        ram: tupledict = model.addVars(pageTimes, name="ram", vtype=GRB.BINARY)
-        dirty: tupledict = model.addVars(pageTimes, name="dirty", vtype=GRB.BINARY)
-        delta_ram: tupledict = model.addVars(pageTimes, name="delta_ram", vtype=GRB.BINARY)
-        delta_dirty: tupledict = model.addVars(pageTimes, name="delta_dirty", vtype=GRB.BINARY)
+        ram: tupledict = model.addVars(pageTimesPost, name="ram", vtype=GRB.BINARY)
+        dirty: tupledict = model.addVars(pageTimesPost, name="dirty", vtype=GRB.BINARY)
+        delta_ram: tupledict = model.addVars(pageTimesPost, name="delta_ram", vtype=GRB.BINARY)
+        delta_dirty: tupledict = model.addVars(pageTimesPost, name="delta_dirty", vtype=GRB.BINARY)
 
         print("Adding constraints")
         #  $\sum_t p_{s,t} \leq P$ = Puffergröße
@@ -51,19 +52,19 @@ def calcCost(accesses, is_write, ramsize, write_cost):
         model.addConstrs((delta_ram.sum('*', time) <= 1 for time in range(-1, access_len +1)), "maxRead")
 
         # $d_{s,t} \leq p_{s,t}$ = Eine dirty Page ist im Puffer
-        model.addConstrs((dirty[pageTime] <= ram[pageTime] for pageTime in pageTimes), "dirtyInRam")
+        model.addConstrs((dirty[pageTime] <= ram[pageTime] for pageTime in pageTimesPost), "dirtyInRam")
 
-        # $p_{s,t} \leq p_{s,t-1} + \delta p_{s,t}$ = Seite kann nur durch lesen eingelagert werden.
-        model.addConstrs((ram[p, t] <= ram[p, t-1] + delta_ram[p, t] for p in pages for t in range(start[p], end[p] +1)), "readFresh");
+        # $p_{s,t} \leq p_{s,t-1} + \delta p_{s,t}$ = Seite kann nur durch lesen eingelagert werden. (Ausnahme 1. Seite (Sonderregel))
+        model.addConstrs((ram[p, t] <= ram[p, t-1] + delta_ram[p, t] for p in pages for t in range(first[p]+1, last[p] + 1)), "readFresh");
 
         # $d_{s,t} \leq d_{s,t+1} + \delta d_{s,t}$ = Eine Seite, verliert ihr dirty flag nur, wenn sie geschrieben wird
-        model.addConstrs((dirty[p, t] <= dirty[p, t+1] + delta_dirty[p, t] for p in pages for t in range(start[p] -1, end[p])), "writeDirty");
+        model.addConstrs((dirty[p, t] <= dirty[p, t+1] + delta_dirty[p, t] for p in pages for t in range(first[p], last[p] + 1)), "writeDirty");
 
-        #  - $p_{s,0} = 0$ = am anfang ist der Puffer leer
-        model.addConstrs((ram[page, start[page]-1] == 0 for page in pages), name="emptyStart")
+        #  - $\delta p_{s,t_min} = 1$ = First access is read
+        model.addConstrs((delta_ram[page, first[page]] == 1 for page in pages), name="emptyStart")
 
         # Optional: $d_{s,t_{max}} = 0$ =Am ende ist der Puffer Sauber
-        model.addConstrs((dirty[page, end[page]] == 0 for page in pages), name="cleanStop")
+        model.addConstrs((dirty[page, last[page] + 1] == 0 for page in pages), name="cleanStop")
 
         # $p_{s,t}\geq 1$ wenn gelesen, $\geq 0$ sonst
         model.addConstrs((ram[(p,t)] == 1 for t,p in enumerate(accesses)), name="read")
@@ -84,28 +85,8 @@ def calcCost(accesses, is_write, ramsize, write_cost):
         print("Optimizing")
         model.optimize()
 
-        pagesInRam = []
-        dirtyInRam = []
-        for pageTime in pageTimes:
-            if ram[pageTime].getAttr("x") == 1:
-                pagesInRam += [pageTime]
-            if dirty[pageTime].getAttr("x") == 1:
-                dirtyInRam += [pageTime]
-
-        ram_time = []
-        for time in range(access_len):
-            currentInRam = [page for (page, time2) in pagesInRam if time == time2]
-            currentDirty = [page for (page, time2) in dirtyInRam if time == time2]
-            ram_time += [(time, currentInRam, currentDirty)]
-
-        writes = delta_dirty.sum().getValue()
-        if write_cost == 0:
-            writes = 0
-            for time in range(access_len-1):
-                writes += sum([1 for x in ram_time[time][2] if x not in ram_time[time+1][2]])
-
         print('Obj: {:n}'.format(model.objVal))
-        print("Reads: {:n}, Writes: {:n}".format(delta_ram.sum().getValue(), writes))
+        print("Reads: {:n}, Writes: {:n}".format(delta_ram.sum().getValue(), delta_dirty.sum().getValue()))
 
     except gp.GurobiError as e:
         print('Error code ' + str(e.errno) + ': ' + str(e))
