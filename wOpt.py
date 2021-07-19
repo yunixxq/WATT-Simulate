@@ -3,6 +3,7 @@
 from os import write
 import gurobipy as gp
 from gurobipy import GRB, tupledict, tuplelist
+from scipy.stats import zipfian
 import pandas, random
 
 
@@ -92,23 +93,41 @@ def calcCost(accesses, is_write, ramsize, write_cost):
     except AttributeError:
         print('Encountered an attribute error')
 
+def generate(file_name, max_page, length):
+    accesses = [random.randint(0, max_page) for x in range(length)]
+    is_write = random.choices([True, False], [0.1, 0.9], k=length)
+    df = {"pages": accesses, "is_write": is_write}
+    df = pandas.DataFrame(data=df)
+    df.to_csv(file_name, index=False)
+
+def generateZipf(file_name, max_page, length, zipf_factor):
+    print("Generating zipf")
+    accesses = list(zipfian.rvs(zipf_factor, max_page, size=length))
+    is_write = random.choices([True, False], [0.1, 0.9], k=length)
+    df = {"pages": accesses, "is_write": is_write}
+    df = pandas.DataFrame(data=df)
+    df.to_csv(file_name, index=False)
+
+
+def run_file(file_name, ram, write_cost):
+    df = pandas.read_csv(file_name)
+    accesses = list(df["pages"])
+    is_write = list(df["is_write"])
+    calcCost(accesses, is_write, ramsize, write_cost)
+
+
 ramsize = 20
 write_cost = 10
 
 csv_name = "wopt.csv"
 try:
     print("try read from cache")
-    df = pandas.read_csv(csv_name)
-    accesses = list(df["pages"])
-    is_write = list(df["is_write"])
-    calcCost(accesses, is_write, ramsize, write_cost)
+    run_file(csv_name, ramsize, write_cost)
 except:
     print("No CSV with name \"{}\" found".format(csv_name))
     max_page=100
     length = 2000
-    accesses = [random.randint(0, max_page) for x in range(length)]
-    is_write = random.choices([True, False], [0.1, 0.9], k=length)
-    df = {"pages": accesses, "is_write": is_write}
-    df = pandas.DataFrame(data=df)
-    df.to_csv(csv_name, index=False)
-    calcCost(accesses, is_write, ramsize, write_cost)
+    # generate(csv_name, max_page, length)
+    generateZipf(csv_name, max_page, length, 0.4)
+
+    run_file(csv_name, ramsize, write_cost)
