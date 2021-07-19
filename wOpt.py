@@ -3,6 +3,7 @@
 from os import write
 import gurobipy as gp
 from gurobipy import GRB, tupledict, tuplelist
+import pandas, random
 
 
 def calcCost(accesses, is_write, ramsize, write_cost):
@@ -54,7 +55,12 @@ def calcCost(accesses, is_write, ramsize, write_cost):
         model.update()
 
         # $\min \sum_{s,t} (\delta d_{s,t} \cdot \alpha + \delta p_{s,t})$
-        model.setObjective(delta_ram.sum() + write_cost * delta_dirty.sum(), GRB.MINIMIZE)
+        if write_cost != 0:
+            model.setObjective(delta_ram.sum() + write_cost * delta_dirty.sum(), GRB.MINIMIZE)
+        else:
+            model.setObjectiveN(delta_ram.sum(), 0, priority=1)
+            model.setObjectiveN(delta_dirty.sum(), 1, priority=0)
+
         model.optimize()
 
         pagesInRam = []
@@ -70,16 +76,6 @@ def calcCost(accesses, is_write, ramsize, write_cost):
             currentInRam = [page for (page, time2) in pagesInRam if time == time2]
             currentDirty = [page for (page, time2) in dirtyInRam if time == time2]
             ram_time += [(time, currentInRam, currentDirty)]
-        for timestep in ram_time:
-            time = timestep[0]
-            if(is_write[time]):
-                print("w", end="(")
-            else:
-                print("r", end="(")
-            print(accesses[time], end=") ")
-            pagesstrings = [str(page) for page in timestep[1] if page not in timestep[2]]
-            pagesstrings += [str(page) + "x" for page in timestep[2]]
-            print(pagesstrings)
 
         writes = delta_dirty.sum().getValue()
         if write_cost == 0:
@@ -96,8 +92,23 @@ def calcCost(accesses, is_write, ramsize, write_cost):
     except AttributeError:
         print('Encountered an attribute error')
 
-ramsize = 3
+ramsize = 20
 write_cost = 10
-accesses = [2, 2, 2, 4, 7, 1, 10, 10, 3, 1, 7, 3, 7, 7, 2, 2, 6, 1, 5, 5, 7, 5, 8, 4, 5, 9, 1, 3, 3, 7, 7, 6, 3, 3, 7, 6, 3, 4, 6, 5, 2, 1, 10, 8, 5, 1, 1, 1, 2, 7, 1, 5, 5, 9, 8, 1, 7, 10, 8, 2]
-is_write = [False, False, True, False, True, True, False, True, False, False, False, True, False, True, True, False, True, False, False, False, True, False, True, True, False, True, False, False, False, True, False, True, True, False, True, False, False, False, True, False, True, True, False, True, False, False, False, True, False, True, True, False, True, False, False, False, True, True, True, False]
-calcCost(accesses, is_write, ramsize, write_cost)
+
+csv_name = "wopt.csv"
+try:
+    print("try read from cache")
+    df = pandas.read_csv(csv_name)
+    accesses = list(df["pages"])
+    is_write = list(df["is_write"])
+    calcCost(accesses, is_write, ramsize, write_cost)
+except:
+    print("No CSV with name \"{}\" found".format(csv_name))
+    max_page=100
+    length = 2000
+    accesses = [random.randint(0, max_page) for x in range(length)]
+    is_write = random.choices([True, False], [0.1, 0.9], k=length)
+    df = {"pages": accesses, "is_write": is_write}
+    df = pandas.DataFrame(data=df)
+    df.to_csv(csv_name, index=False)
+    calcCost(accesses, is_write, ramsize, write_cost)
