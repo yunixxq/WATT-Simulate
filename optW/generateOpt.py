@@ -64,10 +64,15 @@ def addVariables(model, readTimes, writeTimes):
 
     return (ram, delta_ram, dirty, delta_dirty)
 
-def addConstraints(model, writeTimes, ram, delta_ram, dirty, delta_dirty, first_read, last_read, first_write, last_write, accesses, is_write):
+def addConstraints(model, writeTimes, ram, delta_ram, dirty, delta_dirty, first_read, last_read, first_write, last_write, accesses, is_write, ramsize):
+
+    ram_size = model.addVar(ramsize, ramsize, vtype=GRB.INTEGER, name="RAMSIZE")
+
+    ## Weitere Optimierungen:
+    ## - Alle deltas bis auf die direkt am zugriff sind = 0 (read direkt davor, write direkt dort)
     print("Adding Constraints")
         #  $\sum_t p_{s,t} \leq P$ = Puffergröße
-    model.addConstrs((ram.sum('*', time) <= ramsize for time in range(-1, len(accesses) +1)), "capacity")
+    model.addConstrs((ram.sum('*', time) <= ram_size for time in range(-1, len(accesses) +1)), "capacity")
 
     # $\sum_t \delta p_{s,t} \leq 1$ = nur 1 read per step
     ## Ist eigentlich auch egal.. dann soll es halt mehrere laden
@@ -95,10 +100,12 @@ def addConstraints(model, writeTimes, ram, delta_ram, dirty, delta_dirty, first_
     # $d_{s,t} \geq 1$ wenn geschrieben, $\geq 0$ sonst
     model.addConstrs((dirty[(p,t)] == 1 for t,p in enumerate(accesses) if(is_write[t])), name="write")
 
-def setObjective(model, delta_ram, delta_dirty, write_cost):
+def setObjective(model, delta_ram, delta_dirty, writecost):
     print("Setting Objective")
+    write_cost = model.addVar(writecost, writecost, vtype=GRB.INTEGER, name="WRITE_COST")
+
     # $\min \sum_{s,t} (\delta d_{s,t} \cdot \alpha + \delta p_{s,t})$
-    if write_cost != 0:
+    if writecost != 0:
         model.setObjective(delta_ram.sum() + write_cost * delta_dirty.sum(), GRB.MINIMIZE)
     else:
         model.setObjectiveN(delta_ram.sum(), 0, priority=1)
@@ -106,22 +113,17 @@ def setObjective(model, delta_ram, delta_dirty, write_cost):
     return (model, delta_ram, delta_dirty)
 
 
-def calcCost(accesses: list, is_write: list, ramsize, write_cost):
+def generateModel(accesses: list, is_write: list, ramsize, write_cost):
     try:
         model = initModel()
         (first_read, last_read, first_write, last_write) = getAccessLists(accesses, is_write)
         readTimes = createTimes(first_read, last_read)
         writeTimes = createTimes(first_write, last_write)
         (ram, delta_ram, dirty, delta_dirty) = addVariables(model, readTimes, writeTimes)
-        addConstraints(model, writeTimes, ram, delta_ram, dirty, delta_dirty, first_read, last_read, first_write, last_write, accesses, is_write)
-        model.update()
+        addConstraints(model, writeTimes, ram, delta_ram, dirty, delta_dirty, first_read, last_read, first_write, last_write, accesses, is_write, ramsize)
         setObjective(model, delta_ram, delta_dirty, write_cost)
-
-        print("Optimizing")
-        model.optimize()
-
-        print('Obj: {:n}'.format(model.objVal))
-        print("Reads: {:n}, Writes: {:n}".format(delta_ram.sum().getValue(), delta_dirty.sum().getValue()))
+        model.update()
+        model.write("modell.mps")
 
     except gp.GurobiError as e:
         print('Error code ' + str(e.errno) + ': ' + str(e))
@@ -129,7 +131,7 @@ def calcCost(accesses: list, is_write: list, ramsize, write_cost):
     except AttributeError:
         print('Encountered an attribute error')
 
-def generate(file_name, max_page, length):
+def generateDataset(file_name, max_page, length):
     accesses = [random.randint(0, max_page) for x in range(length)]
     is_write = random.choices([True, False], [0.1, 0.9], k=length)
     df = {"pages": accesses, "is_write": is_write}
@@ -149,7 +151,7 @@ def run_file(file_name, ram, write_cost):
     df = pandas.read_csv(file_name)
     accesses = list(df["pages"])
     is_write = list(df["is_write"])
-    calcCost(accesses, is_write, ramsize, write_cost)
+    generateModel(accesses, is_write, ramsize, write_cost)
 
 
 ramsize = 20
@@ -161,8 +163,8 @@ try:
     run_file(csv_name, ramsize, write_cost)
 except FileNotFoundError:
     print("No CSV with name \"{}\" found".format(csv_name))
-    max_page=1000
-    length = 20000
+    max_page=100
+    length = 2000
     # generate(csv_name, max_page, length)
     generateZipf(csv_name, max_page, length, 0.4)
 
