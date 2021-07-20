@@ -12,6 +12,7 @@ def initModel():
     model = gp.Model("writeOpt")
     #model.setParam("NodefileStart", 0.5)
     #model.setParam("Threads", 2)
+    model.setParam("Method", 1)
     return model
 
 def getAccessLists(accesses, is_write):
