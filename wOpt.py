@@ -9,6 +9,7 @@ import pandas, random
 
 
 def initModel():
+    print("Init model")
     model = gp.Model("writeOpt")
     #model.setParam("NodefileStart", 0.5)
     #model.setParam("Threads", 2)
@@ -23,7 +24,7 @@ def getAccessLists(accesses, is_write):
         print(len(is_write))
         assert(len(accesses) == len(is_write))
 
-    print("Building Tuplelist {} {}".format(len(pages), access_len))
+    print("Building AccessLists {} {}".format(len(pages), access_len))
     def getValidTimesForPage(fancyList: list, page: number, writes=False):
         my_accesses = [x for x in fancyList if x[1] == page and ((not writes) or x[2] == True)]
         if len(my_accesses) != 0:
@@ -55,6 +56,7 @@ def createTimes(first, last):
     return gp.tuplelist([(p,t) for p in last for t in range(first[p], last[p] + 2)])
 
 def addVariables(model, readTimes, writeTimes):
+    print("Generating Variables")
     ram: tupledict = model.addVars(readTimes, name="ram", vtype=GRB.BINARY)
     delta_ram: tupledict = model.addVars(readTimes, name="delta_ram", vtype=GRB.BINARY)
     dirty: tupledict = model.addVars(writeTimes, name="dirty", vtype=GRB.BINARY)
@@ -63,6 +65,7 @@ def addVariables(model, readTimes, writeTimes):
     return (ram, delta_ram, dirty, delta_dirty)
 
 def addConstraints(model, writeTimes, ram, delta_ram, dirty, delta_dirty, first_read, last_read, first_write, last_write, accesses, is_write):
+    print("Adding Constraints")
         #  $\sum_t p_{s,t} \leq P$ = Puffergröße
     model.addConstrs((ram.sum('*', time) <= ramsize for time in range(-1, len(accesses) +1)), "capacity")
 
@@ -93,6 +96,7 @@ def addConstraints(model, writeTimes, ram, delta_ram, dirty, delta_dirty, first_
     model.addConstrs((dirty[(p,t)] == 1 for t,p in enumerate(accesses) if(is_write[t])), name="write")
 
 def setObjective(model, delta_ram, delta_dirty, write_cost):
+    print("Setting Objective")
     # $\min \sum_{s,t} (\delta d_{s,t} \cdot \alpha + \delta p_{s,t})$
     if write_cost != 0:
         model.setObjective(delta_ram.sum() + write_cost * delta_dirty.sum(), GRB.MINIMIZE)
