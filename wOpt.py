@@ -8,94 +8,109 @@ from scipy.stats import zipfian
 import pandas, random
 
 
+def initModel():
+    model = gp.Model("writeOpt")
+    #model.setParam("NodefileStart", 0.5)
+    #model.setParam("Threads", 2)
+    return model
+
+def getAccessLists(accesses, is_write):
+    access_len = len(accesses)
+    pages = set(accesses)
+    if len(accesses) != len(is_write):
+        print(len(accesses))
+        print(len(is_write))
+        assert(len(accesses) == len(is_write))
+
+    print("Building Tuplelist {} {}".format(len(pages), access_len))
+    def getValidTimesForPage(fancyList: list, page: number, writes=False):
+        my_accesses = [x for x in fancyList if x[1] == page and ((not writes) or x[2] == True)]
+        if len(my_accesses) != 0:
+            return (my_accesses[0][0], my_accesses[-1][0])
+        else:
+            return (-1,-1)
+
+    fancyList = list(zip(range(access_len), accesses, is_write))
+
+    first_read = {}
+    last_read = {}
+    for p in pages:
+        (start, end) = getValidTimesForPage(fancyList, p)
+        assert(start != -1)
+        assert(end != -1)
+        first_read[p] = start
+        last_read[p] = end
+    first_write = {}
+    last_write = {}
+    for p in pages:
+        (start, end) = getValidTimesForPage(fancyList, p, True)
+        if(start == -1):
+            continue
+        first_write[p] = start
+        last_write[p] = end
+    return (first_read, last_read, first_write, last_write)
+
+def createTimes(first, last):
+    return gp.tuplelist([(p,t) for p in last for t in range(first[p], last[p] + 2)])
+
+def addVariables(model, readTimes, writeTimes):
+    ram: tupledict = model.addVars(readTimes, name="ram", vtype=GRB.BINARY)
+    delta_ram: tupledict = model.addVars(readTimes, name="delta_ram", vtype=GRB.BINARY)
+    dirty: tupledict = model.addVars(writeTimes, name="dirty", vtype=GRB.BINARY)
+    delta_dirty: tupledict = model.addVars(writeTimes, name="delta_dirty", vtype=GRB.BINARY)
+
+    return (ram, delta_ram, dirty, delta_dirty)
+
+def addConstraints(model, writeTimes, ram, delta_ram, dirty, delta_dirty, first_read, last_read, first_write, last_write, accesses, is_write):
+        #  $\sum_t p_{s,t} \leq P$ = Puffergröße
+    model.addConstrs((ram.sum('*', time) <= ramsize for time in range(-1, len(accesses) +1)), "capacity")
+
+    # $\sum_t \delta p_{s,t} \leq 1$ = nur 1 read per step
+    ## Ist eigentlich auch egal.. dann soll es halt mehrere laden
+    # macht es einfacher für den solver, wenn er mehrere laden kann
+    # model.addConstrs((delta_ram.sum('*', time) <= 1 for time in range(-1, access_len +1)), "maxRead")
+
+    # $d_{s,t} \leq p_{s,t}$ = Eine dirty Page ist im Puffer
+    model.addConstrs((dirty[pageTime] <= ram[pageTime] for pageTime in writeTimes), "dirtyInRam")
+
+    # $p_{s,t} \leq p_{s,t-1} + \delta p_{s,t}$ = Seite kann nur durch lesen eingelagert werden. (Ausnahme 1. Seite (Sonderregel))
+    model.addConstrs((ram[p, t] <= ram[p, t-1] + delta_ram[p, t] for p in first_read for t in range(first_read[p]+1, last_read[p] + 1)), "readFresh");
+
+    #  - $\delta p_{s,t_min} = 1$ = First access is read
+    model.addConstrs((delta_ram[page, first_read[page]] == 1 for page in first_read), name="emptyStart")
+
+    # $d_{s,t} \leq d_{s,t+1} + \delta d_{s,t}$ = Eine Seite, verliert ihr dirty flag nur, wenn sie geschrieben wird
+    model.addConstrs((dirty[p, t] <= dirty[p, t+1] + delta_dirty[p, t] for p in first_write for t in range(first_write[p], last_write[p] + 1)), "writeDirty");
+
+    # Optional: $d_{s,t_{max}} = 0$ =Am ende ist der Puffer Sauber
+    model.addConstrs((dirty[page, last_write[page] + 1] == 0 for page in last_write), name="cleanStop")
+
+    # $p_{s,t}\geq 1$ wenn gelesen, $\geq 0$ sonst
+    model.addConstrs((ram[(p,t)] == 1 for t,p in enumerate(accesses)), name="read")
+
+    # $d_{s,t} \geq 1$ wenn geschrieben, $\geq 0$ sonst
+    model.addConstrs((dirty[(p,t)] == 1 for t,p in enumerate(accesses) if(is_write[t])), name="write")
+
+def setObjective(model, delta_ram, delta_dirty, write_cost):
+    # $\min \sum_{s,t} (\delta d_{s,t} \cdot \alpha + \delta p_{s,t})$
+    if write_cost != 0:
+        model.setObjective(delta_ram.sum() + write_cost * delta_dirty.sum(), GRB.MINIMIZE)
+    else:
+        model.setObjectiveN(delta_ram.sum(), 0, priority=1)
+        model.setObjectiveN(delta_dirty.sum(), 1, priority=0)
+    return (model, delta_ram, delta_dirty)
+
+
 def calcCost(accesses: list, is_write: list, ramsize, write_cost):
     try:
-        access_len = len(accesses)
-        pages = set(accesses)
-        if len(accesses) != len(is_write):
-            print(len(accesses))
-            print(len(is_write))
-            assert(len(accesses) == len(is_write))
-
-        print("Building Tuplelist {} {}".format(len(pages), access_len))
-        def getValidTimesForPage(fancyList: list, page: number, writes=False):
-            my_accesses = [x for x in fancyList if x[1] == page and ((not writes) or x[2] == True)]
-            if len(my_accesses) != 0:
-                return (my_accesses[0][0], my_accesses[-1][0])
-            else:
-                return (-1,-1)
-
-        fancyList = list(zip(range(access_len), accesses, is_write))
-
-        first_read = {}
-        last_read = {}
-        for p in pages:
-            (start, end) = getValidTimesForPage(fancyList, p)
-            assert(start != -1)
-            assert(end != -1)
-            first_read[p] = start
-            last_read[p] = end
-        first_write = {}
-        last_write = {}
-        for p in pages:
-            (start, end) = getValidTimesForPage(fancyList, p, True)
-            if(start == -1):
-                continue
-            first_write[p] = start
-            last_write[p] = end
-        
-
-        readTimes: tuplelist = gp.tuplelist([(p,t) for p in last_read for t in range(first_read[p], last_read[p] + 2)])
-        dirtyTimes: tuplelist = gp.tuplelist([(p,t) for p in last_write for t in range(first_write[p], last_write[p] + 2)])
-        
-        print("Building model")
-
-        model = gp.Model("writeOpt")
-
-        print("Adding Variables")
-        ram: tupledict = model.addVars(readTimes, name="ram", vtype=GRB.BINARY)
-        delta_ram: tupledict = model.addVars(readTimes, name="delta_ram", vtype=GRB.BINARY)
-        dirty: tupledict = model.addVars(dirtyTimes, name="dirty", vtype=GRB.BINARY)
-        delta_dirty: tupledict = model.addVars(dirtyTimes, name="delta_dirty", vtype=GRB.BINARY)
-
-        print("Adding constraints")
-        #  $\sum_t p_{s,t} \leq P$ = Puffergröße
-        model.addConstrs((ram.sum('*', time) <= ramsize for time in range(-1, access_len +1)), "capacity")
-
-        # $\sum_t \delta p_{s,t} \leq 1$ = nur 1 read per step
-        ## Ist eigentlich auch egal.. dann soll es halt mehrere laden
-        # model.addConstrs((delta_ram.sum('*', time) <= 1 for time in range(-1, access_len +1)), "maxRead")
-
-        # $d_{s,t} \leq p_{s,t}$ = Eine dirty Page ist im Puffer
-        model.addConstrs((dirty[pageTime] <= ram[pageTime] for pageTime in dirtyTimes), "dirtyInRam")
-
-        # $p_{s,t} \leq p_{s,t-1} + \delta p_{s,t}$ = Seite kann nur durch lesen eingelagert werden. (Ausnahme 1. Seite (Sonderregel))
-        model.addConstrs((ram[p, t] <= ram[p, t-1] + delta_ram[p, t] for p in first_read for t in range(first_read[p]+1, last_read[p] + 1)), "readFresh");
-
-        # $d_{s,t} \leq d_{s,t+1} + \delta d_{s,t}$ = Eine Seite, verliert ihr dirty flag nur, wenn sie geschrieben wird
-        model.addConstrs((dirty[p, t] <= dirty[p, t+1] + delta_dirty[p, t] for p in first_write for t in range(first_write[p], last_write[p] + 1)), "writeDirty");
-
-        #  - $\delta p_{s,t_min} = 1$ = First access is read
-        model.addConstrs((delta_ram[page, first_read[page]] == 1 for page in first_read), name="emptyStart")
-
-        # Optional: $d_{s,t_{max}} = 0$ =Am ende ist der Puffer Sauber
-        model.addConstrs((dirty[page, last_write[page] + 1] == 0 for page in last_write), name="cleanStop")
-
-        # $p_{s,t}\geq 1$ wenn gelesen, $\geq 0$ sonst
-        model.addConstrs((ram[(p,t)] == 1 for t,p in enumerate(accesses)), name="read")
-
-        # $d_{s,t} \geq 1$ wenn geschrieben, $\geq 0$ sonst
-        model.addConstrs((dirty[(p,t)] == 1 for t,p in enumerate(accesses) if(is_write[t])), name="write")
-
+        model = initModel()
+        (first_read, last_read, first_write, last_write) = getAccessLists(accesses, is_write)
+        readTimes = createTimes(first_read, last_read)
+        writeTimes = createTimes(first_write, last_write)
+        (ram, delta_ram, dirty, delta_dirty) = addVariables(model, readTimes, writeTimes)
+        addConstraints(model, writeTimes, ram, delta_ram, dirty, delta_dirty, first_read, last_read, first_write, last_write, accesses, is_write)
         model.update()
-
-        print("Adding Objective")
-        # $\min \sum_{s,t} (\delta d_{s,t} \cdot \alpha + \delta p_{s,t})$
-        if write_cost != 0:
-            model.setObjective(delta_ram.sum() + write_cost * delta_dirty.sum(), GRB.MINIMIZE)
-        else:
-            model.setObjectiveN(delta_ram.sum(), 0, priority=1)
-            model.setObjectiveN(delta_dirty.sum(), 1, priority=0)
+        setObjective(model, delta_ram, delta_dirty, write_cost)
 
         print("Optimizing")
         model.optimize()
