@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import distributions, zipfian
 import time
 import pandas
+import random
 
 # x = random.zipf(a=2, size=1000)
 
@@ -23,10 +24,10 @@ def simulate(discrete_elements, simulation_length, zipf_factor=2):
     for element in range(1, discrete_elements+1):
         counter = x.count(element)
         distribution.append(counter)
-    return distribution
+    return (distribution, x)
 
 writes_to_total_fraction = 0.3
-total_access = 100000
+total_access = 10000
 
 write_zipf = 0.5
 read_zipf = 1.0
@@ -46,6 +47,7 @@ read_access = total_access - write_access
 
 timer = startTime()
 csv_name = "Distribution_{}_{}_{}_{}_{}.csv".format(total_access, write_access, write_pages, write_zipf, read_zipf)
+csv_name2 = "accesses_{}_{}_{}_{}_{}.csv".format(total_access, write_access, write_pages, write_zipf, read_zipf)
 
 write_distribution, read_distribution = ([], [])
 try:
@@ -54,16 +56,24 @@ try:
     dists = list(df["distribution"])
     write_distribution = dists[:write_pages]
     read_distribution = dists[write_pages:]
-except:
+except FileNotFoundError:
     print("Simulating")
-    write_distribution = simulate(write_pages, write_access, write_zipf)
+    (write_distribution, write_accesses) = simulate(write_pages, write_access, write_zipf)
     timer = printTime(timer)
-    read_distribution =  simulate(read_pages, read_access, read_zipf)
+    (read_distribution, read_accesses) =  simulate(read_pages, read_access, read_zipf)
 
     d = {'distribution': write_distribution + read_distribution}
     df = pandas.DataFrame(data=d)
-
     df.to_csv(csv_name, index=False)
+    reads = [(x, False) for x in read_accesses]
+    writes = [(x, True) for x in write_accesses]
+    total = random.sample(reads + writes, len(reads+writes))
+    (pages, is_write) = zip(*total)
+    d2 = {'pages': pages, "is_write": is_write}
+    df2 = pandas.DataFrame(data=d2)
+    df2.to_csv(csv_name2, index=False)
+
+
 
 timer = printTime(timer)
 
