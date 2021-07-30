@@ -132,14 +132,15 @@ def genEvalList(costfactor, elements):
     
     def evalLists(missList, writeList):
         costList = map(lambda read, write: read + write*costfactor, missList, writeList)
-        norm_miss = map(lambda x: x/elements, missList)
-        norm_costList = map(lambda x: x/elements, costList)
-        return (norm_miss, norm_costList)
+        norm_miss = list(map(lambda x: x/elements, missList))
+        norm_hit = list(map(lambda x: 1-x, norm_miss))
+        norm_costList = list(map(lambda x: x/elements, costList))
+        return (norm_hit, norm_miss, norm_costList)
     return evalLists
 
-def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, all=False, quick=False):
+def generateCSV(pidAndNextAndWrite, dirName, heatUp=0):
     elements = len(pidAndNextAndWrite) - heatUp
-    evalList = genEvalList(8, elements)
+    quick=False
 
     pre = time.time()
 
@@ -153,8 +154,8 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, all=False, quick=False):
     range7 = 5000000
     xList = list(range(range0, range1, 1)) + list(range(range1, range2, 10)) + list(range(range2, range3, 100)) + list(range(range3, range4, 1000)) + list(range(range4, range5, 10000)) + list(range(range5, range6, 100000)) + list(range(range6, range7+1, 1000000))
     names = []
-    yMissLists = []
-    yCostLists = []
+    yReadList = []
+    yWriteList = []
 
     post = time.time()
     print(post-pre)
@@ -169,6 +170,10 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, all=False, quick=False):
     minValue = min([x for x in xList if x > max(stackDist)])
     xList = [x for x in xList if x<= minValue]
 
+    names.append("elements")
+    yReadList.append([elements for x in xList])
+    yWriteList.append([elements for x in xList])
+
     print("Buffers to calculate: {}".format(len(xList)))
 
     print("Stacksize: " + str(max(stackDist)))
@@ -181,11 +186,10 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, all=False, quick=False):
     dirty_inRam = total_writes - written
     lruDirtyList = list(map(lambda hits: hits + dirty_inRam, lruDirtyList))
     
-    (normMissList, normCostList) = evalList(lruMissList, lruDirtyList)
-
     names.append("lru")
-    yMissLists.append(normMissList)
-    yCostLists.append(normCostList)
+    yReadList.append(lruMissList)
+    yWriteList.append(lruDirtyList)
+
     post = time.time()
     print(post-pre)
     pre=post
@@ -194,10 +198,10 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, all=False, quick=False):
         for (name, function) in [("rand", ran), ("opt", belady), ("strange lru2", lru2),  ("strange lru3", lru3)]:
             print(name)
             (missList, dirtyList) = list(zip(*Parallel(n_jobs=8)(delayed(function)(pidAndNextAndWrite, size, heatUp=heatUp) for size in xList)))
-            (normMissList, normCostList) = evalList(missList, dirtyList)
+
             names.append(name)
-            yMissLists.append(normMissList)
-            yCostLists.append(normCostList)
+            yReadList.append(missList)
+            yWriteList.append(dirtyList)
 
             post = time.time()
             print(post-pre)
@@ -210,54 +214,52 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, all=False, quick=False):
         df = pandas.DataFrame(data=d)
         df.to_csv(name+".csv", index=False)
 
-    save_csv(xList, yMissLists, names, dirName + "miss")
-    save_csv(xList, yCostLists, names, dirName + "cost")
+    save_csv(xList, yReadList, names, dirName + "reads")
+    save_csv(xList, yWriteList, names, dirName + "writes")
     
 
 
-def plotGraph(name, all=False):
-    df = pandas.read_csv(name+"miss.csv")
-    df_cost = pandas.read_csv(name+"cost.csv")
+def plotGraph(name, write_cost = 8):
+    df_read = pandas.read_csv(name+"reads.csv")
+    df_write = pandas.read_csv(name+"writes.csv")
+    elements = df_read["elements"][0]
+    evalList = genEvalList(write_cost, elements)
 
-    def plotGraphInner(df, title, ylabel, file, miss=True):
-        labels = list(df.head())
-        labels.remove("X")
-        for pos in range(0, len(labels)):
-            misses = df[labels[pos]]
-            label= labels[pos]
-            if not miss:
-                misses = list(map(lambda x: 1-x, misses))
-            plt.plot(df["X"], misses, label=label)
+    for elem in list(df_read["elements"]) + list(df_write["elements"]):
+        assert(elem == elements)
+
+    df_hit = pandas.DataFrame()
+    df_miss = pandas.DataFrame()
+    df_cost = pandas.DataFrame()
+    df_hit["X"] = df_read["X"]
+    df_miss["X"] = df_read["X"]
+    df_cost["X"] = df_read["X"]
+
+    labels = list(df_read.columns.values)
+    labels.remove("X")
+    labels.remove("elements")
+
+    for column in labels:
+        (df_hit[column], df_miss[column], df_cost[column]) = evalList(df_read[column], df_write[column])
+
+    def plotGraphInner(df, title, ylabel, file, labels, limit=False):
+        for label in labels:
+            plt.plot(df["X"], df[label], label=label)
 
         plt.xlabel("Buffer Size")
         plt.ylabel(ylabel)
-        plt.ylim(0,1)
+        if(limit):
+            plt.ylim(0,1)
         plt.legend()
         plt.title(title)
         plt.savefig(file)
         plt.clf()
 
-    def plotGraphCost(df, title, ylabel, file):
-        labels = list(df.head())
-        labels.remove("X")
-        for pos in range(0, len(labels)):
-            costs = df[labels[pos]]
-            label= labels[pos]
-            plt.plot(df["X"], costs, label=label)
+    plotGraphInner(df_hit, "Hitrate", "Hits", name + "_hits.pdf", labels, limit=True)
 
-        plt.xlabel("Buffer Size")
-        plt.ylabel(ylabel)
-        # plt.ylim(0,1)
-        plt.legend()
-        plt.title(title)
-        plt.savefig(file)
-        plt.clf()
+    plotGraphInner(df_miss, "Missrate", "Misses", name + "_misses.pdf", labels, limit=True)
 
-    plotGraphInner(df, "Hitrate", "Hits", name + "_hits.pdf", miss=False)
-
-    plotGraphInner(df, "Missrate", "Misses", name + "_misses.pdf")
-
-    plotGraphCost(df_cost, "Cost", "Cost", name + "_cost.pdf")
+    plotGraphInner(df_cost, "Cost", "Cost", name + "_cost.pdf", labels)
 
 
 def doOneRun(heatUp, all, data, name):
@@ -274,18 +276,14 @@ def doOneRun(heatUp, all, data, name):
     print("Length data {}: {}".format(name, len(data)))
     try:
         print("try to load from cache")
-        plotGraph(dirpath + name, all=all)
+        plotGraph(dirpath + name)
     except FileNotFoundError:
         print("Failed to load from cache")
-        generateCSV(data, dirpath + name, heatUp=heatUp, all=all)
-        plotGraph(dirpath + name, all=all)
+        generateCSV(data, dirpath + name, heatUp=heatUp)
+        plotGraph(dirpath + name)
 
 
-def do_run():
-    elementList = [10000, 100000, 1000000, -1]
-    heatUpList = [0, 400, 1000, 4000, 10000, 40000]
-
-    file = "./accesses_10000_3000_40_0.5_1.0.csv"
+def do_run(file, elementList, heatUpList):
 
     loaded_data = pandas.read_csv(file)
     data = list(zip(loaded_data["pages"], loaded_data["is_write"]))
@@ -299,8 +297,8 @@ def do_run():
     preprocessed_data = preprocess(data_file)
 
     for (data, name) in [(preprocessed_data, "/Data")]:
-        for elements in [-1]: # elementList:
-            for heatUp in [0]: # heatUpList:
+        for elements in elementList:
+            for heatUp in heatUpList:
                 print("-------")
                 print("Elements: {}, heatup: {}".format(elements, heatUp))
                 if elements == -1:
@@ -308,6 +306,9 @@ def do_run():
                 else:
                     doOneRun(heatUp, False, data[:elements+heatUp], name)
 
-do_run()
-# Second Try: dont evict during locking (from resolve swip to unlock)
-# Third try???
+if __name__ == "__main__":
+    file = "./accesses_10000_3000_40_0.5_1.0.csv"
+    elementList = [-1] #[10000, 100000, 1000000, -1]
+    heatUpList = [0] #[0, 400, 1000, 4000, 10000, 40000]
+
+    do_run(file, elementList, heatUpList)
