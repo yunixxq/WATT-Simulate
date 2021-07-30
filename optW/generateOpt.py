@@ -147,25 +147,26 @@ def generateZipf(file_name, max_page, length, zipf_factor):
     df.to_csv(file_name, index=False)
 
 
-def run_file(file_name, ram, write_cost):
+def run_file(file_name, ramsize=20, write_cost=1):
     df = pandas.read_csv(file_name)
     accesses = list(df["pages"])
     is_write = list(df["is_write"])
     generateModel(accesses, is_write, ramsize, write_cost)
 
 
-ramsize = 20
-write_cost = 10
+if __name__ == "__main__":
+    ramsize = 20
+    write_cost = 10
 
-csv_name = "wopt.csv"
-try:
-    print("try read from cache")
-    run_file(csv_name, ramsize, write_cost)
-except FileNotFoundError:
-    print("No CSV with name \"{}\" found".format(csv_name))
-    max_page=100
-    length = 2000
-    # generate(csv_name, max_page, length)
-    generateZipf(csv_name, max_page, length, 0.4)
+    csv_name = "wopt.csv"
+    try:
+        print("try read from cache")
+        run_file(csv_name, ramsize, write_cost)
+    except FileNotFoundError:
+        print("No CSV with name \"{}\" found".format(csv_name))
+        max_page=100
+        length = 2000
+        # generate(csv_name, max_page, length)
+        generateZipf(csv_name, max_page, length, 0.4)
 
-    run_file(csv_name, ramsize, write_cost)
+        run_file(csv_name, ramsize, write_cost)

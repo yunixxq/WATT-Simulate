@@ -283,7 +283,7 @@ def doOneRun(heatUp, all, data, name):
         plotGraph(dirpath + name)
 
 
-def do_run(file, elementList, heatUpList):
+def do_run(file, elementList = [-1], heatUpList = [0]):
 
     loaded_data = pandas.read_csv(file)
     data = list(zip(loaded_data["pages"], loaded_data["is_write"]))
