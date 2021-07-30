@@ -102,7 +102,7 @@ def addConstraints(model, writeTimes, ram, delta_ram, dirty, delta_dirty, first_
 
 def setObjective(model, delta_ram, delta_dirty, writecost):
     print("Setting Objective")
-    write_cost = model.addVar(writecost, writecost, vtype=GRB.INTEGER, name="WRITE_COST")
+    write_cost = model.addVar(writecost, writecost, name="WRITE_COST")
 
     # $\min \sum_{s,t} (\delta d_{s,t} \cdot \alpha + \delta p_{s,t})$
     if writecost != 0:
