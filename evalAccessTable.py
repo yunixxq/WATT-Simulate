@@ -9,6 +9,23 @@ import pandas
 def evictMinPage(ram: dict, dirtyInRam: set):
     return min(ram, key=lambda x: ram[x])
 
+def evict_cf_lru(ram: dict, dirtyInRam: set, clean_percentage = 0.5): #cflru
+    window_length = int(len(ram)*clean_percentage)
+    window = list(sorted(ram, key=lambda x: ram[x]))[:window_length]
+    window_clean = [x for x in window if x not in dirtyInRam]
+    if len(window_clean) > 0:
+        return window_clean[0]
+    return window[0]
+
+def evict_lru_wsr(ram: dict, dirtyInRam: set): # flag = (last_access, dirty_seen)
+    while True:
+        evict_cand = min(ram, key=lambda x: ram[x][0])
+        if (evict_cand not in dirtyInRam) or ram[evict_cand][1]:
+            return evict_cand
+        else:
+            ram[evict_cand] = (ram[max(ram, key=lambda x: ram[x][0])][0] + 1.0 / len(ram), True)
+
+
 def randomFindPageToEvict(ram: dict, dirtyInRam: set):
     return random.choice(list(ram))
 
@@ -26,7 +43,6 @@ def executeStrategy(pidAndNextAndWrite, ramSize, flagFunction, evictFinder, heat
             pageMisses = 0
             dirtyEvicts = 0
         (pid, nextZugriff, write) = pidAndNextAndWrite[pos]
-        
         if pid not in currentRam:
             # Load
             pageMisses += 1
@@ -49,23 +65,51 @@ def executeStrategy(pidAndNextAndWrite, ramSize, flagFunction, evictFinder, heat
 def belady(pidAndNextAndWrite, ramSize, heatUp=0):
     return executeStrategy(pidAndNextAndWrite, ramSize, lambda _, x: x[1], evictMinPage, heatUp=heatUp)
 
-def lru(pidAndNext, ramSize, heatUp=0):
-    return executeStrategy(pidAndNext, ramSize, lambda _, x: x[0], evictMinPage, heatUp=heatUp)
+def lru(pidAndNextAndWrite, ramSize, heatUp=0):
+    return executeStrategy(pidAndNextAndWrite, ramSize, lambda _, x: x[0], evictMinPage, heatUp=heatUp)
+
+def cf_lru(pidAndNextAndWrite, ramSize, heatUp=0):
+    return executeStrategy(pidAndNextAndWrite, ramSize, lambda _, x: x[0], evict_cf_lru, heatUp=heatUp)
+
+def lru_wsr(pidAndNextAndWrite, ramSize, heatUp=0): # Flag: (last_access, dirty_cold)
+    return executeStrategy(pidAndNextAndWrite, ramSize, lambda _, x: (x[0], False), evict_lru_wsr, heatUp=heatUp)
 
 def ran(pidAndNextAndWrite, ramSize, heatUp=0):
     return executeStrategy(pidAndNextAndWrite, ramSize, lambda _, x: 0, randomFindPageToEvict, heatUp=heatUp)
 
-def lru2(pidAndNext, ramSize, heatUp=0): # Last_flag: (last_access, dirty)
-    return executeStrategy(pidAndNext, ramSize,
+def lru2(pidAndNextAndWrite, ramSize, heatUp=0): # Last_flag: (last_access, dirty)
+    return executeStrategy(pidAndNextAndWrite, ramSize,
         lambda last_flag, x: x[0],
         evict_lru_strange, heatUp=heatUp)
 
-def lru3(pidAndNext, ramSize, heatUp=0): # Last_flag: (last_access, dirty)
-    return executeStrategy(pidAndNext, ramSize,
+def lru3(pidAndNextAndWrite, ramSize, heatUp=0,): # Last_flag: (last_access, dirty)
+    return executeStrategy(pidAndNextAndWrite, ramSize,
         lambda last_flag, x:
             x[0] + 40 if x[2] or x[3] 
             else x[0],
         evictMinPage, heatUp=heatUp)
+
+def staticOpt(pidAndNextAndWrite, ramSize, heatUp=0, write_cost=1):
+    pidList = [x[0] for x in pidAndNextAndWrite]
+    writeList = [x[0] for x in pidAndNextAndWrite if x[2]]
+    accesses = {}
+    writes = {}
+    cost = {}
+    for pid in set(pidList):
+        accesses[pid] = pidList.count(pid)
+        writes[pid] = writeList.count(pid)
+        cost[pid] = accesses[pid] + writes[pid]*write_cost
+    pidByCost = sorted(cost, key=lambda x: -cost.get(x))
+    print("Static page ranking")
+    print(pidByCost)
+    pageMisses, dirtyEvicts = (0,0)
+    if len(set(pidList)) > ramSize:
+        pageMisses = sum(map(lambda x: accesses[x], pidByCost[ramSize-1:])) + ramSize-1
+        dirtyEvicts = sum(map(lambda x: writes[x], pidByCost[ramSize-1:])) + sum([1 for x in pidByCost[:ramSize-1]])
+    else:
+        pageMisses = len(set(pidList))
+        dirtyEvicts = len(set(writeList))
+    return (pageMisses, dirtyEvicts)
 
 def lruStack(pidAndNextAndWrite: list[(int, int, int)], heatUp=0):
     stack = [] # The stack
@@ -138,10 +182,9 @@ def genEvalList(costfactor, elements):
         return (norm_hit, norm_miss, norm_costList)
     return evalLists
 
-def generateCSV(pidAndNextAndWrite, dirName, heatUp=0):
+def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
     elements = len(pidAndNextAndWrite) - heatUp
     quick=False
-
     pre = time.time()
 
     range0 = 3
@@ -185,27 +228,29 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0):
     total_writes = sum(write)
     dirty_inRam = total_writes - written
     lruDirtyList = list(map(lambda hits: hits + dirty_inRam, lruDirtyList))
-    
-    names.append("lru")
-    yReadList.append(lruMissList)
-    yWriteList.append(lruDirtyList)
 
-    post = time.time()
-    print(post-pre)
-    pre=post
+    def append(name, missList, dirtyList):
+        names.append(name)
+        yReadList.append(missList)
+        yWriteList.append(dirtyList)
+
+        post = time.time()
+        print(post-pre)
+        return (pre, post)
+
+    (pre, post) = append("lru", lruMissList, lruDirtyList)
 
     if not quick:
-        for (name, function) in [("rand", ran), ("opt", belady), ("strange lru2", lru2),  ("strange lru3", lru3)]:
+        # Not Write Cost Aware
+        for (name, function) in [("rand", ran), ("opt", belady), ("cf_lru", cf_lru), ("lru_wsr", lru_wsr), ("strange lru2", lru2)]: # ("strange lru2", lru2),  ("strange lru3", lru3), 
             print(name)
             (missList, dirtyList) = list(zip(*Parallel(n_jobs=8)(delayed(function)(pidAndNextAndWrite, size, heatUp=heatUp) for size in xList)))
-
-            names.append(name)
-            yReadList.append(missList)
-            yWriteList.append(dirtyList)
-
-            post = time.time()
-            print(post-pre)
-            pre=post
+            (pre, post) = append(name, missList, dirtyList)
+        # Write Cost Aware
+        for (name, function) in [("staticOpt", staticOpt)]:
+            print(name)
+            (missList, dirtyList) = list(zip(*Parallel(n_jobs=8)(delayed(function)(pidAndNextAndWrite, size, heatUp=heatUp, write_cost=write_cost) for size in xList)))
+            (pre, post) = append(name, missList, dirtyList)
 
     def save_csv(xList, yMissLists, names, name):
         d = {"X": xList}
@@ -231,9 +276,11 @@ def plotGraph(name, write_cost = 8):
     df_hit = pandas.DataFrame()
     df_miss = pandas.DataFrame()
     df_cost = pandas.DataFrame()
+    df_writes = pandas.DataFrame()
     df_hit["X"] = df_read["X"]
     df_miss["X"] = df_read["X"]
     df_cost["X"] = df_read["X"]
+    df_writes["X"] = df_read["X"]
 
     labels = list(df_read.columns.values)
     labels.remove("X")
@@ -241,6 +288,7 @@ def plotGraph(name, write_cost = 8):
 
     for column in labels:
         (df_hit[column], df_miss[column], df_cost[column]) = evalList(df_read[column], df_write[column])
+        df_writes[column] = df_write[column]
 
     def plotGraphInner(df, title, ylabel, file, labels, limit=False):
         for label in labels:
@@ -261,8 +309,10 @@ def plotGraph(name, write_cost = 8):
 
     plotGraphInner(df_cost, "Cost", "Cost", name + "_cost.pdf", labels)
 
+    plotGraphInner(df_writes, "Writes", "Writes", name + "_writes.pdf", labels)
 
-def doOneRun(heatUp, all, data, name):
+
+def doOneRun(heatUp, all, data, name, write_cost = 8):
     elements= len(data)-heatUp
     dirpath = "./Elem_" + str(elements)+ "_heatUp_" + str(heatUp)
     if all:
@@ -276,17 +326,18 @@ def doOneRun(heatUp, all, data, name):
     print("Length data {}: {}".format(name, len(data)))
     try:
         print("try to load from cache")
-        plotGraph(dirpath + name)
+        plotGraph(dirpath + name, write_cost)
     except FileNotFoundError:
         print("Failed to load from cache")
         generateCSV(data, dirpath + name, heatUp=heatUp)
-        plotGraph(dirpath + name)
+        plotGraph(dirpath + name, write_cost)
 
+def get_data_file(file):
+    loaded_data = pandas.read_csv(file)
+    return list(zip(loaded_data["pages"], loaded_data["is_write"]))
 
 def do_run(file, elementList = [-1], heatUpList = [0]):
-
-    loaded_data = pandas.read_csv(file)
-    data = list(zip(loaded_data["pages"], loaded_data["is_write"]))
+    data = get_data_file(file)
     
     if -1 in elementList:
         data_file = data
@@ -305,6 +356,11 @@ def do_run(file, elementList = [-1], heatUpList = [0]):
                     doOneRun(heatUp, True, data, name)
                 else:
                     doOneRun(heatUp, False, data[:elements+heatUp], name)
+
+def oneFullRun(file, csv_start, write_cost):
+    data = preprocess(get_data_file(file))
+    generateCSV(data, csv_start, write_cost=write_cost)
+
 
 if __name__ == "__main__":
     file = "./accesses_10000_3000_40_0.5_1.0.csv"
