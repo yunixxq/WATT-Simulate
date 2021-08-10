@@ -4,36 +4,97 @@ import matplotlib.pyplot as plt
 import os, random, time
 from joblib import Parallel, delayed
 import pandas
+from abc import ABC, abstractmethod
+
+class EvictStrategy(ABC):
+    @abstractmethod
+    def flagFunction(self, currentFlag, Values: list):
+        pass
+
+    @abstractmethod
+    def evictFinder(self, ram: dict, dirtyInRam: set):
+        pass
+
+class EvictStrategyWrite(EvictStrategy):
+    write_cost : int = 1
+
+    def __init__(self, write_cost=1):
+        self.write_cost = write_cost
+
+class Lru(EvictStrategy):
+    def flagFunction(self, currentFlag, values: list):
+        return values[0]
+
+    def evictFinder(self, ram: dict, dirtyInRam: set):
+        return evictMinPage(ram)
+
+class Ran(EvictStrategy):
+    def flagFunction(self, currentFlag, values: list):
+        return 0
+
+    def evictFinder(self, ram: dict, dirtyInRam: set):
+        return randomFindPageToEvict(ram)
 
 
-def evictMinPage(ram: dict, dirtyInRam: set):
+class Belady(EvictStrategy):
+    def flagFunction(self, currentFlag, values: list):
+        return values[1]
+
+    def evictFinder(self, ram: dict, dirtyInRam: set):
+        return evictMinPage(ram)
+
+class Cf_lru(EvictStrategy):
+    def __init__(self, clean_percentage):
+        self.clean_percentage = clean_percentage
+
+    def flagFunction(self, currentFlag, values: list):
+        return values[0]
+
+    def evictFinder(self, ram: dict, dirtyInRam: set):
+        window_length = int(len(ram)*self.clean_percentage)
+        window = list(sorted(ram, key=lambda x: ram[x]))[:window_length]
+        window_clean = [x for x in window if x not in dirtyInRam]
+        if len(window_clean) > 0:
+            return window_clean[0]
+        return window[0]
+
+class Lru_wsr(EvictStrategy):
+    def flagFunction(self, currentFlag, values: list):
+        return (values[0], False)
+
+    def evictFinder(self, ram: dict, dirtyInRam: set):
+        while True:
+            evict_cand = min(ram, key=lambda x: ram[x][0])
+            if (evict_cand not in dirtyInRam) or ram[evict_cand][1]:
+                return evict_cand
+            else:
+                ram[evict_cand] = (ram[max(ram, key=lambda x: ram[x][0])][0] + 1.0 / len(ram), True)
+
+class Lru_strange_1(EvictStrategy):
+    def flagFunction(self, currentFlag, values: list):
+        return values[0]
+
+    def evictFinder(self, ram: dict, dirtyInRam: set):
+        return min(ram, key=lambda x: ram[x] +40 if x in dirtyInRam else ram[x])
+
+class Lru_strange_2(EvictStrategy):
+    def flagFunction(self, currentFlag, values: list):
+        if values[2] or values[3]:
+            return values[0] + 40 
+        else:
+            return values[0]
+
+    def evictFinder(self, ram: dict, dirtyInRam: set):
+        return evictMinPage(ram)
+
+def evictMinPage(ram: dict, dirtyInRam: set = {}):
     return min(ram, key=lambda x: ram[x])
 
-def evict_cf_lru(ram: dict, dirtyInRam: set, clean_percentage = 0.5): #cflru
-    window_length = int(len(ram)*clean_percentage)
-    window = list(sorted(ram, key=lambda x: ram[x]))[:window_length]
-    window_clean = [x for x in window if x not in dirtyInRam]
-    if len(window_clean) > 0:
-        return window_clean[0]
-    return window[0]
-
-def evict_lru_wsr(ram: dict, dirtyInRam: set): # flag = (last_access, dirty_seen)
-    while True:
-        evict_cand = min(ram, key=lambda x: ram[x][0])
-        if (evict_cand not in dirtyInRam) or ram[evict_cand][1]:
-            return evict_cand
-        else:
-            ram[evict_cand] = (ram[max(ram, key=lambda x: ram[x][0])][0] + 1.0 / len(ram), True)
-
-
-def randomFindPageToEvict(ram: dict, dirtyInRam: set):
+def randomFindPageToEvict(ram: dict, dirtyInRam: set = {}):
     return random.choice(list(ram))
 
-def evict_lru_strange(ram: dict, dirtyInRam: set):
-    return min(ram, key=lambda x: ram[x] +40 if x in dirtyInRam else ram[x])
-
 # FlagFunction: [pos, nextZugriff, write, dirty]
-def executeStrategy(pidAndNextAndWrite, ramSize, flagFunction, evictFinder, heatUp= 0):
+def executeStrategy(pidAndNextAndWrite, ramSize, strategy:EvictStrategy, heatUp= 0):
     currentRam = {}
     dirtyInRam = set()
     pageMisses = 0
@@ -48,46 +109,19 @@ def executeStrategy(pidAndNextAndWrite, ramSize, flagFunction, evictFinder, heat
             pageMisses += 1
             # Evict
             if len(currentRam) >= ramSize:
-                evictMe = evictFinder(currentRam, dirtyInRam)
+                evictMe = strategy.evictFinder(currentRam, dirtyInRam)
 
                 del currentRam[evictMe]
                 if evictMe in dirtyInRam:
                     dirtyEvicts += 1
                     dirtyInRam.remove(evictMe)
         
-        currentRam[pid] = flagFunction(currentRam.get(pid, None), [pos, nextZugriff, write, pid in dirtyInRam])
+        currentRam[pid] = strategy.flagFunction(currentRam.get(pid, None), [pos, nextZugriff, write, pid in dirtyInRam])
         if write:
             dirtyInRam.add(pid)
 
     dirtyEvicts += len(dirtyInRam)
     return (pageMisses, dirtyEvicts)
-
-def belady(pidAndNextAndWrite, ramSize, heatUp=0):
-    return executeStrategy(pidAndNextAndWrite, ramSize, lambda _, x: x[1], evictMinPage, heatUp=heatUp)
-
-def lru(pidAndNextAndWrite, ramSize, heatUp=0):
-    return executeStrategy(pidAndNextAndWrite, ramSize, lambda _, x: x[0], evictMinPage, heatUp=heatUp)
-
-def cf_lru(pidAndNextAndWrite, ramSize, heatUp=0):
-    return executeStrategy(pidAndNextAndWrite, ramSize, lambda _, x: x[0], evict_cf_lru, heatUp=heatUp)
-
-def lru_wsr(pidAndNextAndWrite, ramSize, heatUp=0): # Flag: (last_access, dirty_cold)
-    return executeStrategy(pidAndNextAndWrite, ramSize, lambda _, x: (x[0], False), evict_lru_wsr, heatUp=heatUp)
-
-def ran(pidAndNextAndWrite, ramSize, heatUp=0):
-    return executeStrategy(pidAndNextAndWrite, ramSize, lambda _, x: 0, randomFindPageToEvict, heatUp=heatUp)
-
-def lru2(pidAndNextAndWrite, ramSize, heatUp=0): # Last_flag: (last_access, dirty)
-    return executeStrategy(pidAndNextAndWrite, ramSize,
-        lambda last_flag, x: x[0],
-        evict_lru_strange, heatUp=heatUp)
-
-def lru3(pidAndNextAndWrite, ramSize, heatUp=0,): # Last_flag: (last_access, dirty)
-    return executeStrategy(pidAndNextAndWrite, ramSize,
-        lambda last_flag, x:
-            x[0] + 40 if x[2] or x[3] 
-            else x[0],
-        evictMinPage, heatUp=heatUp)
 
 def staticOpt(pidAndNextAndWrite, ramSize, heatUp=0, write_cost=1):
     pidList = [x[0] for x in pidAndNextAndWrite]
@@ -100,8 +134,9 @@ def staticOpt(pidAndNextAndWrite, ramSize, heatUp=0, write_cost=1):
         writes[pid] = writeList.count(pid)
         cost[pid] = accesses[pid] + writes[pid]*write_cost
     pidByCost = sorted(cost, key=lambda x: -cost.get(x))
-    print("Static page ranking")
-    print(pidByCost)
+    if ramSize == 10:
+        print("Static page ranking")
+        print(pidByCost)
     pageMisses, dirtyEvicts = (0,0)
     if len(set(pidList)) > ramSize:
         pageMisses = sum(map(lambda x: accesses[x], pidByCost[ramSize-1:])) + ramSize-1
@@ -241,12 +276,11 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
     (pre, post) = append("lru", lruMissList, lruDirtyList)
 
     if not quick:
-        # Not Write Cost Aware
-        for (name, function) in [("rand", ran), ("opt", belady), ("cf_lru", cf_lru), ("lru_wsr", lru_wsr), ("strange lru2", lru2)]: # ("strange lru2", lru2),  ("strange lru3", lru3), 
-            print(name)
-            (missList, dirtyList) = list(zip(*Parallel(n_jobs=8)(delayed(function)(pidAndNextAndWrite, size, heatUp=heatUp) for size in xList)))
+        # Standardized
+        for (name, strategy) in [("rand", Ran()), ("opt", Belady()), ("cf_lru", Cf_lru(0.5)), ("lru_wsr", Lru_wsr()), ("strange lru", Lru_strange_1())]:
+            (missList, dirtyList) = list(zip(*Parallel(n_jobs=8)(delayed(executeStrategy)(pidAndNextAndWrite, size, strategy, heatUp=heatUp) for size in xList)))
             (pre, post) = append(name, missList, dirtyList)
-        # Write Cost Aware
+        # Others
         for (name, function) in [("staticOpt", staticOpt)]:
             print(name)
             (missList, dirtyList) = list(zip(*Parallel(n_jobs=8)(delayed(function)(pidAndNextAndWrite, size, heatUp=heatUp, write_cost=write_cost) for size in xList)))
