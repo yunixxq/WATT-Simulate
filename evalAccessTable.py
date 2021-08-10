@@ -7,120 +7,156 @@ import pandas
 from abc import ABC, abstractmethod
 
 class EvictStrategy(ABC):
-    @abstractmethod
-    def flagFunction(self, currentFlag, Values: list):
-        pass
-
-    @abstractmethod
-    def evictFinder(self, ram: dict, dirtyInRam: set):
-        pass
-
-class EvictStrategyWrite(EvictStrategy):
-    write_cost : int = 1
+    ram: dict = {}
+    dirtyInRam: set = ()
 
     def __init__(self, write_cost=1):
         self.write_cost = write_cost
+    
+    def reset(self):
+        self.ram = {}
+        self.dirtyInRam = ()
+
+    def minFromRam(self) -> int:
+        return min(self.ram, key=self.ram.get)
+    
+    def handleRemove(self, pid: int) -> bool:
+        del self.ram[pid]
+        if pid in self.dirtyInRam:
+            self.dirtyInRam.remove(pid)
+            return True
+        return False
+    
+    def handleDirty(self, pid: int, write: bool):
+        if write:
+            self.dirtyInRam.add(pid)
+
+    def inRam(self, pid: int):
+        return pid in self.ram
+    
+    def ramsize(self):
+        return len(self.ram)
+    
+    def dirtyPages(self):
+        return len(self.dirtyInRam)
+
+    @abstractmethod
+    def access(self, pid: int, pos: int, nextZugriff: int, write: bool) -> None:
+        pass
+
+    @abstractmethod
+    def evictOne(self) -> bool: # Returns True if it was write
+        pass
 
 class Lru(EvictStrategy):
-    def flagFunction(self, currentFlag, values: list):
-        return values[0]
+    def access(self, pid: int, pos: int, nextZugriff: int, write: bool) -> None:
+        self.ram[pid] = pos
+        self.handleDirty(pid, write)
 
-    def evictFinder(self, ram: dict, dirtyInRam: set):
-        return evictMinPage(ram)
+    def evictOne(self) -> bool:
+        pid = self.minFromRam()
+        return self.handleRemove(pid)
 
 class Ran(EvictStrategy):
-    def flagFunction(self, currentFlag, values: list):
-        return 0
-
-    def evictFinder(self, ram: dict, dirtyInRam: set):
-        return randomFindPageToEvict(ram)
+    def access(self, pid: int, pos: int, nextZugriff: int, write: bool) -> None:
+        self.ram[pid] = 1
+        if write:
+            self.dirtyInRam.add(pid)
+        self.handleDirty(pid, write)
+    
+    def evictOne(self) -> bool:
+        pid = random.choice(list(self.ram))
+        return self.handleRemove(pid)
 
 
 class Belady(EvictStrategy):
-    def flagFunction(self, currentFlag, values: list):
-        return values[1]
+    def access(self, pid: int, pos: int, nextZugriff: int, write: bool) -> None:
+        self.ram[pid] = nextZugriff
+        self.handleDirty(pid, write)
 
-    def evictFinder(self, ram: dict, dirtyInRam: set):
-        return evictMinPage(ram)
+    def evictOne(self) -> bool:
+        pid = self.minFromRam()
+        return self.handleRemove(pid)
+
 
 class Cf_lru(EvictStrategy):
     def __init__(self, clean_percentage):
+        EvictStrategy(self)
         self.clean_percentage = clean_percentage
 
-    def flagFunction(self, currentFlag, values: list):
-        return values[0]
+    def access(self, pid: int, pos: int, nextZugriff: int, write: bool) -> None:
+        self.ram[pid] = pos
+        self.handleDirty(pid, write)
 
-    def evictFinder(self, ram: dict, dirtyInRam: set):
-        window_length = int(len(ram)*self.clean_percentage)
-        window = list(sorted(ram, key=lambda x: ram[x]))[:window_length]
-        window_clean = [x for x in window if x not in dirtyInRam]
+    def evictOne(self) -> bool:
+        pid = 0
+        window_length = int(len(self.ram)*self.clean_percentage)
+        window = list(sorted(self.ram, key=lambda x: self.ram[x]))[:window_length]
+        window_clean = [x for x in window if x not in self.dirtyInRam]
         if len(window_clean) > 0:
-            return window_clean[0]
-        return window[0]
+            pid = window_clean[0]
+        else:
+            pid = window[0]
+        return self.handleRemove(pid)
 
 class Lru_wsr(EvictStrategy):
-    def flagFunction(self, currentFlag, values: list):
-        return (values[0], False)
+    def access(self, pid: int, pos: int, nextZugriff: int, write: bool) -> None:
+        self.ram[pid] = (pos, False)
+        self.handleDirty(pid, write)
 
-    def evictFinder(self, ram: dict, dirtyInRam: set):
+    def evictOne(self) -> bool:
+        pid = 0
         while True:
-            evict_cand = min(ram, key=lambda x: ram[x][0])
-            if (evict_cand not in dirtyInRam) or ram[evict_cand][1]:
-                return evict_cand
+            evict_cand = min(self.ram, key=lambda x: self.ram[x][0])
+            if (evict_cand not in self.dirtyInRam) or self.ram[evict_cand][1]:
+                return self.handleRemove(evict_cand)
             else:
-                ram[evict_cand] = (ram[max(ram, key=lambda x: ram[x][0])][0] + 1.0 / len(ram), True)
+                self.ram[evict_cand] = (self.ram[max(self.ram, key=lambda x: self.ram[x][0])][0] + 1.0 / len(self.ram), True)
 
 class Lru_strange_1(EvictStrategy):
-    def flagFunction(self, currentFlag, values: list):
-        return values[0]
+    def access(self, pid: int, pos: int, nextZugriff: int, write: bool) -> None:
+        self.ram[pid] = pos
+        self.handleDirty(pid, write)
 
-    def evictFinder(self, ram: dict, dirtyInRam: set):
-        return min(ram, key=lambda x: ram[x] +40 if x in dirtyInRam else ram[x])
+    def evictOne(self):
+        pid = min(self.ram, key=lambda x: self.ram[x] +40 if x in self.dirtyInRam else self.ram[x])
+        return self.handleRemove(pid)
 
 class Lru_strange_2(EvictStrategy):
-    def flagFunction(self, currentFlag, values: list):
-        if values[2] or values[3]:
-            return values[0] + 40 
+    def access(self, pid: int, pos: int, nextZugriff: int, write: bool) -> None:
+        if write or pid in self.dirtyInRam:
+            self.ram[pid] = pos + 40 
         else:
-            return values[0]
+            self.ram[pid] = pos
 
-    def evictFinder(self, ram: dict, dirtyInRam: set):
-        return evictMinPage(ram)
-
-def evictMinPage(ram: dict, dirtyInRam: set = {}):
-    return min(ram, key=lambda x: ram[x])
+    def evictOne(self, ram: dict, dirtyInRam: set):
+        pid = self.minFromRam()
+        return self.handleRemove(pid)
 
 def randomFindPageToEvict(ram: dict, dirtyInRam: set = {}):
     return random.choice(list(ram))
 
 # FlagFunction: [pos, nextZugriff, write, dirty]
 def executeStrategy(pidAndNextAndWrite, ramSize, strategy:EvictStrategy, heatUp= 0):
-    currentRam = {}
-    dirtyInRam = set()
     pageMisses = 0
     dirtyEvicts = 0
+    strategy.reset()
     for pos in range(0, len(pidAndNextAndWrite)):
         if pos == heatUp: # Heatup, ignore previous accesses
             pageMisses = 0
             dirtyEvicts = 0
         (pid, nextZugriff, write) = pidAndNextAndWrite[pos]
-        if pid not in currentRam:
+        if not strategy.inRam(pid):
             # Load
             pageMisses += 1
             # Evict
-            if len(currentRam) >= ramSize:
-                evictMe = strategy.evictFinder(currentRam, dirtyInRam)
-
-                del currentRam[evictMe]
-                if evictMe in dirtyInRam:
+            if strategy.ramsize >= ramSize:
+                wasDirty = strategy.evictOne()
+                if wasDirty:
                     dirtyEvicts += 1
-                    dirtyInRam.remove(evictMe)
-        
-        currentRam[pid] = strategy.flagFunction(currentRam.get(pid, None), [pos, nextZugriff, write, pid in dirtyInRam])
-        if write:
-            dirtyInRam.add(pid)
+        strategy.access(pid, pos, nextZugriff, write)
 
-    dirtyEvicts += len(dirtyInRam)
+    dirtyEvicts += strategy.dirtyInRam()
     return (pageMisses, dirtyEvicts)
 
 def staticOpt(pidAndNextAndWrite, ramSize, heatUp=0, write_cost=1):
