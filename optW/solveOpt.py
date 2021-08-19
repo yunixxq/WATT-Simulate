@@ -1,6 +1,7 @@
 #!/bin/python3
 
 import gurobipy as gp
+from pathlib import Path
 
 def evalModelMulti(writeCosts, ramSizes):
     model = gp.read("modell.mps")
@@ -16,9 +17,15 @@ def evalModelMulti(writeCosts, ramSizes):
             ram_size = model.getVarByName("RAMSIZE")
             ram_size.setAttr("ub", ramSize)
             ram_size.setAttr("lb", ramSize)
+            sol_file = "modell_{}_{}.sol".format(writeCost, ramSize)
+            
+            if Path(sol_file).is_file():
+                print("Using previous sol")
+                model.read(sol_file)
+
             model.optimize()
 
-            model.write("modell_{}_{}.sol".format(writeCost, ramSize))
+            model.write(sol_file)
 
             vars = model.getVars()
             reads = sum([x.x for x in vars if "delta_ram" in x.varName])
