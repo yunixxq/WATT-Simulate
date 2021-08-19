@@ -8,14 +8,14 @@ from abc import ABC, abstractmethod
 
 class EvictStrategy(ABC):
     ram: dict = {}
-    dirtyInRam: set = ()
+    dirtyInRam: set = set()
 
     def __init__(self, write_cost=1):
         self.write_cost = write_cost
     
     def reset(self):
         self.ram = {}
-        self.dirtyInRam = ()
+        self.dirtyInRam = set()
 
     def minFromRam(self) -> int:
         return min(self.ram, key=self.ram.get)
@@ -60,8 +60,6 @@ class Lru(EvictStrategy):
 class Ran(EvictStrategy):
     def access(self, pid: int, pos: int, nextZugriff: int, write: bool) -> None:
         self.ram[pid] = 1
-        if write:
-            self.dirtyInRam.add(pid)
         self.handleDirty(pid, write)
     
     def evictOne(self) -> bool:
@@ -81,7 +79,7 @@ class Belady(EvictStrategy):
 
 class Cf_lru(EvictStrategy):
     def __init__(self, clean_percentage):
-        EvictStrategy(self)
+        super().__init__()
         self.clean_percentage = clean_percentage
 
     def access(self, pid: int, pos: int, nextZugriff: int, write: bool) -> None:
@@ -150,13 +148,13 @@ def executeStrategy(pidAndNextAndWrite, ramSize, strategy:EvictStrategy, heatUp=
             # Load
             pageMisses += 1
             # Evict
-            if strategy.ramsize >= ramSize:
+            if strategy.ramsize() >= ramSize:
                 wasDirty = strategy.evictOne()
                 if wasDirty:
                     dirtyEvicts += 1
         strategy.access(pid, pos, nextZugriff, write)
 
-    dirtyEvicts += strategy.dirtyInRam()
+    dirtyEvicts += strategy.dirtyPages()
     return (pageMisses, dirtyEvicts)
 
 def staticOpt(pidAndNextAndWrite, ramSize, heatUp=0, write_cost=1):
