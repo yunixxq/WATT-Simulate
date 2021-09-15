@@ -146,7 +146,24 @@ class K_Entries(EvictStrategy):
         assert(len(self.ram[pid]) <= self.k)
         self.handleDirty(pid, write)
 
-class lfu_k_best_zipf_read(K_Entries): # Ignore last access, just care about others
+class K_Entries_out_of_ram(K_Entries):
+    def __init__(self, k):
+        self.k = k
+        self.history = {}
+
+    def access(self, pid: int, pos: int, nextZugriff: int, write: bool) -> None:
+        if pid in self.history:
+            if len(self.history[pid]) > self.k-1:
+                self.history[pid] = [pos] + self.history[pid][:(self.k-1)]
+            else:
+                self.history[pid] = [pos] + self.history[pid]
+        else:
+            self.history[pid] = [pos]
+        assert(len(self.history[pid]) <= self.k)
+        self.ram[pid] = self.history[pid]
+        self.handleDirty(pid, write)
+
+class lfu_k_best_zipf_read(K_Entries): # Ignore last access, just care about others, usually takes oldest frequency
     def __init__(self, k):
         super().__init__(k)
     def eval_ram_entry(self, pid: int, curr_time: int):
@@ -157,16 +174,11 @@ class lfu_k_best_zipf_read(K_Entries): # Ignore last access, just care about oth
         pid = min(self.ram, key=lambda pid: self.eval_ram_entry(pid, curr_time))
         return self.handleRemove(pid)
 
-class lfu_k(K_Entries): # gets current_frequencies
+class lfu_k(K_Entries_out_of_ram): # gets current_frequencies
     def __init__(self, k, skew):
         super().__init__(k)
         self.skew = skew
     def eval_ram_entry(self, pid: int, curr_time: int):
-        list_all = list(map(lambda time, pos : (pos, pos/(curr_time - time)), 
-            self.ram[pid], [0] + list(range(self.skew, len(self.ram[pid])+self.skew))))
-        maximum = max(list_all,key=lambda x: x[0])
-        if len(list_all) != maximum[0] +1:
-            print(str(len(list_all)) + " " + str(maximum))
         return max(map(lambda time, pos : pos/(curr_time - time), 
             self.ram[pid], [0] + list(range(self.skew, len(self.ram[pid])+self.skew))))
 
@@ -199,7 +211,10 @@ class lru_k_mod(K_Entries):
         pid = max(self.ram, key=lambda pid: self.eval_ram_entry(pid, curr_time))
         return self.handleRemove(pid)
 
-
+class best_zipf_read(lfu_k_best_zipf_read):
+    def __init__(self):
+        super().__init__(10)
+    
 # FlagFunction: [pos, nextZugriff, write, dirty]
 def executeStrategy(pidAndNextAndWrite, ramSize, strategy:EvictStrategy, heatUp= 0):
     pageMisses = 0
@@ -380,15 +395,17 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
         # Standardized
         for (name, strategy) in [
                 #("rand", Ran()), ("opt", Belady()),
-                #("lru_2", lru_k(2)),
-                ("zip_lfu_10", lfu_k_best_zipf_read(10)),
+                ("lru_2", lru_k(2)),
+                ("zipf_best_read", best_zipf_read()),
                 #("cf_lru", Cf_lru(0.5)), ("lru_wsr", Lru_wsr()), # ("strange lru", Lru_strange_1()),
+                # ("lfu_o_o_R", lfu_k_out_of_ram(100)),
                 #("lfu_0", lfu_k(10, 0)),
-                ("lfu_1", lfu_k(10, 1)),
-                #("lfu_2", lfu_k(10, 2)),
-                #("lfu_3", lfu_k(10, 3)),
-                #("lfu_4", lfu_k(10, 4)),
-                # ("lfu_2", lfu_k(2, 0)), ("lfu_5", lfu_k(5, 0)), ("lfu_20", lfu_k(20, 0)),
+                ("lfu_1", lfu_k(5, 1)),
+                ("lfu_2", lfu_k(10, 1)),
+                ("lfu_3", lfu_k(100, 1)),
+                ("lfu_4", lfu_k(1000, 1)),
+                ("lfu_b_1", lfu_k_best_zipf_read(2)),
+                ("lfu_b_2", lfu_k_best_zipf_read(5)),
                 ]:
             (missList, dirtyList) = list(zip(*Parallel(n_jobs=8)(delayed(executeStrategy)(pidAndNextAndWrite, size, strategy, heatUp=heatUp) for size in xList)))
             pre = append(name, missList, dirtyList)
@@ -436,8 +453,13 @@ def plotGraph(name, write_cost = 8):
         df_writes[column] = df_write[column]
 
     def plotGraphInner(df, title, ylabel, file, labels, limit=False):
+        linewidth = 1
+        if len(labels) > 5:
+            linewidth = 0.5
+        if len(labels) > 10:
+            linewidth = 0.1
         for label in labels:
-            plt.plot(df["X"], df[label], label=label, linewidth=0.3)
+            plt.plot(df["X"], df[label], label=label, linewidth=linewidth)
 
         plt.xlabel("Buffer Size")
         plt.ylabel(ylabel)
@@ -457,7 +479,7 @@ def plotGraph(name, write_cost = 8):
     plotGraphInner(df_writes, "Writes", "Writes", name + "_writes.pdf", labels)
 
 
-def doOneRun(heatUp, all, data, name, write_cost = 8):
+def doOneRun(heatUp, all, data, name, write_cost = 1):
     elements= len(data)-heatUp
     dirpath = "./Elem_" + str(elements)+ "_heatUp_" + str(heatUp)
     if all:
