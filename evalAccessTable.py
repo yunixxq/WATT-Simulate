@@ -394,18 +394,18 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
     if not quick:
         # Standardized
         for (name, strategy) in [
-                #("rand", Ran()), ("opt", Belady()),
+                ("rand", Ran()), ("opt", Belady()),
                 ("lru_2", lru_k(2)),
                 ("zipf_best_read", best_zipf_read()),
                 #("cf_lru", Cf_lru(0.5)), ("lru_wsr", Lru_wsr()), # ("strange lru", Lru_strange_1()),
                 # ("lfu_o_o_R", lfu_k_out_of_ram(100)),
                 #("lfu_0", lfu_k(10, 0)),
-                ("lfu_1", lfu_k(5, 1)),
-                ("lfu_2", lfu_k(10, 1)),
-                ("lfu_3", lfu_k(100, 1)),
-                ("lfu_4", lfu_k(1000, 1)),
-                ("lfu_b_1", lfu_k_best_zipf_read(2)),
-                ("lfu_b_2", lfu_k_best_zipf_read(5)),
+                #("lfu_1", lfu_k(5, 1)),
+                #("lfu_2", lfu_k(10, 1)),
+                #("lfu_3", lfu_k(100, 1)),
+                #("lfu_4", lfu_k(1000, 1)),
+                #("lfu_b_1", lfu_k_best_zipf_read(2)),
+                #("lfu_b_2", lfu_k_best_zipf_read(5)),
                 ]:
             (missList, dirtyList) = list(zip(*Parallel(n_jobs=8)(delayed(executeStrategy)(pidAndNextAndWrite, size, strategy, heatUp=heatUp) for size in xList)))
             pre = append(name, missList, dirtyList)
@@ -530,7 +530,7 @@ def oneFullRun(file, csv_start, write_cost):
 
 
 if __name__ == "__main__":
-    file = "./accesses_10000_3000_40_0.5_1.0.csv"
+    file = "./zipf_accesses.csv"
     elementList = [-1] #[10000, 100000, 1000000, -1]
     heatUpList = [0] #[0, 400, 1000, 4000, 10000, 40000]
 

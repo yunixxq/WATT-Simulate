@@ -1,31 +1,14 @@
 #!/bin/python3
 
 import matplotlib.pyplot as plt
-from scipy.stats import distributions, zipfian
 import time
 import pandas
 import random
+from generate_traces import simulate_zipf, generate_zipf_distribution
 
 # x = random.zipf(a=2, size=1000)
 
 # print(x)
-
-def printTime(last):
-    post = time.time()
-    print(post-last)
-    return post
-def startTime():
-    return time.time()
-
-
-def simulate(discrete_elements, simulation_length, zipf_factor=2):
-    x = list(zipfian.rvs(zipf_factor, discrete_elements, size=simulation_length))
-    distribution = []
-    for element in range(1, discrete_elements+1):
-        counter = x.count(element)
-        distribution.append(counter)
-    return (distribution, x)
-
 writes_to_total_fraction = 0.3
 total_access = 10000
 
@@ -45,9 +28,15 @@ write_access = int(writes_to_total_fraction * total_access)
 read_pages = total_pages - write_pages
 read_access = total_access - write_access
 
-timer = startTime()
+timer = time.time()
 csv_name = "Distribution_{}_{}_{}_{}_{}.csv".format(total_access, write_access, write_pages, write_zipf, read_zipf)
 csv_name2 = "accesses_{}_{}_{}_{}_{}.csv".format(total_access, write_access, write_pages, write_zipf, read_zipf)
+
+
+def printTime(last):
+    post = time.time()
+    print(post-last)
+    return post
 
 write_distribution, read_distribution = ([], [])
 try:
@@ -58,13 +47,16 @@ try:
     read_distribution = dists[write_pages:]
 except FileNotFoundError:
     print("Simulating")
-    (write_distribution, write_accesses) = simulate(write_pages, write_access, write_zipf)
+    write_accesses = simulate_zipf(write_pages, write_access, write_zipf)
+    write_distribution = generate_zipf_distribution(write_accesses)
     timer = printTime(timer)
-    (read_distribution, read_accesses) =  simulate(read_pages, read_access, read_zipf)
+    read_accesses =  simulate_zipf(read_pages, read_access, read_zipf)
+    read_distribution = generate_zipf_distribution(read_accesses)
 
     d = {'distribution': write_distribution + read_distribution}
     df = pandas.DataFrame(data=d)
     df.to_csv(csv_name, index=False)
+
     reads = [(x, False) for x in read_accesses]
     writes = [(x, True) for x in write_accesses]
     total = random.sample(reads + writes, len(reads+writes))
@@ -72,7 +64,6 @@ except FileNotFoundError:
     d2 = {'pages': pages, "is_write": is_write}
     df2 = pandas.DataFrame(data=d2)
     df2.to_csv(csv_name2, index=False)
-
 
 
 timer = printTime(timer)
