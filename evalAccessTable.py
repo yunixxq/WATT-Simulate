@@ -146,25 +146,33 @@ class K_Entries(EvictStrategy):
         assert(len(self.ram[pid]) <= self.k)
         self.handleDirty(pid, write)
 
-
-class lfu_k_first(K_Entries): # gets current_frequencies
-    def eval_ram_entry(self, pid: int, curr_time: int):
-        return max(map(lambda time, pos : (pos+1)/(curr_time - time), 
-            self.ram[pid], range(len(self.ram[pid]))))
-
-    def evictOne(self, curr_time: int) -> bool:
-        pid = min(self.ram, key=lambda pid: self.eval_ram_entry(pid, curr_time))
-        return self.handleRemove(pid)
-
-class lfu_k_ignore_first(K_Entries): # gets current_frequencies
+class lfu_k_best_zipf_read(K_Entries): # Ignore last access, just care about others
+    def __init__(self, k):
+        super().__init__(k)
     def eval_ram_entry(self, pid: int, curr_time: int):
         return max(map(lambda time, pos : pos/(curr_time - time), 
-            self.ram[pid], range(len(self.ram[pid]))))
+            self.ram[pid], list(range(len(self.ram[pid])))))
 
     def evictOne(self, curr_time: int) -> bool:
         pid = min(self.ram, key=lambda pid: self.eval_ram_entry(pid, curr_time))
         return self.handleRemove(pid)
 
+class lfu_k(K_Entries): # gets current_frequencies
+    def __init__(self, k, skew):
+        super().__init__(k)
+        self.skew = skew
+    def eval_ram_entry(self, pid: int, curr_time: int):
+        list_all = list(map(lambda time, pos : (pos, pos/(curr_time - time)), 
+            self.ram[pid], [0] + list(range(self.skew, len(self.ram[pid])+self.skew))))
+        maximum = max(list_all,key=lambda x: x[0])
+        if len(list_all) != maximum[0] +1:
+            print(str(len(list_all)) + " " + str(maximum))
+        return max(map(lambda time, pos : pos/(curr_time - time), 
+            self.ram[pid], [0] + list(range(self.skew, len(self.ram[pid])+self.skew))))
+
+    def evictOne(self, curr_time: int) -> bool:
+        pid = min(self.ram, key=lambda pid: self.eval_ram_entry(pid, curr_time))
+        return self.handleRemove(pid)
 
 def randomFindPageToEvict(ram: dict, dirtyInRam: set = {}):
     return random.choice(list(ram))
@@ -370,12 +378,17 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
 
     if not quick:
         # Standardized
-        for (name, strategy) in [("rand", Ran()), ("opt", Belady()),
+        for (name, strategy) in [
+                #("rand", Ran()), ("opt", Belady()),
+                #("lru_2", lru_k(2)),
+                ("zip_lfu_10", lfu_k_best_zipf_read(10)),
                 #("cf_lru", Cf_lru(0.5)), ("lru_wsr", Lru_wsr()), # ("strange lru", Lru_strange_1()),
-                #("lfu1_2", lfu_k_first(2)), ("lfu1_5", lfu_k_first(5)), ("lfu1_20", lfu_k_first(20)), ("lfu1_100", lfu_k_first(100)),
-                ("lfu_2", lfu_k_ignore_first(2)), ("lfu_5", lfu_k_ignore_first(5)), ("lfu_20", lfu_k_ignore_first(20)), ("lfu_100", lfu_k_ignore_first(100)),
-                ("lru_2", lru_k(2)), #("lru_3", lru_k(3))#, ("lru_5", lru_k(5)), ("lru_20", lru_k(20))
-               # ,("lru_mod_2", lru_k_mod(2))
+                #("lfu_0", lfu_k(10, 0)),
+                ("lfu_1", lfu_k(10, 1)),
+                #("lfu_2", lfu_k(10, 2)),
+                #("lfu_3", lfu_k(10, 3)),
+                #("lfu_4", lfu_k(10, 4)),
+                # ("lfu_2", lfu_k(2, 0)), ("lfu_5", lfu_k(5, 0)), ("lfu_20", lfu_k(20, 0)),
                 ]:
             (missList, dirtyList) = list(zip(*Parallel(n_jobs=8)(delayed(executeStrategy)(pidAndNextAndWrite, size, strategy, heatUp=heatUp) for size in xList)))
             pre = append(name, missList, dirtyList)
@@ -424,7 +437,7 @@ def plotGraph(name, write_cost = 8):
 
     def plotGraphInner(df, title, ylabel, file, labels, limit=False):
         for label in labels:
-            plt.plot(df["X"], df[label], label=label, linewidth=0.5)
+            plt.plot(df["X"], df[label], label=label, linewidth=0.3)
 
         plt.xlabel("Buffer Size")
         plt.ylabel(ylabel)
