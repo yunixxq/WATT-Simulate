@@ -45,7 +45,7 @@ class EvictStrategy(ABC):
         pass
 
     @abstractmethod
-    def evictOne(self) -> bool: # Returns True if it was write
+    def evictOne(self, curr_time: int) -> bool: # Returns True if it was write
         pass
 
 class Lru(EvictStrategy):
@@ -53,7 +53,7 @@ class Lru(EvictStrategy):
         self.ram[pid] = pos
         self.handleDirty(pid, write)
 
-    def evictOne(self) -> bool:
+    def evictOne(self, curr_time: int) -> bool:
         pid = self.minFromRam()
         return self.handleRemove(pid)
 
@@ -62,7 +62,7 @@ class Ran(EvictStrategy):
         self.ram[pid] = 1
         self.handleDirty(pid, write)
     
-    def evictOne(self) -> bool:
+    def evictOne(self, curr_time: int) -> bool:
         pid = random.choice(list(self.ram))
         return self.handleRemove(pid)
 
@@ -72,7 +72,7 @@ class Belady(EvictStrategy):
         self.ram[pid] = nextZugriff
         self.handleDirty(pid, write)
 
-    def evictOne(self) -> bool:
+    def evictOne(self, curr_time: int) -> bool:
         pid = self.minFromRam()
         return self.handleRemove(pid)
 
@@ -86,7 +86,7 @@ class Cf_lru(EvictStrategy):
         self.ram[pid] = pos
         self.handleDirty(pid, write)
 
-    def evictOne(self) -> bool:
+    def evictOne(self, curr_time: int) -> bool:
         pid = 0
         window_length = int(len(self.ram)*self.clean_percentage)
         window = list(sorted(self.ram, key=lambda x: self.ram[x]))[:window_length]
@@ -102,7 +102,7 @@ class Lru_wsr(EvictStrategy):
         self.ram[pid] = (pos, False)
         self.handleDirty(pid, write)
 
-    def evictOne(self) -> bool:
+    def evictOne(self, curr_time: int) -> bool:
         pid = 0
         while True:
             evict_cand = min(self.ram, key=lambda x: self.ram[x][0])
@@ -116,7 +116,7 @@ class Lru_strange_1(EvictStrategy):
         self.ram[pid] = pos
         self.handleDirty(pid, write)
 
-    def evictOne(self):
+    def evictOne(self, curr_time: int):
         pid = min(self.ram, key=lambda x: self.ram[x] +40 if x in self.dirtyInRam else self.ram[x])
         return self.handleRemove(pid)
 
@@ -127,12 +127,70 @@ class Lru_strange_2(EvictStrategy):
         else:
             self.ram[pid] = pos
 
-    def evictOne(self, ram: dict, dirtyInRam: set):
+    def evictOne(self, curr_time: int):
         pid = self.minFromRam()
         return self.handleRemove(pid)
 
+class K_Entries(EvictStrategy):
+    def __init__(self, k):
+        self.k = k
+
+    def access(self, pid: int, pos: int, nextZugriff: int, write: bool) -> None:
+        if pid in self.ram:
+            if len(self.ram[pid]) > self.k-1:
+                self.ram[pid] = [pos] + self.ram[pid][:(self.k-1)]
+            else:
+                self.ram[pid] = [pos] + self.ram[pid]
+        else:
+            self.ram[pid] = [pos]
+        assert(len(self.ram[pid]) <= self.k)
+        self.handleDirty(pid, write)
+
+
+class lfu_k_first(K_Entries): # gets current_frequencies
+    def eval_ram_entry(self, pid: int, curr_time: int):
+        return max(map(lambda time, pos : (pos+1)/(curr_time - time), 
+            self.ram[pid], range(len(self.ram[pid]))))
+
+    def evictOne(self, curr_time: int) -> bool:
+        pid = min(self.ram, key=lambda pid: self.eval_ram_entry(pid, curr_time))
+        return self.handleRemove(pid)
+
+class lfu_k_ignore_first(K_Entries): # gets current_frequencies
+    def eval_ram_entry(self, pid: int, curr_time: int):
+        return max(map(lambda time, pos : pos/(curr_time - time), 
+            self.ram[pid], range(len(self.ram[pid]))))
+
+    def evictOne(self, curr_time: int) -> bool:
+        pid = min(self.ram, key=lambda pid: self.eval_ram_entry(pid, curr_time))
+        return self.handleRemove(pid)
+
+
 def randomFindPageToEvict(ram: dict, dirtyInRam: set = {}):
     return random.choice(list(ram))
+
+class lru_k(K_Entries):
+    def eval_ram_entry(self, pid: int, curr_time: int):
+        if(len(self.ram[pid]) == self.k):
+            return (self.ram[pid][-1])
+        else:
+            return -1
+
+    def evictOne(self, curr_time: int) -> bool:
+        pid = min(self.ram, key=lambda pid: self.eval_ram_entry(pid, curr_time))
+        return self.handleRemove(pid)
+
+class lru_k_mod(K_Entries):
+    def eval_ram_entry(self, pid: int, curr_time: int):
+        if(len(self.ram[pid]) == self.k):
+            return (curr_time - self.ram[pid][-1])
+        else:
+            return (curr_time - self.ram[pid][-1])*self.k/len(self.ram[pid])
+
+    def evictOne(self, curr_time: int) -> bool:
+        pid = max(self.ram, key=lambda pid: self.eval_ram_entry(pid, curr_time))
+        return self.handleRemove(pid)
+
 
 # FlagFunction: [pos, nextZugriff, write, dirty]
 def executeStrategy(pidAndNextAndWrite, ramSize, strategy:EvictStrategy, heatUp= 0):
@@ -149,7 +207,7 @@ def executeStrategy(pidAndNextAndWrite, ramSize, strategy:EvictStrategy, heatUp=
             pageMisses += 1
             # Evict
             if strategy.ramsize() >= ramSize:
-                wasDirty = strategy.evictOne()
+                wasDirty = strategy.evictOne(pos)
                 if wasDirty:
                     dirtyEvicts += 1
         strategy.access(pid, pos, nextZugriff, write)
@@ -304,21 +362,27 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
         yWriteList.append(dirtyList)
 
         post = time.time()
+        print(name)
         print(post-pre)
-        return (pre, post)
+        return post
 
-    (pre, post) = append("lru", lruMissList, lruDirtyList)
+    pre = append("lru", lruMissList, lruDirtyList)
 
     if not quick:
         # Standardized
-        for (name, strategy) in [("rand", Ran()), ("opt", Belady()), ("cf_lru", Cf_lru(0.5)), ("lru_wsr", Lru_wsr()), ("strange lru", Lru_strange_1())]:
+        for (name, strategy) in [("rand", Ran()), ("opt", Belady()),
+                #("cf_lru", Cf_lru(0.5)), ("lru_wsr", Lru_wsr()), # ("strange lru", Lru_strange_1()),
+                #("lfu1_2", lfu_k_first(2)), ("lfu1_5", lfu_k_first(5)), ("lfu1_20", lfu_k_first(20)), ("lfu1_100", lfu_k_first(100)),
+                ("lfu_2", lfu_k_ignore_first(2)), ("lfu_5", lfu_k_ignore_first(5)), ("lfu_20", lfu_k_ignore_first(20)), ("lfu_100", lfu_k_ignore_first(100)),
+                ("lru_2", lru_k(2)), #("lru_3", lru_k(3))#, ("lru_5", lru_k(5)), ("lru_20", lru_k(20))
+               # ,("lru_mod_2", lru_k_mod(2))
+                ]:
             (missList, dirtyList) = list(zip(*Parallel(n_jobs=8)(delayed(executeStrategy)(pidAndNextAndWrite, size, strategy, heatUp=heatUp) for size in xList)))
-            (pre, post) = append(name, missList, dirtyList)
+            pre = append(name, missList, dirtyList)
         # Others
         for (name, function) in [("staticOpt", staticOpt)]:
-            print(name)
             (missList, dirtyList) = list(zip(*Parallel(n_jobs=8)(delayed(function)(pidAndNextAndWrite, size, heatUp=heatUp, write_cost=write_cost) for size in xList)))
-            (pre, post) = append(name, missList, dirtyList)
+            pre = append(name, missList, dirtyList)
 
     def save_csv(xList, yMissLists, names, name):
         d = {"X": xList}
@@ -360,7 +424,7 @@ def plotGraph(name, write_cost = 8):
 
     def plotGraphInner(df, title, ylabel, file, labels, limit=False):
         for label in labels:
-            plt.plot(df["X"], df[label], label=label)
+            plt.plot(df["X"], df[label], label=label, linewidth=0.5)
 
         plt.xlabel("Buffer Size")
         plt.ylabel(ylabel)
