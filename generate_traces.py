@@ -40,7 +40,7 @@ if __name__ == "__main__":
     pages_total = 1000
     pages_w_fract = 0.4
     pages_r_fract = 1-pages_w_fract
-    access_total = 5000
+    access_total = 10000
     access_w_fract = 0.4
     access_r_fract = 1-access_w_fract
     zipf_w = 0.5

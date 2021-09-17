@@ -149,7 +149,7 @@ class K_Entries(EvictStrategy):
 class K_Entries_History(K_Entries):
     history: dict = {}
     backlog = []
-    def __init__(self, k=100, history_size = 10, backlog_length = -5):
+    def __init__(self, k=10, history_size = 10, backlog_length = -5):
         self.history = {}
         self.history_size = history_size
         self.backlog_length = backlog_length
@@ -192,57 +192,50 @@ class K_Entries_Write(EvictStrategy):
         assert(len(self.ram[pid]) <= self.k)
         self.handleDirty(pid, write)
 
-def get_lfu_k(cls):
+def get_lfu_k(cls, *args):
     assert(issubclass(cls, K_Entries))
     class lfu_k(cls): # gets current_frequencies
-        def __init__(self, k=10):
-            super().__init__(k)
+        def __init__(self, *args):
+            super().__init__(*args)
 
-        def eval_ram_entry(self, pid: int, curr_time: int):
-            return max(map(lambda time, pos : pos/(curr_time - time), 
-                self.ram[pid], list(range(len(self.ram[pid])))))
-
+        def get_frequency(self, pid: int, curr_time: int):
+            return max(map(lambda time, pos : pos/(curr_time - time),
+                self.ram[pid], list(range(len(self.ram[pid])))), key=lambda x: x)
+            
         def evictOne(self, curr_time: int) -> bool:
-            pid = min(self.ram, key=lambda pid: self.eval_ram_entry(pid, curr_time)) 
+            pid = min(self.ram, key=lambda pid: self.get_frequency(pid, curr_time)) 
             if len(self.ram[pid]) == 1:
                 zeros = list(filter(lambda pid: len(self.ram[pid])== 1, self.ram))
                 if len(zeros) > 1:
-                    # print(zeros)
                     pid = min(zeros, key=lambda pid: self.ram[pid][0])
             return self.handleRemove(pid)
-    return lfu_k
 
-def randomFindPageToEvict(ram: dict, dirtyInRam: set = {}):
-    return random.choice(list(ram))
+    return lfu_k(*args)
 
-def get_lru_k(cls):
+def get_lru_k(cls, *args):
     assert(issubclass(cls, K_Entries))
     class lru_k(cls):
-        def __init__(self, k=2):
-            super().__init__(k=k)
+        def __init__(self, *args):
+            super().__init__(*args)
 
-        def eval_ram_entry(self, pid: int, curr_time: int):
+        def get_age(self, pid: int, curr_time: int, pseudo_k = -1):
+            if pseudo_k == -1:
+                pseudo_k = self.k
             assert(len(self.ram[pid]) <= self.k)
-            if(len(self.ram[pid]) == self.k):
-                return (self.ram[pid][-1])
+            if(len(self.ram[pid]) == pseudo_k):
+                return curr_time - self.ram[pid][pseudo_k-1]
             else:
                 return -1
 
         def evictOne(self, curr_time: int) -> bool:
-            pid = min(self.ram, key=lambda pid: self.eval_ram_entry(pid, curr_time))
+            min_k = min(map(lambda pid: len(self.ram[pid]), self.ram))
+            pid = max(self.ram, key=lambda pid: self.get_age(pid, curr_time, min_k))
             return self.handleRemove(pid)
-    return lru_k
 
-class lru_k_mod(K_Entries):
-    def eval_ram_entry(self, pid: int, curr_time: int):
-        if(len(self.ram[pid]) == self.k):
-            return (curr_time - self.ram[pid][-1])
-        else:
-            return (curr_time - self.ram[pid][-1])*self.k/len(self.ram[pid])
+    return lru_k(*args)
 
-    def evictOne(self, curr_time: int) -> bool:
-        pid = max(self.ram, key=lambda pid: self.eval_ram_entry(pid, curr_time))
-        return self.handleRemove(pid)
+def randomFindPageToEvict(ram: dict, dirtyInRam: set = {}):
+    return random.choice(list(ram))
 
 # FlagFunction: [pos, nextZugriff, write, dirty]
 def executeStrategy(pidAndNextAndWrite, ramSize, strategy:EvictStrategy, heatUp= 0):
@@ -425,10 +418,9 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
         for (name, strategy) in [
                 ("rand", Ran), ("opt", Belady),
                 ("cf_lru", lambda: Cf_lru(0.5)), ("lru_wsr", Lru_wsr), # ("strange lru", Lru_strange_1),
-                ("lru_2", get_lru_k(K_Entries)),
-                ("lru_2_history", get_lru_k(K_Entries_History)),
-                ("zipf_best_read", get_lfu_k(K_Entries)),
-                ("zipf_best_read_history", get_lfu_k(K_Entries_History)),
+                ("lru_2", lambda: get_lru_k(K_Entries, 2)),
+                ("zipf_best_read", lambda: get_lfu_k(K_Entries, 10)),
+                ("zipf_best_read_history", lambda: get_lfu_k(K_Entries_History, 10, 3, -5)),
                 ]:
             (missList, dirtyList) = list(zip(*Parallel(n_jobs=8)(delayed(executeStrategy)(pidAndNextAndWrite, size, strategy(), heatUp=heatUp) for size in xList)))
             pre = append(name, missList, dirtyList)
