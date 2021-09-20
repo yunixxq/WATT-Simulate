@@ -419,8 +419,11 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
                 ("rand", Ran), ("opt", Belady),
                 ("cf_lru", lambda: Cf_lru(0.5)), ("lru_wsr", Lru_wsr), # ("strange lru", Lru_strange_1),
                 ("lru_2", lambda: get_lru_k(K_Entries, 2)),
-                ("zipf_best_read", lambda: get_lfu_k(K_Entries, 10)),
-                ("zipf_best_read_history", lambda: get_lfu_k(K_Entries_History, 10, 3, -5)),
+                ("lfu_5", lambda: get_lfu_k(K_Entries, 5)),
+                ("lfu_10", lambda: get_lfu_k(K_Entries, 10)),
+                ("lfu_20", lambda: get_lfu_k(K_Entries, 20)),
+                #("zipf_best_read", lambda: get_lfu_k(K_Entries, 10)),
+                ("lfu_10_history_3_-5", lambda: get_lfu_k(K_Entries_History, 10, 3, -5)),
                 ]:
             (missList, dirtyList) = list(zip(*Parallel(n_jobs=8)(delayed(executeStrategy)(pidAndNextAndWrite, size, strategy(), heatUp=heatUp) for size in xList)))
             pre = append(name, missList, dirtyList)

@@ -40,14 +40,15 @@ if __name__ == "__main__":
     pages_total = 1000
     pages_w_fract = 0.4
     pages_r_fract = 1-pages_w_fract
-    access_total = 10000
+    access_total = 1000000
     access_w_fract = 0.4
     access_r_fract = 1-access_w_fract
     zipf_w = 0.5
     zipf_r = 1.0
+    shuffled = True
     
     generate_zipf_file(
         pages_total,
         int(pages_total*pages_w_fract), int(access_total*access_w_fract), zipf_w,
         int(pages_total*pages_r_fract), int(access_total*access_r_fract), zipf_r,
-        True, "zipf_accesses.csv")
+        shuffled, "zipf_accesses.csv")
