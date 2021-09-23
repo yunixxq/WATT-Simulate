@@ -135,17 +135,27 @@ class K_Entries(EvictStrategy):
         super().__init__()
 
     def access(self, pid: int, pos: int, nextZugriff: int, write: bool) -> None:
+        value = (pos, write)
         if pid in self.ram:
             if len(self.ram[pid]) > self.k-1:
-                self.ram[pid] = [pos] + self.ram[pid][:(self.k-1)]
+                self.ram[pid] = [value] + self.ram[pid][:(self.k-1)]
                 assert(len(self.ram[pid]) == self.k)
             else:
-                self.ram[pid] = [pos] + self.ram[pid]
+                self.ram[pid] = [value] + self.ram[pid]
                 assert(len(self.ram[pid]) <= self.k)
         else:
-            self.ram[pid] = [pos]
+            self.ram[pid] = [value]
         self.handleDirty(pid, write)
 
+    def get_values(self, pid: int) -> list[int]:
+        return list(map(lambda x: x[0], self.ram[pid]))
+
+    def get_accesses(self, pid: int, curr_time) -> list[int]:
+        return self.get_values(pid)
+
+    def get_writes(self, pid: int) -> list[bool]:
+        return list(map(lambda x: x[1], self.ram[pid]))
+    
 class K_Entries_History(K_Entries):
     history: dict = {}
     backlog = []
@@ -154,6 +164,7 @@ class K_Entries_History(K_Entries):
         self.history_size = history_size
         self.backlog_length = backlog_length
         super().__init__(k)
+
     def access(self, pid: int, pos: int, nextZugriff: int, write: bool) -> None:
         if pid in self.backlog:
             self.backlog.remove(pid)
@@ -168,29 +179,33 @@ class K_Entries_History(K_Entries):
         backlog_length = self.backlog_length
         if backlog_length < 0:
             backlog_length = int(self.ramsize()/-backlog_length)
-        if backlog_length != 0:
-            self.backlog = [pid] + self.backlog
-            while len(self.backlog) > backlog_length:
-                drop_pid = self.backlog[-1]
-                self.backlog = self.backlog[:-1]
-                self.history[drop_pid] = []
+        elif backlog_length > 0:
+            backlog_length = int(self.ramsize()*backlog_length)
+        else:
+            backlog_length = 1_000_000
+        self.backlog = [pid] + self.backlog
+        while len(self.backlog) > backlog_length:
+            drop_pid = self.backlog[-1]
+            self.backlog = self.backlog[:-1]
+            self.history[drop_pid] = []
         return super().handleRemove(pid)
 
-class K_Entries_Write(EvictStrategy):
-    def __init__(self, k):
-        self.k = k
-        super().__init__()
-
-    def access(self, pid: int, pos: int, nextZugriff: int, write: bool) -> None:
-        if pid in self.ram:
-            if len(self.ram[pid]) > self.k-1:
-                self.ram[pid] = [(pos, write)] + self.ram[pid][:(self.k-1)]
-            else:
-                self.ram[pid] = [(pos, write)] + self.ram[pid]
+class K_Entries_Write(K_Entries):
+    def __init__(self, k, write_factor):
+        self.write_factor = write_factor
+        super().__init__(k)
+    
+    def makeYounger(self, pos, pid, curr_time) -> int: # Make page younger by a factor, if write
+        value = self.get_values(pid)[pos]
+        if not self.get_writes(pid)[pos]:
+            return value
         else:
-            self.ram[pid] = [(pos, write)]
-        assert(len(self.ram[pid]) <= self.k)
-        self.handleDirty(pid, write)
+            return int(curr_time - (curr_time - value)*self.write_factor)
+
+    def get_accesses(self, pid: int, curr_time) -> list[int]:
+        return list(map(lambda x: self.makeYounger(x, pid, curr_time), range(len(self.ram[pid]))))
+
+
 
 def get_lfu_k(cls, *args):
     assert(issubclass(cls, K_Entries))
@@ -200,14 +215,14 @@ def get_lfu_k(cls, *args):
 
         def get_frequency(self, pid: int, curr_time: int):
             return max(map(lambda time, pos : pos/(curr_time - time),
-                self.ram[pid], list(range(len(self.ram[pid])))), key=lambda x: x)
+                self.get_accesses(pid, curr_time), list(range(len(self.ram[pid])))), key=lambda x: x)
             
         def evictOne(self, curr_time: int) -> bool:
             pid = min(self.ram, key=lambda pid: self.get_frequency(pid, curr_time)) 
             if len(self.ram[pid]) == 1:
                 zeros = list(filter(lambda pid: len(self.ram[pid])== 1, self.ram))
                 if len(zeros) > 1:
-                    pid = min(zeros, key=lambda pid: self.ram[pid][0])
+                    pid = min(zeros, key=lambda pid: self.get_accesses(pid, curr_time)[0])
             return self.handleRemove(pid)
 
     return lfu_k(*args)
@@ -223,7 +238,7 @@ def get_lru_k(cls, *args):
                 pseudo_k = self.k
             assert(len(self.ram[pid]) <= self.k)
             if(len(self.ram[pid]) == pseudo_k):
-                return curr_time - self.ram[pid][pseudo_k-1]
+                return curr_time - self.get_accesses(pid, curr_time)[pseudo_k-1]
             else:
                 return -1
 
@@ -350,7 +365,8 @@ def genEvalList(costfactor, elements):
         norm_miss = list(map(lambda x: x/elements, missList))
         norm_hit = list(map(lambda x: 1-x, norm_miss))
         norm_costList = list(map(lambda x: x/elements, costList))
-        return (norm_hit, norm_miss, norm_costList)
+        norm_write = list(map(lambda x: x/elements, writeList))
+        return (norm_hit, norm_miss, norm_costList, norm_write)
     return evalLists
 
 def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
@@ -415,15 +431,26 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
 
     if not quick:
         # Standardized
+        write_factor = 0.1
         for (name, strategy) in [
-                ("rand", Ran), ("opt", Belady),
-                ("cf_lru", lambda: Cf_lru(0.5)), ("lru_wsr", Lru_wsr), # ("strange lru", Lru_strange_1),
-                ("lru_2", lambda: get_lru_k(K_Entries, 2)),
+                #("rand", Ran), ("opt", Belady),
+                #("cf_lru", lambda: Cf_lru(0.5)), ("lru_wsr", Lru_wsr), # ("strange lru", Lru_strange_1),
                 ("lfu_5", lambda: get_lfu_k(K_Entries, 5)),
-                ("lfu_10", lambda: get_lfu_k(K_Entries, 10)),
-                ("lfu_20", lambda: get_lfu_k(K_Entries, 20)),
+                ("lfu_5_w1", lambda: get_lfu_k(K_Entries_Write, 5, 0.1)),
+                ("lfu_5_w2", lambda: get_lfu_k(K_Entries_Write, 5, 0.2)),
+                ("lfu_5_w3", lambda: get_lfu_k(K_Entries_Write, 5, 0.3)),
+                ("lfu_5_w4", lambda: get_lfu_k(K_Entries_Write, 5, 0.4)),
+                ("lfu_5_w5", lambda: get_lfu_k(K_Entries_Write, 5, 0.5)),
+                ("lfu_5_w6", lambda: get_lfu_k(K_Entries_Write, 5, 0.6)),
+                ("lfu_5_w7", lambda: get_lfu_k(K_Entries_Write, 5, 0.7)),
+                ("lfu_5_w8", lambda: get_lfu_k(K_Entries_Write, 5, 0.8)),
+                ("lfu_5_w9", lambda: get_lfu_k(K_Entries_Write, 5, 0.9)),
+                ("lfu_5_w10", lambda: get_lfu_k(K_Entries_Write, 5, 1.0)),
+                ("lfu_5_w11", lambda: get_lfu_k(K_Entries_Write, 5, 1.1)),
+                ("lfu_5_w12", lambda: get_lfu_k(K_Entries_Write, 5, 1.2)),
+                ("lfu_5_w13", lambda: get_lfu_k(K_Entries_Write, 5, 1.3)),
+                ("lfu_5_w14", lambda: get_lfu_k(K_Entries_Write, 5, 1.4)),
                 #("zipf_best_read", lambda: get_lfu_k(K_Entries, 10)),
-                ("lfu_10_history_3_-5", lambda: get_lfu_k(K_Entries_History, 10, 3, -5)),
                 ]:
             (missList, dirtyList) = list(zip(*Parallel(n_jobs=8)(delayed(executeStrategy)(pidAndNextAndWrite, size, strategy(), heatUp=heatUp) for size in xList)))
             pre = append(name, missList, dirtyList)
@@ -465,36 +492,53 @@ def plotGraph(name, write_cost = 8):
     labels = list(df_read.columns.values)
     labels.remove("X")
     labels.remove("elements")
-
+    labels = sorted(labels, key=lambda x: sum(df_read[x] + df_write[x]))
     for column in labels:
-        (df_hit[column], df_miss[column], df_cost[column]) = evalList(df_read[column], df_write[column])
-        df_writes[column] = df_write[column]
+        (df_hit[column], df_miss[column], df_cost[column], df_writes[column]) = evalList(df_read[column], df_write[column])
 
-    def plotGraphInner(df, title, ylabel, file, labels, limit=False):
+    df_hit.set_index("X", inplace=True)
+    df_miss.set_index("X", inplace=True)
+    df_cost.set_index("X", inplace=True)
+    df_writes.set_index("X", inplace=True)
+
+    def plotGraphInner(df, title, ylabel, file, labels, limit=False, transpose=False):
+        if(transpose):
+            df = df.transpose(copy=True)
+            plt.xticks(rotation=90, fontsize=3)
+            plt.xlabel("Algorithms")
+        else:
+            plt.xlabel("Buffer Size")
+        
+        labels = list(df.columns.values)
         linewidth = 1
         if len(labels) > 3:
             linewidth = 0.5
         if len(labels) > 14:
             linewidth = 0.1
         for label in labels:
-            plt.plot(df["X"], df[label], label=label, linewidth=linewidth)
+            plt.plot(df.index, df[label], label=label, linewidth=linewidth)
 
-        plt.xlabel("Buffer Size")
         plt.ylabel(ylabel)
         if(limit):
             plt.ylim(0,1)
-        plt.legend()
+        if len(labels) > 10:
+            plt.legend(prop={"size":5})
+        else:
+            plt.legend()
         plt.title(title)
         plt.savefig(file)
         plt.clf()
 
     plotGraphInner(df_hit, "Hitrate", "Hits", name + "_hits.pdf", labels, limit=True)
-
     plotGraphInner(df_miss, "Missrate", "Misses", name + "_misses.pdf", labels, limit=True)
-
     plotGraphInner(df_cost, "Cost", "Cost", name + "_cost.pdf", labels)
-
     plotGraphInner(df_writes, "Writes", "Writes", name + "_writes.pdf", labels)
+
+
+    plotGraphInner(df_hit, "Hitrate_T", "Hits", name + "_hits_t.pdf", labels, limit=True, transpose=True)
+    plotGraphInner(df_miss, "Missrate_T", "Misses", name + "_misses_t.pdf", labels, limit=True, transpose=True)
+    plotGraphInner(df_cost, "Cost_T", "Cost", name + "_cost_t.pdf", labels, transpose=True)
+    plotGraphInner(df_writes, "Writes_T", "Writes", name + "_writes_t.pdf", labels, transpose=True)
 
 
 def doOneRun(heatUp, all, data, name, write_cost = 1):
