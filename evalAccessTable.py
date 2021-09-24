@@ -5,7 +5,13 @@ import os, random, time
 from joblib import Parallel, delayed
 import pandas
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 
+class Executor(ABC):
+
+    @abstractmethod
+    def getExecutor(): # -> Callable[[list((int, int, bool)), list(int), int, int],list(int, int)]:
+        pass
 class EvictStrategy(ABC):
     ram: dict = {}
     dirtyInRam: set = set()
@@ -253,13 +259,16 @@ def randomFindPageToEvict(ram: dict, dirtyInRam: set = {}):
     return random.choice(list(ram))
 
 # FlagFunction: [pos, nextZugriff, write, dirty]
-def executeStrategy(pidAndNextAndWrite, ramSize, strategy:EvictStrategy, heatUp= 0):
+def executeStrategy(pidAndNextAndWrite: list((int, int, bool)), ramSize, strategy:EvictStrategy, heatUp= 0, write_cost=0):
     pageMisses = 0
     dirtyEvicts = 0
     for pos in range(0, len(pidAndNextAndWrite)):
         if pos == heatUp: # Heatup, ignore previous accesses
             pageMisses = 0
             dirtyEvicts = 0
+        pid: int
+        nextZugriff: int
+        write: bool
         (pid, nextZugriff, write) = pidAndNextAndWrite[pos]
         if not strategy.inRam(pid):
             # Load
@@ -274,28 +283,34 @@ def executeStrategy(pidAndNextAndWrite, ramSize, strategy:EvictStrategy, heatUp=
     dirtyEvicts += strategy.dirtyPages()
     return (pageMisses, dirtyEvicts)
 
-def staticOpt(pidAndNextAndWrite, ramSize, heatUp=0, write_cost=1):
-    pidList = [x[0] for x in pidAndNextAndWrite]
-    writeList = [x[0] for x in pidAndNextAndWrite if x[2]]
-    accesses = {}
-    writes = {}
-    cost = {}
-    for pid in set(pidList):
-        accesses[pid] = pidList.count(pid)
-        writes[pid] = writeList.count(pid)
-        cost[pid] = accesses[pid] + writes[pid]*write_cost
-    pidByCost = sorted(cost, key=lambda x: -cost.get(x))
-    if ramSize == 10:
+class StaticOpt(Executor):
+    def staticOpt(pidAndNextAndWrite, ramSizes, heatUp=0, write_cost=1):
+        pidList = [x[0] for x in pidAndNextAndWrite]
+        writeList = [x[0] for x in pidAndNextAndWrite if x[2]]
+        accesses = {}
+        writes = {}
+        cost = {}
+        for pid in set(pidList):
+            accesses[pid] = pidList.count(pid)
+            writes[pid] = writeList.count(pid)
+            cost[pid] = accesses[pid] + writes[pid]*write_cost
+        pidByCost = sorted(cost, key=lambda x: -cost.get(x))
         print("Static page ranking")
         print(pidByCost)
-    pageMisses, dirtyEvicts = (0,0)
-    if len(set(pidList)) > ramSize:
-        pageMisses = sum(map(lambda x: accesses[x], pidByCost[ramSize-1:])) + ramSize-1
-        dirtyEvicts = sum(map(lambda x: writes[x], pidByCost[ramSize-1:])) + sum([1 for x in pidByCost[:ramSize-1] if writes[x] > 0])
-    else:
-        pageMisses = len(set(pidList))
-        dirtyEvicts = len(set(writeList))
-    return (pageMisses, dirtyEvicts)
+        returner=[]
+        for ramSize in ramSizes:
+            pageMisses, dirtyEvicts = (0,0)
+            if len(set(pidList)) > ramSize:
+                pageMisses = sum(map(lambda x: accesses[x], pidByCost[ramSize-1:])) + ramSize-1
+                dirtyEvicts = sum(map(lambda x: writes[x], pidByCost[ramSize-1:])) + sum([1 for x in pidByCost[:ramSize-1] if writes[x] > 0])
+            else:
+                pageMisses = len(set(pidList))
+                dirtyEvicts = len(set(writeList))
+            returner.append((pageMisses, dirtyEvicts))
+        return returner
+
+    def getExecutor():
+        return StaticOpt.staticOpt
 
 def lruStack(pidAndNextAndWrite: list[(int, int, int)], heatUp=0):
     stack = [] # The stack
@@ -423,6 +438,7 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
 
         post = time.time()
         print(name)
+        print(sum(missList + dirtyList)/elements)
         print(post-pre)
         print("****")
         return post
@@ -435,28 +451,26 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
         for (name, strategy) in [
                 #("rand", Ran), ("opt", Belady),
                 #("cf_lru", lambda: Cf_lru(0.5)), ("lru_wsr", Lru_wsr), # ("strange lru", Lru_strange_1),
-                ("lfu_5", lambda: get_lfu_k(K_Entries, 5)),
-                ("lfu_5_w1", lambda: get_lfu_k(K_Entries_Write, 5, 0.1)),
-                ("lfu_5_w2", lambda: get_lfu_k(K_Entries_Write, 5, 0.2)),
-                ("lfu_5_w3", lambda: get_lfu_k(K_Entries_Write, 5, 0.3)),
-                ("lfu_5_w4", lambda: get_lfu_k(K_Entries_Write, 5, 0.4)),
-                ("lfu_5_w5", lambda: get_lfu_k(K_Entries_Write, 5, 0.5)),
-                ("lfu_5_w6", lambda: get_lfu_k(K_Entries_Write, 5, 0.6)),
-                ("lfu_5_w7", lambda: get_lfu_k(K_Entries_Write, 5, 0.7)),
-                ("lfu_5_w8", lambda: get_lfu_k(K_Entries_Write, 5, 0.8)),
-                ("lfu_5_w9", lambda: get_lfu_k(K_Entries_Write, 5, 0.9)),
-                ("lfu_5_w10", lambda: get_lfu_k(K_Entries_Write, 5, 1.0)),
-                ("lfu_5_w11", lambda: get_lfu_k(K_Entries_Write, 5, 1.1)),
-                ("lfu_5_w12", lambda: get_lfu_k(K_Entries_Write, 5, 1.2)),
-                ("lfu_5_w13", lambda: get_lfu_k(K_Entries_Write, 5, 1.3)),
-                ("lfu_5_w14", lambda: get_lfu_k(K_Entries_Write, 5, 1.4)),
-                #("zipf_best_read", lambda: get_lfu_k(K_Entries, 10)),
+                #("lfu20", lambda: get_lfu_k(K_Entries, 20)),
+                #("lfu20_h20_-1", lambda: get_lfu_k(K_Entries_History, 20, 20, -1)),
+                #("lfu5_w03", lambda: get_lfu_k(K_Entries_Write, 5, 0.03)),
+                #("lfu5_w05", lambda: get_lfu_k(K_Entries_Write, 5, 0.05)),
+                #("lfu5_w01", lambda: get_lfu_k(K_Entries_Write, 5, 0.01)),
+                #("lfu5_w2", lambda: get_lfu_k(K_Entries_Write, 5, 0.2)),
+                #("lfu5_w5", lambda: get_lfu_k(K_Entries_Write, 5, 0.5)),
+                #("lfu5_w7", lambda: get_lfu_k(K_Entries_Write, 5, 0.7)),
+                # ("zipf_best_read", lambda: get_lfu_k(K_Entries, 10)),
                 ]:
-            (missList, dirtyList) = list(zip(*Parallel(n_jobs=8)(delayed(executeStrategy)(pidAndNextAndWrite, size, strategy(), heatUp=heatUp) for size in xList)))
+            (missList, dirtyList) = list(zip(*Parallel(n_jobs=8)(delayed(executeStrategy)(pidAndNextAndWrite, size, strategy(), heatUp=heatUp, write_cost=write_cost) for size in xList)))
             pre = append(name, missList, dirtyList)
         # Others
-        for (name, function) in [("staticOpt", staticOpt)]:
-            (missList, dirtyList) = list(zip(*Parallel(n_jobs=8)(delayed(function)(pidAndNextAndWrite, size, heatUp=heatUp, write_cost=write_cost) for size in xList)))
+        name: str
+        function: Executor
+        for (name, function) in [
+                ("staticOpt", StaticOpt)
+                ]:
+            executor = function.getExecutor()
+            (missList, dirtyList) = list(zip(*(executor(pidAndNextAndWrite, xList, heatUp=heatUp, write_cost=write_cost))))
             pre = append(name, missList, dirtyList)
 
     def save_csv(xList, yMissLists, names, name):
@@ -592,7 +606,8 @@ def oneFullRun(file, csv_start, write_cost):
 
 
 if __name__ == "__main__":
-    file = "./zipf_accesses.csv"
+    # file = "./zipf_accesses.csv"
+    file = "./tpcc_64_-5.csv"
     elementList = [-1] #[10000, 100000, 1000000, -1]
     heatUpList = [0] #[0, 400, 1000, 4000, 10000, 40000]
 
