@@ -7,12 +7,14 @@ from numpy import double
 import pandas, itertools
 from abc import ABC, abstractmethod
 from collections.abc import Callable
+from typing import List, Tuple
 
 class Executor(ABC):
 
     @abstractmethod
-    def getExecutor(): # -> Callable[[list((int, int, bool)), list(int), int, int],list(int, int)]:
+    def getExecutor() -> Callable[[List[Tuple[int, int, bool]], List[int], int, int],List[Tuple[int, int]]]:
         pass
+
 class EvictStrategy(ABC):
     ram: dict = {}
     dirtyInRam: set = set()
@@ -154,13 +156,13 @@ class K_Entries(EvictStrategy):
             self.ram[pid] = [value]
         self.handleDirty(pid, write)
 
-    def get_values(self, pid: int) -> list[int]:
+    def get_values(self, pid: int) -> List[int]:
         return list(map(lambda x: x[0], self.ram[pid]))
 
-    def get_accesses(self, pid: int, curr_time) -> list[int]:
+    def get_accesses(self, pid: int, curr_time) -> List[int]:
         return self.get_values(pid)
 
-    def get_writes(self, pid: int) -> list[bool]:
+    def get_writes(self, pid: int) -> List[bool]:
         return list(map(lambda x: x[1], self.ram[pid]))
     
 class K_Entries_History(K_Entries):
@@ -209,7 +211,7 @@ class K_Entries_Write(K_Entries):
         else:
             return int(curr_time - (curr_time - value)*self.write_factor)
 
-    def get_accesses(self, pid: int, curr_time) -> list[int]:
+    def get_accesses(self, pid: int, curr_time) -> List[int]:
         return list(map(lambda x: self.makeYounger(x, pid, curr_time), range(len(self.ram[pid]))))
 
 
@@ -285,7 +287,7 @@ def executeStrategy(pidAndNextAndWrite: list((int, int, bool)), ramSize, strateg
     return (pageMisses, dirtyEvicts)
 
 class StaticOpt(Executor):
-    def staticOpt(pidAndNextAndWrite, ramSizes, heatUp=0, write_cost=1):
+    def staticOpt(pidAndNextAndWrite, ramSizes, heatUp=0, write_cost=1) -> List[Tuple[int, int]]:
         pidList = [x[0] for x in pidAndNextAndWrite]
         writeList = [x[0] for x in pidAndNextAndWrite if x[2]]
         accesses = {}
@@ -313,7 +315,7 @@ class StaticOpt(Executor):
     def getExecutor():
         return StaticOpt.staticOpt
 
-def lruStack(pidAndNextAndWrite: list[(int, int, int)], heatUp=0):
+def lruStack(pidAndNextAndWrite: List[Tuple[int, int, int]], heatUp=0):
     stack = [] # The stack
     stackDist = {} # Fast access to counter of stack depth x
     stackDistDirty = {} # Stack for dirty Accesses (if depth > buffersize: dirty page was evicted)
@@ -386,76 +388,91 @@ def genEvalList(costfactor, elements):
     return evalLists
 
 def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
-    elements = len(pidAndNextAndWrite) - heatUp
-    quick=False
+    
     pre = time.time()
 
-    range0 = 3
-    range1 = 20
-    range2 = 100
-    range3 = 1000
-    range4 = 10000
-    range5 = 100000
-    range6 = 1000000
-    range7 = 5000000
-    xList = list(range(range0, range1, 1)) + list(range(range1, range2, 10)) + list(range(range2, range3, 100)) + list(range(range3, range4, 1000)) + list(range(range4, range5, 10000)) + list(range(range5, range6, 100000)) + list(range(range6, range7+1, 1000000))
-    names = []
-    yReadList = []
-    yWriteList = []
+    def printTimestamp():
+        nonlocal pre
+        post = time.time()
+        print(post-pre)
+        pre = post
 
-    post = time.time()
-    print(post-pre)
-    pre=post
-       
-    print("lruStack")
-    (stackDist, dirtyStack) = lruStack(pidAndNextAndWrite, heatUp)
-    
-    post = time.time()
-    print(post-pre)
-    pre=post
-    minValue = min([x for x in xList if x > max(stackDist)])
-    xList = [x for x in xList if x<= minValue]
-
-    names.append("elements")
-    yReadList.append([elements for x in xList])
-    yWriteList.append([elements for x in xList])
-
-    print("Buffers to calculate: {}".format(len(xList)))
-
-    print("Stacksize: " + str(max(stackDist)))
-    lruMissList = list(map(lambda size: evalStack(stackDist, size), xList))
-    lruDirtyList = list(map(lambda size: evalStack(dirtyStack, size), xList))
-    
-    written = sum(list(dirtyStack.values()))
-    (_, _, write) = zip(*pidAndNextAndWrite)
-    total_writes = sum(write)
-    dirty_inRam = total_writes - written
-    lruDirtyList = list(map(lambda hits: hits + dirty_inRam, lruDirtyList))
+    def initLists(elements, readFile, writeFile):
+        yReadList = {}
+        yWriteList = {}
+        xList = []
+        try:
+            df_read = pandas.read_csv(readFile)
+            df_write = pandas.read_csv(writeFile)
+            if elements == df_read["elements"][0]:
+                for label in list(df_read.columns.values):
+                    yReadList[label] = list(df_read[label])
+                    yWriteList[label] = list(df_write[label])
+                xList = list(df_read["X"])
+        except FileNotFoundError:
+            pass
+        return (yReadList, yWriteList, xList)
 
     def append(name, missList, dirtyList):
-        def save_csv(xList, yMissLists, names, name):
-            d = {"X": xList}
-            for x in range(0, len(names)):
-                d[names[x]] = yMissLists[x]
-            df = pandas.DataFrame(data=d)
-            df.to_csv(name+".csv", index=False)
+        nonlocal yReadList, yWriteList, elements, readFile, writeFile
+        yReadList[name] = missList
+        yWriteList[name] = dirtyList
 
-        names.append(name)
-        yReadList.append(missList)
-        yWriteList.append(dirtyList)
-
-        post = time.time()
         print(name)
         print(sum(missList + dirtyList)/elements)
-        print(post-pre)
+        printTimestamp()
         print("****")
 
-        save_csv(xList, yReadList, names, dirName + "reads")
-        save_csv(xList, yWriteList, names, dirName + "writes")
+        pandas.DataFrame(data=yReadList).to_csv(readFile, index=False)
+        pandas.DataFrame(data=yWriteList).to_csv(writeFile, index=False)
 
-        return post
+    readFile = dirName + "reads.csv"
+    writeFile = dirName + "writes.csv"
+    quick=False
 
-    pre = append("lru", lruMissList, lruDirtyList)
+    elements = len(pidAndNextAndWrite) - heatUp
+    (yReadList, yWriteList, xList) = initLists(elements, readFile, writeFile)
+
+    if "lru" not in yReadList:
+        range0 = 3
+        range1 = 20
+        range2 = 100
+        range3 = 1000
+        range4 = 10000
+        range5 = 100000
+        range6 = 1000000
+        range7 = 5000000
+        xList = list(range(range0, range1, 1)) + list(range(range1, range2, 10)) + list(range(range2, range3, 100)) + list(range(range3, range4, 1000)) + list(range(range4, range5, 10000)) + list(range(range5, range6, 100000)) + list(range(range6, range7+1, 1000000))
+
+
+        post = time.time()
+        print(post-pre)
+        pre=post
+        
+        print("lruStack")
+        (stackDist, dirtyStack) = lruStack(pidAndNextAndWrite, heatUp)
+        
+        post = time.time()
+        print(post-pre)
+        pre=post
+        minValue = min([x for x in xList if x > max(stackDist)])
+        xList = [x for x in xList if x<= minValue]
+
+        append("elements", [elements for _ in xList], [elements for _ in xList])
+        append("X", xList, xList)
+
+        print("Buffers to calculate: {}".format(len(xList)))
+
+        print("Stacksize: " + str(max(stackDist)))
+        lruMissList = list(map(lambda size: evalStack(stackDist, size), xList))
+        lruDirtyList = list(map(lambda size: evalStack(dirtyStack, size), xList))
+        
+        written = sum(list(dirtyStack.values()))
+        (_, _, write) = zip(*pidAndNextAndWrite)
+        total_writes = sum(write)
+        dirty_inRam = total_writes - written
+        lruDirtyList = list(map(lambda hits: hits + dirty_inRam, lruDirtyList))
+        append("lru", lruMissList, lruDirtyList)
 
     if not quick:
         # Standardized
@@ -481,8 +498,8 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
 
 
         for (name, strategy) in [
-                #("rand", Ran), ("opt", Belady),
-                #("cf_lru", lambda: Cf_lru(0.5)), ("lru_wsr", Lru_wsr), # ("strange lru", Lru_strange_1),
+                ("rand", Ran), ("opt", Belady),
+                ("cf_lru", lambda: Cf_lru(0.5)), ("lru_wsr", Lru_wsr), # ("strange lru", Lru_strange_1),
                 #("lfu20", lambda: get_lfu_k(K_Entries, 20)),
                 #("lfu5_w03", lambda: get_lfu_k(K_Entries_Write, 5, 0.03)),
                 #("lfu5_w05", lambda: get_lfu_k(K_Entries_Write, 5, 0.05)),
@@ -492,18 +509,22 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
                 #("lfu5_w7", lambda: get_lfu_k(K_Entries_Write, 5, 0.7)),
                 # ("zipf_best_read", lambda: get_lfu_k(K_Entries, 10)),
                 ] + strats_h + strats_w:
+            if name in yReadList:
+                continue
             print(name)
             (missList, dirtyList) = list(zip(*Parallel(n_jobs=8)(delayed(executeStrategy)(pidAndNextAndWrite, size, strategy(), heatUp=heatUp, write_cost=write_cost) for size in xList)))
-            pre = append(name, missList, dirtyList)
+            append(name, missList, dirtyList)
         # Others
         name: str
         function: Executor
         for (name, function) in [
                 #("staticOpt", StaticOpt)
                 ]:
+            if name in yReadList:
+                continue
             executor = function.getExecutor()
             (missList, dirtyList) = list(zip(*(executor(pidAndNextAndWrite, xList, heatUp=heatUp, write_cost=write_cost))))
-            pre = append(name, missList, dirtyList)
+            append(name, missList, dirtyList)
 
     
 
@@ -590,13 +611,8 @@ def doOneRun(heatUp, all, data, name, write_cost = 1):
         pass
 
     print("Length data {}: {}".format(name, len(data)))
-    try:
-        print("try to load from cache")
-        plotGraph(dirpath + name, write_cost)
-    except FileNotFoundError:
-        print("Failed to load from cache")
-        generateCSV(data, dirpath + name, heatUp=heatUp)
-        plotGraph(dirpath + name, write_cost)
+    generateCSV(data, dirpath + name, heatUp=heatUp)
+    plotGraph(dirpath + name, write_cost)
 
 def get_data_file(file):
     loaded_data = pandas.read_csv(file)
