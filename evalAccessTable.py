@@ -433,6 +433,13 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
     lruDirtyList = list(map(lambda hits: hits + dirty_inRam, lruDirtyList))
 
     def append(name, missList, dirtyList):
+        def save_csv(xList, yMissLists, names, name):
+            d = {"X": xList}
+            for x in range(0, len(names)):
+                d[names[x]] = yMissLists[x]
+            df = pandas.DataFrame(data=d)
+            df.to_csv(name+".csv", index=False)
+
         names.append(name)
         yReadList.append(missList)
         yWriteList.append(dirtyList)
@@ -442,6 +449,10 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
         print(sum(missList + dirtyList)/elements)
         print(post-pre)
         print("****")
+
+        save_csv(xList, yReadList, names, dirName + "reads")
+        save_csv(xList, yWriteList, names, dirName + "writes")
+
         return post
 
     pre = append("lru", lruMissList, lruDirtyList)
@@ -494,15 +505,6 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
             (missList, dirtyList) = list(zip(*(executor(pidAndNextAndWrite, xList, heatUp=heatUp, write_cost=write_cost))))
             pre = append(name, missList, dirtyList)
 
-    def save_csv(xList, yMissLists, names, name):
-        d = {"X": xList}
-        for x in range(0, len(names)):
-            d[names[x]] = yMissLists[x]
-        df = pandas.DataFrame(data=d)
-        df.to_csv(name+".csv", index=False)
-
-    save_csv(xList, yReadList, names, dirName + "reads")
-    save_csv(xList, yWriteList, names, dirName + "writes")
     
 
 
