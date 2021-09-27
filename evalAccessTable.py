@@ -3,7 +3,8 @@
 import matplotlib.pyplot as plt
 import os, random, time
 from joblib import Parallel, delayed
-import pandas
+from numpy import double
+import pandas, itertools
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 
@@ -447,12 +448,31 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
 
     if not quick:
         # Standardized
-        write_factor = 0.1
+        strats_h = []
+        # Add k_entries_history
+        for (k, a, b) in itertools.product([1, 3, 5, 10, 20, 50], [1, 3, 5, 10, 20, 50], [-2, -1, 2, 0]):
+            if a <= k:
+                name = "lfu" + str(k) + "_h" + str(a) + "_"
+                if b == 0:
+                    name += "inf"
+                else:
+                    name += str(b)
+
+                strats_h.append((name, lambda: get_lfu_k(K_Entries_History, int(k), int(a), int(b))))
+        
+        strats_w = []
+        for (k, a) in itertools.product([1, 3, 5, 10, 20, 50], ["03", "01", "05", "1", "2", "7"]):
+            name = "lfu" + str(k) + "_w" + a
+            value = double("0."+a)
+
+            strats_w.append((name, lambda: get_lfu_k(K_Entries_Write, int(k), value)))
+
+
+
         for (name, strategy) in [
                 #("rand", Ran), ("opt", Belady),
                 #("cf_lru", lambda: Cf_lru(0.5)), ("lru_wsr", Lru_wsr), # ("strange lru", Lru_strange_1),
                 #("lfu20", lambda: get_lfu_k(K_Entries, 20)),
-                #("lfu20_h20_-1", lambda: get_lfu_k(K_Entries_History, 20, 20, -1)),
                 #("lfu5_w03", lambda: get_lfu_k(K_Entries_Write, 5, 0.03)),
                 #("lfu5_w05", lambda: get_lfu_k(K_Entries_Write, 5, 0.05)),
                 #("lfu5_w01", lambda: get_lfu_k(K_Entries_Write, 5, 0.01)),
@@ -460,14 +480,15 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
                 #("lfu5_w5", lambda: get_lfu_k(K_Entries_Write, 5, 0.5)),
                 #("lfu5_w7", lambda: get_lfu_k(K_Entries_Write, 5, 0.7)),
                 # ("zipf_best_read", lambda: get_lfu_k(K_Entries, 10)),
-                ]:
+                ] + strats_h + strats_w:
+            print(name)
             (missList, dirtyList) = list(zip(*Parallel(n_jobs=8)(delayed(executeStrategy)(pidAndNextAndWrite, size, strategy(), heatUp=heatUp, write_cost=write_cost) for size in xList)))
             pre = append(name, missList, dirtyList)
         # Others
         name: str
         function: Executor
         for (name, function) in [
-                ("staticOpt", StaticOpt)
+                #("staticOpt", StaticOpt)
                 ]:
             executor = function.getExecutor()
             (missList, dirtyList) = list(zip(*(executor(pidAndNextAndWrite, xList, heatUp=heatUp, write_cost=write_cost))))
