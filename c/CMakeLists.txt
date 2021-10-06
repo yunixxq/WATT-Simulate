@@ -3,4 +3,4 @@ project(c)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(evalAccessTable evalAccessTable/evalAccessTable.cpp)
+add_executable(evalAccessTable evalAccessTable/evalAccessTable.cpp evalAccessTable/general.hpp evalAccessTable/lruStackDist.cpp evalAccessTable/lruStackDist.hpp)
