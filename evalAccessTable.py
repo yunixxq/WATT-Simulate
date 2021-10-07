@@ -413,18 +413,36 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
             pass
         return (yReadList, yWriteList, xList)
 
-    def append(name, missList, dirtyList):
-        nonlocal yReadList, yWriteList, elements, readFile, writeFile
+    def store(sorted=False, sort_value=[]):
+        nonlocal yReadList, yWriteList, readFile, writeFile
+        dRead = pandas.DataFrame(data=yReadList)
+        dWrite = pandas.DataFrame(data=yWriteList)
+        if sorted:
+            if len(sort_value) == 0:
+                dRead.sort_index(axis=1, inplace=True)
+                dWrite.sort_index(axis=1, inplace=True)
+            else:
+                dRead.sort_values(by=sort_value ,axis=1, inplace=True)
+                dWrite.sort_values(by=sort_value ,axis=1, inplace=True)
+        dRead.set_index("X", inplace=True)
+        dWrite.set_index("X", inplace=True)
+
+        dRead.to_csv(readFile)
+        dWrite.to_csv(writeFile)
+
+
+    def append(name, missList, dirtyList, storeThis=True):
+        nonlocal elements
         yReadList[name] = missList
         yWriteList[name] = dirtyList
 
-        print(name)
-        print(sum(missList + dirtyList)/elements)
-        printTimestamp()
-        print("****")
+        if(storeThis):
+            print(name)
+            print(sum(missList + dirtyList)/elements)
+            printTimestamp()
+            print("****")
+            store()
 
-        pandas.DataFrame(data=yReadList).to_csv(readFile, index=False)
-        pandas.DataFrame(data=yWriteList).to_csv(writeFile, index=False)
 
     readFile = dirName + "reads.csv"
     writeFile = dirName + "writes.csv"
@@ -444,7 +462,6 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
         range7 = 5000000
         xList = list(range(range0, range1, 1)) + list(range(range1, range2, 10)) + list(range(range2, range3, 100)) + list(range(range3, range4, 1000)) + list(range(range4, range5, 10000)) + list(range(range5, range6, 100000)) + list(range(range6, range7+1, 1000000))
 
-
         post = time.time()
         print(post-pre)
         pre=post
@@ -458,8 +475,8 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
         minValue = min([x for x in xList if x > max(stackDist)])
         xList = [x for x in xList if x<= minValue]
 
-        append("elements", [elements for _ in xList], [elements for _ in xList])
-        append("X", xList, xList)
+        append("elements", [elements for _ in xList], [elements for _ in xList], storeThis=False)
+        append("X", xList, xList, storeThis=False)
 
         print("Buffers to calculate: {}".format(len(xList)))
 
@@ -500,6 +517,10 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
         for (name, strategy) in [
                 ("rand", Ran), ("opt", Belady),
                 ("cf_lru", lambda: Cf_lru(0.5)), ("lru_wsr", Lru_wsr), # ("strange lru", Lru_strange_1),
+                #("lru2", lambda: get_lru_k(K_Entries, 2)),
+                #("lru4", lambda: get_lru_k(K_Entries, 4)),
+                #("lru10", lambda: get_lru_k(K_Entries, 10)),
+                #("lru20", lambda: get_lru_k(K_Entries, 20)),
                 #("lfu20", lambda: get_lfu_k(K_Entries, 20)),
                 #("lfu5_w03", lambda: get_lfu_k(K_Entries_Write, 5, 0.03)),
                 #("lfu5_w05", lambda: get_lfu_k(K_Entries_Write, 5, 0.05)),
@@ -525,6 +546,8 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
             executor = function.getExecutor()
             (missList, dirtyList) = list(zip(*(executor(pidAndNextAndWrite, xList, heatUp=heatUp, write_cost=write_cost))))
             append(name, missList, dirtyList)
+
+    store(sorted=True)
 
     
 
