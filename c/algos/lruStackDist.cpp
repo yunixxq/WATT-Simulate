@@ -11,7 +11,6 @@
 #include <string>
 #include "lruStackDist.hpp"
 
-
 void lruStackDist(std::vector<Access> &data, std::vector<unsigned int> &x_list, std::vector<unsigned int> &read_list,
                   std::vector<unsigned int> &write_list) {
     std::cout << "lru_stack" << std::endl;

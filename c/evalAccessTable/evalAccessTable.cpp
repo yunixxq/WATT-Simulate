@@ -5,8 +5,9 @@
 #include <cassert>
 #include <unordered_map>
 #include <filesystem>
-#include "lruStackDist.hpp"
+#include "../algos/lruStackDist.hpp"
 #include "general.hpp"
+#include "../algos/random.hpp"
 
 using namespace std;
 
@@ -28,7 +29,7 @@ void createLists(const string &output_dir, const string &read_file, const string
 
 void getDataFile(const string &filename, vector<Access> &data);
 
-void printAlgosToFile(const string file, const vector<unsigned int> &x_list, unsigned int elements,
+void printAlgosToFile(const string& file, const vector<unsigned int> &x_list, unsigned int elements,
                       unordered_map<string, vector<unsigned int>> &algo_entries);
 
 int main(int , char** )
@@ -49,14 +50,36 @@ void runFromFilename(const std::string& filename){
     createLists(output_dir, read_file, write_file, y_read_list, y_write_list, data.size());
     if(y_read_list.find("lru") == y_read_list.end()){
         lruStackDist(data, y_read_list["X"], y_read_list["lru"], y_write_list["lru"]);
+        printAlgosToFile(read_file, y_read_list["X"], data.size(), y_read_list);
+        printAlgosToFile(write_file, y_read_list["X"], data.size(), y_write_list);
+    }
+    string name = "random";
+    if(y_read_list.find(name) == y_read_list.end()){
+        auto& x_list = y_read_list["X"];
+        auto& read_list = y_read_list[name];
+        auto& write_list = y_write_list[name];
+        std::cout << name << std::endl;
+        auto t1 = std::chrono::high_resolution_clock::now();
+        for(auto& ram_size: y_read_list["X"]){
+            Random rand(ram_size);
+            auto pair = rand.executeStrategy(data);
+            read_list.push_back(pair.first);
+            write_list.push_back(pair.second);
+            }
+        printAlgosToFile(read_file, y_read_list["X"], data.size(), y_read_list);
+        printAlgosToFile(write_file, y_read_list["X"], data.size(), y_write_list);
+        auto t2 = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> seconds_double = t2 - t1;
+        std::cout << seconds_double.count() << " seconds" <<std:: endl;
+
     }
     printAlgosToFile(read_file, y_read_list["X"], data.size(), y_read_list);
     printAlgosToFile(write_file, y_read_list["X"], data.size(), y_write_list);
 
-    assert(y_read_list["X"].size() >0);
+    assert(!y_read_list["X"].empty());
 }
 
-void printAlgosToFile(const string file, const vector<unsigned int> &x_list, unsigned int elements,
+void printAlgosToFile(const string& file, const vector<unsigned int> &x_list, unsigned int elements,
                       unordered_map<string, vector<unsigned int>> &algo_entries) {
     vector<string> names;
     for(auto& entry: algo_entries){
@@ -105,6 +128,7 @@ void getDataFile(const string &filename, vector<Access> &data) {
             access.pageRef = stoi(value);
             getline(ss, value);
             access.write = (value.find("rue") != std::string::npos);
+            access.pos=i;
 
             getOrDefaultAndSet(last_access, i, access, 0);
 

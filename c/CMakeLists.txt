@@ -3,4 +3,8 @@ project(c)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(evalAccessTable evalAccessTable/evalAccessTable.cpp evalAccessTable/general.hpp evalAccessTable/lruStackDist.cpp evalAccessTable/lruStackDist.hpp)
+add_library(lru algos/lruStackDist.cpp algos/random.hpp algos/EvictStrategy.hpp)
+
+add_executable(evalAccessTable evalAccessTable/evalAccessTable.cpp)
+
+target_link_libraries(evalAccessTable lru)

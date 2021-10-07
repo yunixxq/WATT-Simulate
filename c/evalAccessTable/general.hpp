@@ -12,5 +12,6 @@ struct Access {
     unsigned int pageRef;
     unsigned int nextRef;
     unsigned int lastRef;
+    unsigned int pos;
     bool write;
 };
