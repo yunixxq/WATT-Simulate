@@ -15,6 +15,8 @@ struct Random: public EvictStrategy<bool> {
     uniform_int_distribution<int> ram_distro;
     default_random_engine ran_engine;
 
+    explicit Random(int ramSize) : EvictStrategy(ramSize), ram_distro(0, RAM_SIZE-1) {}
+
     void access(Access& access) override{
         ram[access.pageRef]=true;
         handleDirty(access.pageRef, access.write);

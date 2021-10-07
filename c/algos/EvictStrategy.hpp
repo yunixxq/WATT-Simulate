@@ -65,3 +65,18 @@ public:
     }
 
 };
+
+template<class Strategy>
+void executeStrategy(std::vector<Access> &data, const std::string &name, std::vector<unsigned int> &x_list, std::vector<unsigned int> &read_list,
+                     std::vector<unsigned int> &write_list) {
+    std::cout << name << std::endl;
+    auto t1 = std::chrono::high_resolution_clock::now();
+    for(auto& ram_size: x_list){
+        auto pair = Strategy(ram_size).executeStrategy(data);
+        read_list.push_back(pair.first);
+        write_list.push_back(pair.second);
+        }
+    auto t2 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> seconds_double = t2 - t1;
+    std::cout << seconds_double.count() << " seconds" << std::endl;
+}

@@ -3,17 +3,14 @@
 //
 
 #include <filesystem>
-#include <unordered_map>
 #include <cassert>
 #include <iostream>
-#include <fstream>
 #include <vector>
-#include <string>
 #include "lruStackDist.hpp"
 
-void lruStackDist(std::vector<Access> &data, std::vector<unsigned int> &x_list, std::vector<unsigned int> &read_list,
+void lruStackDist(std::vector<Access> &data, const std::string &name, std::vector<unsigned int> &x_list, std::vector<unsigned int> &read_list,
                   std::vector<unsigned int> &write_list) {
-    std::cout << "lru_stack" << std::endl;
+    std::cout <<name<< std::endl;
     assert(x_list.size() == read_list.size() && x_list.size() == write_list.size());
     auto t1 = std::chrono::high_resolution_clock::now();
     std::vector<int> lruStack, lruStackDist, lru_stack_dirty, dirty_depth;
