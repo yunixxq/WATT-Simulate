@@ -7,6 +7,8 @@
 #include <filesystem>
 #include "../algos/lruStackDist.hpp"
 #include "../algos/random.hpp"
+#include "../algos/lru.hpp"
+#include "../algos/opt.hpp"
 
 using namespace std;
 
@@ -32,7 +34,9 @@ private:
         getDataFile();
         createLists();
         runAlgorithm("lru", lruStackDist);
-        runAlgorithm("random", executeStrategy<Random>);
+        // runAlgorithm("random", executeStrategy<Random>);
+        // runAlgorithm("lru_alt", executeStrategy<LRU>);
+        runAlgorithm("opt", executeStrategy<OPT>);
         printToFile();
     }
 
@@ -98,7 +102,7 @@ private:
                 access.write = (value.find("rue") != std::string::npos);
                 access.pos = i;
 
-                getOrDefaultAndSet(last_access, i, access, 0);
+                getOrDefaultAndSet(last_access, i, access.pageRef, 0, &access.lastRef);
 
                 i++;
             }
@@ -107,7 +111,8 @@ private:
             unordered_map<unsigned int, unsigned int> next_access;
             unsigned int data_size = data.size();
             for (unsigned int i = 0; i < data.size(); i++) {
-                getOrDefaultAndSet(next_access, data_size - (i + 1), data[i], data_size);
+                unsigned int pos = data_size - (i + 1);
+                getOrDefaultAndSet(next_access, pos, data[pos].pageRef, data_size, &data[pos].nextRef);
             }
         }
     }
@@ -156,15 +161,15 @@ private:
     }
 
 
-    void getOrDefaultAndSet(unordered_map<unsigned int, unsigned int> &history, unsigned int new_value, Access &access,
-                            unsigned int default_value) {
-        auto element = history.find(access.pageRef);
+    void getOrDefaultAndSet(unordered_map<unsigned int, unsigned int> &history, unsigned int new_value, unsigned int pageRef,
+                            unsigned int default_value, unsigned int* value) {
+        auto element = history.find(pageRef);
         if (element == history.end()) {
-            access.lastRef = default_value;
+            *value = default_value;
         } else {
-            access.lastRef = element->second;
+            *value = element->second;
         }
-        history[access.pageRef] = new_value;
+        history[pageRef] = new_value;
     }
 
 };

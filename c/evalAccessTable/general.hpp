@@ -9,9 +9,9 @@
 #endif //C_GENERAL_HPP
 
 struct Access {
-    unsigned int pageRef;
-    unsigned int nextRef;
-    unsigned int lastRef;
-    unsigned int pos;
-    bool write;
+    unsigned int pageRef=0;
+    unsigned int nextRef=0;
+    unsigned int lastRef=0;
+    unsigned int pos=0;
+    bool write=false;
 };

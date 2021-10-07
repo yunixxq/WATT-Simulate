@@ -1,6 +1,7 @@
 //
 // Created by dev on 06.10.21.
 //
+#pragma once
 
 #ifndef C_EVICTSTRATEGY_HPP
 #define C_EVICTSTRATEGY_HPP
