@@ -7,25 +7,47 @@
 using namespace std;
 
 template<int clean_percentage>
-struct CF_LRU: public EvictStrategyContainer<unordered_map<int, Access>> {
+struct CF_LRU: public EvictStrategy {
     unsigned int window_length;
-
+    unordered_map<PID, std::list<Access*>::iterator> hash_for_list;
+    std::list<Access*> ram_list;
     void reInit(RamSize ram_size) override{
-        EvictStrategyContainer::reInit(ram_size);
-        window_length = (unsigned int) (clean_percentage/100.0 * RAM_SIZE);
+        ram_list.clear();
+        hash_for_list.clear();
+        window_length = (unsigned int) (clean_percentage/100.0 * ram_size);
+        EvictStrategy::reInit(ram_size);
     }
+    RamSize ramSize() override{
+        return ram_list.size();
+    }
+
 
     void access(Access& access) override{
-        ram[access.pageRef]=access;
+        if(in_ram[access.pageRef]){
+            ram_list.erase(hash_for_list[access.pageRef]);
+        }
+        ram_list.push_back(&access);
+        hash_for_list[access.pageRef] = std::prev(ram_list.end());
     };
 
-    bool evictOne(unsigned int curr_time) override{
-        auto candidate = std::min_element(ram.begin(), ram.end(), compare_second);
-        return removeCandidatePidFirst(candidate);
+    PID evictOne(RefTime curr_time) override{
+        std::list<Access*>::iterator candidate = ram_list.begin();
+        bool found = false;
+        for(int i= 0; i< window_length; i++){
+            if(!dirty_in_ram[(*candidate)->pageRef]){
+                found=true;
+                break;
+            }
+            candidate = std::next(candidate);
+        }
+        // No Clean Page in first window_length? => take oldest
+        if(!found){
+            candidate = ram_list.begin();
+        }
+        PID pid = (*candidate)->pageRef;
+        hash_for_list.erase(pid);
+        ram_list.erase(candidate);
+        return pid;
     }
-    auto compare_second(const std::pair<int, int>& l, const std::pair<int, int>& r) {
-        if(dirty_in_ram[l.first])
-        return l.second < r.second;
-    };
 
 };

@@ -23,7 +23,7 @@ struct Random: public EvictStrategyContainer<unordered_map<unsigned int, bool>> 
     void access(Access& access) override{
         ram[access.pageRef]=true;
     };
-    bool evictOne(RefTime curr_time) override{
+    PID evictOne(RefTime curr_time) override{
         unsigned int increment_by = ram_distro(ran_engine);
         auto candidate = std::next(ram.begin(), increment_by);
         return removeCandidatePidFirst(candidate);

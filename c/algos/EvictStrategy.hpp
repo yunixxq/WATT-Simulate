@@ -21,6 +21,7 @@ public:
         for(auto& ram_size: x_list){
             reInit(ram_size);
             assert(ramSize() == 0);
+            assert(RAM_SIZE == ram_size);
             assert(dirty_in_ram.size() == 0);
             assert(in_ram.size() == 0);
             auto pair = executeStrategy(data);
@@ -42,7 +43,8 @@ protected:
             if(!in_ram[single_access.pageRef]){
                 page_misses++;
                 if(ramSize() >= RAM_SIZE){
-                    if(evictOne(single_access.pos)){
+                    PID pid = evictOne(single_access.pos);
+                    if(postRemove(pid)){
                         dirty_evicts++;
                     }
                 }
@@ -60,7 +62,7 @@ protected:
 
 
     virtual void access(Access& access) = 0;
-    virtual bool evictOne(RefTime curr_time) = 0;
+    virtual PID evictOne(RefTime curr_time) = 0;
     // removes pid from strucutres, returns true if page was dirty
 
     int dirtyPages(){
@@ -84,7 +86,35 @@ protected:
         }
         return false;
     }
+};
 
+template<class Container>
+class EvictStrategyContainer: public EvictStrategy{
+protected:
+    Container ram;
+    RamSize ramSize() override{
+        return ram.size();
+    }
+    void reInit(RamSize ram_size) override{
+        EvictStrategy::reInit(ram_size);
+        ram.clear();
+    }
+
+    PID removeCandidate(typename Container::iterator candidate){
+        PID pid = candidate->pageRef;
+        ram.erase(candidate);
+        return pid;
+    }
+    PID removeCandidatePidFirst(typename Container::iterator candidate){
+        PID pid = candidate->first;
+        ram.erase(candidate);
+        return pid;
+    }
+    PID removeCandidatePidSecond(typename Container::iterator candidate){
+        PID pid = candidate->second;
+        ram.erase(candidate);
+        return pid;
+    }
     template<typename T>
     typename std::vector<T>::iterator findInVector(PID pid, std::vector<T>& ram){
         return std::find_if(ram.begin(), ram.end(), [pid](const auto& elem) { return elem.first == pid; });
@@ -134,37 +164,7 @@ protected:
         if(l.write){
             return l.write < r.write;
         }
-        };
-
-};
-
-template<class Container>
-class EvictStrategyContainer: public EvictStrategy{
-protected:
-    Container ram;
-    RamSize ramSize() override{
-        return ram.size();
-    }
-    void reInit(RamSize ram_size) override{
-        EvictStrategy::reInit(ram_size);
-        ram.clear();
-    }
-
-    bool removeCandidate(typename Container::iterator candidate){
-        PID pid = candidate->pageRef;
-        ram.erase(candidate);
-        return postRemove(pid);
-    }
-    bool removeCandidatePidFirst(typename Container::iterator candidate){
-        PID pid = candidate->first;
-        ram.erase(candidate);
-        return postRemove(pid);
-    }
-    bool removeCandidatePidSecond(typename Container::iterator candidate){
-        PID pid = candidate->second;
-        ram.erase(candidate);
-        return postRemove(pid);
-    }
+    };
 
 };
 

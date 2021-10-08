@@ -42,8 +42,19 @@ private:
         runAlgorithm<LRU>("lru_alt");
         runAlgorithm<LRU1>("lru_alt1");
         runAlgorithm<LRU2>("lru_alt2");
+        runAlgorithm<LRU2b>("lru_alt2b");
         runAlgorithm<LRU3>("lru_alt3");
-        // runAlgorithm<CF_LRU<50>>("cf_lru");
+        runAlgorithm<CF_LRU<10>>("cf_lru10");
+        runAlgorithm<CF_LRU<20>>("cf_lru20");
+        runAlgorithm<CF_LRU<30>>("cf_lru30");
+        runAlgorithm<CF_LRU<40>>("cf_lru40");
+        runAlgorithm<CF_LRU<50>>("cf_lru50");
+        runAlgorithm<CF_LRU<60>>("cf_lru60");
+        runAlgorithm<CF_LRU<70>>("cf_lru70");
+        runAlgorithm<CF_LRU<80>>("cf_lru80");
+        runAlgorithm<CF_LRU<90>>("cf_lru90");
+        runAlgorithm<CF_LRU<100>>("cf_lru100");
+
         printToFile();
     }
 
