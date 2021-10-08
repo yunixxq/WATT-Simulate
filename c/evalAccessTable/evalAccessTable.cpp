@@ -9,6 +9,7 @@
 #include "../algos/random.hpp"
 #include "../algos/lru.hpp"
 #include "../algos/opt.hpp"
+#include "../algos/cf_lru.hpp"
 
 using namespace std;
 
@@ -21,7 +22,7 @@ class EvalAccessTable {
     const string output_dir;
     const string read_file = output_dir + "reads.csv";
     const string write_file = output_dir + "writes.csv";
-    unordered_map<string, vector<unsigned int>> y_read_list, y_write_list;
+    unordered_map<string, vector<int>> y_read_list, y_write_list;
     vector<Access> data;
 
 
@@ -32,11 +33,15 @@ public:
 private:
     void runFromFilename() {
         getDataFile();
-        createLists();
-        runAlgorithm("lru", lruStackDist);
-        // runAlgorithm("random", executeStrategy<Random>);
-        // runAlgorithm("lru_alt", executeStrategy<LRU>);
-        runAlgorithm("opt", executeStrategy<OPT>);
+        createLists(); // this runs "lru" (lru_stack_trace)
+        runAlgorithm<Random>("random");
+        runAlgorithm<OPT>("opt");
+        runAlgorithm<OPT2>("opt2");
+        runAlgorithm<OPT3>("opt3");
+        runAlgorithm<LRU>("lru_alt1");
+        runAlgorithm<LRU2>("lru_alt2");
+        runAlgorithm<LRU3>("lru_alt3");
+        // runAlgorithm<CF_LRU<50>>("cf_lru");
         printToFile();
     }
 
@@ -45,14 +50,23 @@ private:
         printAlgosToFile(write_file, y_write_list);
     }
 
-    void runAlgorithm(const string &name, auto& executor) {
+    template<class  executor>
+    void runAlgorithm(const string &name) {
         if (y_read_list.find(name) == y_read_list.end()) {
-            executor(data, name, y_read_list["X"], y_read_list[name], y_write_list[name]);
+            std::cout << name << std::endl;
+            auto t1 = std::chrono::high_resolution_clock::now();
+
+            executor().evaluateRamList(data,y_read_list["X"], y_read_list[name], y_write_list[name]);
             printToFile();
+
+            auto t2 = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> seconds_double = t2 - t1;
+            std::cout << seconds_double.count() << " seconds" << std::endl;
+
         }
     }
 
-    void printAlgosToFile(const string &file, unordered_map<string, vector<unsigned int>> &algo_entries) {
+    void printAlgosToFile(const string &file, unordered_map<string, vector<int>> &algo_entries) {
         vector<string> names;
         for (auto &entry: algo_entries) {
             if (entry.first != "X") {
@@ -85,8 +99,8 @@ private:
             reader.open(filename);
             string line;
             bool firstLine = true;
-            unordered_map<unsigned int, unsigned int> last_access;
-            unsigned int i = 0;
+            unordered_map<int, int> last_access;
+            int i = 0;
             while (getline(reader, line)) {
                 if (firstLine) {
                     firstLine = false;
@@ -102,16 +116,16 @@ private:
                 access.write = (value.find("rue") != std::string::npos);
                 access.pos = i;
 
-                getOrDefaultAndSet(last_access, i, access.pageRef, 0, &access.lastRef);
+                getOrDefaultAndSet(last_access, i, access.pageRef, -1, &access.lastRef);
 
                 i++;
             }
         }
         {
-            unordered_map<unsigned int, unsigned int> next_access;
-            unsigned int data_size = data.size();
-            for (unsigned int i = 0; i < data.size(); i++) {
-                unsigned int pos = data_size - (i + 1);
+            unordered_map<int, int> next_access;
+            int data_size = data.size();
+            for (int i = 0; i < data.size(); i++) {
+                int pos = data_size - (i + 1);
                 getOrDefaultAndSet(next_access, pos, data[pos].pageRef, data_size, &data[pos].nextRef);
             }
         }
@@ -135,9 +149,10 @@ private:
             cout << "No old files found" << endl;
             filesystem::create_directory(output_dir);
         }
+        runAlgorithm<LruStackDist>("lru");
     }
 
-    void handleCsv(vector<string> &names, unordered_map<string, vector<unsigned int>> &y_list, ifstream &filestream) {
+    static void handleCsv(vector<string> &names, unordered_map<string, vector<int>> &y_list, ifstream &filestream) {
         string line;
         bool first_line = true;
         while (getline(filestream, line)) {
@@ -161,8 +176,8 @@ private:
     }
 
 
-    void getOrDefaultAndSet(unordered_map<unsigned int, unsigned int> &history, unsigned int new_value, unsigned int pageRef,
-                            unsigned int default_value, unsigned int* value) {
+    static void getOrDefaultAndSet(unordered_map<int, int> &history, int new_value, int pageRef,
+                            int default_value, int* value) {
         auto element = history.find(pageRef);
         if (element == history.end()) {
             *value = default_value;

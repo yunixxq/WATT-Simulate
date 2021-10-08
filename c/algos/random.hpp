@@ -11,19 +11,21 @@
 #include <random>
 using namespace std;
 
-struct Random: public EvictStrategy<bool> {
+struct Random: public EvictStrategy<unordered_map<unsigned int, bool>> {
     uniform_int_distribution<int> ram_distro;
     default_random_engine ran_engine;
 
-    explicit Random(int ramSize) : EvictStrategy(ramSize), ram_distro(0, RAM_SIZE-1) {}
+    void reInit(int ram_size) override{
+        EvictStrategy::reInit(ram_size);
+        ram_distro = uniform_int_distribution<int>(0, ram_size-1);
+    }
 
     void access(Access& access) override{
         ram[access.pageRef]=true;
-        handleDirty(access.pageRef, access.write);
     };
-    bool evictOne(unsigned int curr_time) override{
+    bool evictOne(int curr_time) override{
         unsigned int increment_by = ram_distro(ran_engine);
-        return handleRemove(std::next(ram.begin(), increment_by)->first);
+        auto candidate = std::next(ram.begin(), increment_by);
+        return removeCandidatePidFirst(candidate);
     }
-
 };
