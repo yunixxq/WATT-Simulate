@@ -7,11 +7,16 @@
 #define C_GENERAL_HPP
 
 #endif //C_GENERAL_HPP
+using uInt = unsigned int;
+using PID = int;
+using RefTime = int;
+using RamSize = uInt;
 
 struct Access {
-    int pageRef=0;
-    int nextRef=0;
-    int lastRef=-1;
-    int pos=0;
+    PID pageRef=0;
+    RefTime nextRef=0;
+    RefTime lastRef=-1;
+    RefTime pos=0;
     bool write=false;
 };
+

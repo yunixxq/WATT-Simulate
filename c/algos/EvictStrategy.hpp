@@ -11,35 +11,37 @@
 #include <map>
 #include "../evalAccessTable/general.hpp"
 
-template<class Container>
 class EvictStrategy
 {
 public:
     explicit EvictStrategy(){};
 
-    virtual void evaluateRamList(std::vector<Access> &data, std::vector<int> &x_list, std::vector<int> &read_list,
-                         std::vector<int> &write_list) {
+    virtual void evaluateRamList(std::vector<Access> &data, std::vector<RamSize> &x_list, std::vector<uInt> &read_list,
+                         std::vector<uInt> &write_list) {
         for(auto& ram_size: x_list){
             reInit(ram_size);
+            assert(ramSize() == 0);
+            assert(dirty_in_ram.size() == 0);
+            assert(in_ram.size() == 0);
             auto pair = executeStrategy(data);
             read_list.push_back(pair.first);
             write_list.push_back(pair.second);
         }
     }
 protected:
-    virtual void reInit(int ram_size){
+    virtual void reInit(RamSize ram_size){
         RAM_SIZE = ram_size;
-        ram.clear();
         dirty_in_ram.clear();
         in_ram.clear();
     }
-    std::pair<int, int> executeStrategy(std::vector<Access> access_data){
-        int page_misses = 0, dirty_evicts = 0;
+    virtual RamSize ramSize() = 0;
+    std::pair<uInt, uInt> executeStrategy(std::vector<Access> access_data){
+        uInt page_misses = 0, dirty_evicts = 0;
         for(Access& single_access: access_data){
             checkSizes(single_access.pageRef);
             if(!in_ram[single_access.pageRef]){
                 page_misses++;
-                if(ram.size() >= RAM_SIZE){
+                if(ramSize() >= RAM_SIZE){
                     if(evictOne(single_access.pos)){
                         dirty_evicts++;
                     }
@@ -52,21 +54,20 @@ protected:
         return std::pair(page_misses, dirty_evicts + dirtyPages());
     }
 
-    int RAM_SIZE=0;
-    Container ram;
+    RamSize RAM_SIZE=0;
     std::vector<bool> dirty_in_ram;
     std::vector<bool> in_ram;
 
 
     virtual void access(Access& access) = 0;
-    virtual bool evictOne(int curr_time) = 0;
+    virtual bool evictOne(RefTime curr_time) = 0;
     // removes pid from strucutres, returns true if page was dirty
 
     int dirtyPages(){
         return std::count(dirty_in_ram.begin(), dirty_in_ram.end(), true);
     }
 
-    void checkSizes(int pid){
+    void checkSizes(PID pid){
         if(dirty_in_ram.size() < pid){
             dirty_in_ram.resize(pid+1, false);
         }
@@ -74,18 +75,8 @@ protected:
             in_ram.resize(pid+1, false);
         }
     }
-    bool removeCandidatePidFirst(auto candidate){
-        int pid = candidate->first;
-        ram.erase(candidate);
-        return postRemove(pid);
-    }
-    bool removeCandidatePidSecond(auto candidate){
-        int pid = candidate->second;
-        ram.erase(candidate);
-        return postRemove(pid);
-    }
 
-    bool postRemove(int pid){
+    bool postRemove(PID pid){
         in_ram[pid]=false;
         if (dirty_in_ram[pid]){
             dirty_in_ram[pid] = false;
@@ -95,11 +86,14 @@ protected:
     }
 
     template<typename T>
-    typename std::vector<T>::iterator findInVector(int pid, std::vector<T>& ram){
+    typename std::vector<T>::iterator findInVector(PID pid, std::vector<T>& ram){
         return std::find_if(ram.begin(), ram.end(), [pid](const auto& elem) { return elem.first == pid; });
     }
+    typename std::vector<Access>::iterator findInVector(PID pid, std::vector<Access>& ram){
+        return std::find_if(ram.begin(), ram.end(), [pid](const Access& elem) { return elem.pageRef == pid; });
+    }
     template<typename T1, typename T2, typename T3>
-    typename std::map<T1, T2, T3>::iterator findInMap(int pid, std::map<T1, T2, T3>& ram){
+    typename std::map<T1, T2, T3>::iterator findInMap(PID pid, std::map<T1, T2, T3>& ram){
         return std::find_if(ram.begin(), ram.end(), [pid](const auto& elem) { return elem.first == pid; });
     }
 
@@ -128,8 +122,10 @@ protected:
     bool inRamMap(T1 pid, std::map<T1, T2, T3>& ram){
         return findInMap(pid, ram) != ram.end();
     }
-    static auto compare_second(const std::pair<int, int>& l, const std::pair<int, int>& r) { return l.second < r.second; };
-    static auto compare_pos(const Access& l, const Access& r) { return l.pos < r.pos; };
+    static bool compare_second(const std::pair<int, int>& l, const std::pair<int, int>& r) { return l.second < r.second; };
+    template<typename T>
+    static bool comparePairPos(const std::pair<T, Access>& l, const std::pair<T,  Access>& r) { return l.second.pos < r.second.pos; };
+    static bool comparePos(const Access& l, const Access& r) { return l.pos < r.pos; };
     static auto compare_next(const Access& l, const Access& r) { return l.nextRef < r.nextRef; };
     static auto compare_pos_writeBigger(const Access& l, const Access& r) {
         if(l.write == r.write){
@@ -139,6 +135,36 @@ protected:
             return l.write < r.write;
         }
         };
+
+};
+
+template<class Container>
+class EvictStrategyContainer: public EvictStrategy{
+protected:
+    Container ram;
+    RamSize ramSize() override{
+        return ram.size();
+    }
+    void reInit(RamSize ram_size) override{
+        EvictStrategy::reInit(ram_size);
+        ram.clear();
+    }
+
+    bool removeCandidate(typename Container::iterator candidate){
+        PID pid = candidate->pageRef;
+        ram.erase(candidate);
+        return postRemove(pid);
+    }
+    bool removeCandidatePidFirst(typename Container::iterator candidate){
+        PID pid = candidate->first;
+        ram.erase(candidate);
+        return postRemove(pid);
+    }
+    bool removeCandidatePidSecond(typename Container::iterator candidate){
+        PID pid = candidate->second;
+        ram.erase(candidate);
+        return postRemove(pid);
+    }
 
 };
 

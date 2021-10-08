@@ -8,38 +8,65 @@
 
 using namespace std;
 
-struct LRU: public EvictStrategy<unordered_map<unsigned int, unsigned int>> {
+struct LRU: public EvictStrategyContainer<unordered_map<PID, RefTime>> {
 
     void access(Access& access) override{
         ram[access.pageRef]=access.pos;
     };
-    bool evictOne(int curr_time) override{
+    bool evictOne(RefTime curr_time) override{
         auto candidate = std::min_element(ram.begin(), ram.end(), compare_second);
         return removeCandidatePidFirst(candidate);
     }
 };
 
-struct LRU2: public EvictStrategy<vector<std::pair<int, int>>> {
+struct LRU1: public EvictStrategyContainer<unordered_map<PID, Access>> {
 
     void access(Access& access) override{
-        auto it = findInVector(access.pageRef, ram);
-        if(it != ram.end()){
-            ram.erase(it);
-        }
-        ram.push_back(pair(access.pageRef, access.nextRef));
+        ram[access.pageRef]=access;
     };
-    bool evictOne(int curr_time) override{
-        return removeCandidatePidFirst(ram.begin());
+    bool evictOne(RefTime curr_time) override{
+        auto candidate = std::min_element(ram.begin(), ram.end(), comparePairPos<PID>);
+        return removeCandidatePidFirst(candidate);
     }
 };
 
-struct LRU3: public EvictStrategy<map<int, int >> {
+struct LRU2: public EvictStrategyContainer<vector<Access>> {
+
+    void access(Access& access) override{
+        if(in_ram[access.pageRef]){
+            ram.erase(findInVector(access.pageRef, ram));
+        }
+        ram.push_back(access);
+    };
+    bool evictOne(RefTime curr_time) override{
+        return removeCandidate(ram.begin());
+    }
+};
+/*
+struct LRU2b: public EvictStrategyContainer<std::list<Access>> {
+    unordered_map<PID, std::list<Access>::iterator> hash_for_list;
+    void reInit(RamSize ram_size) override{
+        EvictStrategyContainer::reInit(ram_size);
+        hash_for_list.clear();
+    }
+    void access(Access& access) override{
+        if(in_ram[access.pageRef]){
+            ram.erase(findInVector(access.pageRef, ram));
+        }
+        ram.push_back(access);
+    };
+    bool evictOne(RefTime curr_time) override{
+        return removeCandidate(ram.begin());
+    }
+};*/
+
+struct LRU3: public EvictStrategyContainer<map<RefTime, PID >> {
 
     void access(Access& access) override{
         ram.erase(access.lastRef);
         ram[access.pos]=access.pageRef;
     };
-    bool evictOne(int curr_time) override{
+    bool evictOne(RefTime curr_time) override{
         return removeCandidatePidSecond(ram.begin()); //last value of map
     }
 };

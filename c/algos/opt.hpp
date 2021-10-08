@@ -6,7 +6,7 @@
 #include <random>
 using namespace std;
 
-struct OPT: public EvictStrategy<unordered_map<int, int>> {
+struct OPT: public EvictStrategyContainer<unordered_map<int, int>> {
 
     void access(Access& access) override{
         ram[access.pageRef]=access.nextRef;
@@ -17,7 +17,7 @@ struct OPT: public EvictStrategy<unordered_map<int, int>> {
     }
 };
 
-struct OPT2: public EvictStrategy<vector<std::pair<int, int>>> {
+struct OPT2: public EvictStrategyContainer<vector<std::pair<int, int>>> {
 
     void access(Access& access) override{
         auto it = findInVector(access.pageRef, ram);
@@ -32,7 +32,7 @@ struct OPT2: public EvictStrategy<vector<std::pair<int, int>>> {
     }
 };
 
-struct OPT3: public EvictStrategy<map<int, int >> {
+struct OPT3: public EvictStrategyContainer<map<int, int >> {
 
     void access(Access& access) override{
         ram.erase(access.pos);

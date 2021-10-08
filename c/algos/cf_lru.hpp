@@ -7,11 +7,11 @@
 using namespace std;
 
 template<int clean_percentage>
-struct CF_LRU: public EvictStrategy<unordered_map<int, Access>> {
+struct CF_LRU: public EvictStrategyContainer<unordered_map<int, Access>> {
     unsigned int window_length;
 
-    void reInit(int ram_size) override{
-        EvictStrategy::reInit(ram_size);
+    void reInit(RamSize ram_size) override{
+        EvictStrategyContainer::reInit(ram_size);
         window_length = (unsigned int) (clean_percentage/100.0 * RAM_SIZE);
     }
 

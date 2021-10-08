@@ -11,7 +11,7 @@
 
 struct LruStackDist
 {
-    void evaluateRamList(std::vector<Access> &data, std::vector<int> &x_list,
-                         std::vector<int> &read_list,
-                         std::vector<int> &write_list);
+    void evaluateRamList(std::vector<Access> &data, std::vector<RamSize> &x_list,
+                         std::vector<uInt> &read_list,
+                         std::vector<uInt> &write_list);
 };

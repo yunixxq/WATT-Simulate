@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <cassert>
+#include <map>
 #include <unordered_map>
 #include <filesystem>
 #include "../algos/lruStackDist.hpp"
@@ -22,7 +23,7 @@ class EvalAccessTable {
     const string output_dir;
     const string read_file = output_dir + "reads.csv";
     const string write_file = output_dir + "writes.csv";
-    unordered_map<string, vector<int>> y_read_list, y_write_list;
+    map<string, vector<uInt>> y_read_list, y_write_list;
     vector<Access> data;
 
 
@@ -38,7 +39,8 @@ private:
         runAlgorithm<OPT>("opt");
         runAlgorithm<OPT2>("opt2");
         runAlgorithm<OPT3>("opt3");
-        runAlgorithm<LRU>("lru_alt1");
+        runAlgorithm<LRU>("lru_alt");
+        runAlgorithm<LRU1>("lru_alt1");
         runAlgorithm<LRU2>("lru_alt2");
         runAlgorithm<LRU3>("lru_alt3");
         // runAlgorithm<CF_LRU<50>>("cf_lru");
@@ -66,7 +68,7 @@ private:
         }
     }
 
-    void printAlgosToFile(const string &file, unordered_map<string, vector<int>> &algo_entries) {
+    void printAlgosToFile(const string &file, map<string, vector<uInt>> &algo_entries) {
         vector<string> names;
         for (auto &entry: algo_entries) {
             if (entry.first != "X") {
@@ -99,7 +101,7 @@ private:
             reader.open(filename);
             string line;
             bool firstLine = true;
-            unordered_map<int, int> last_access;
+            map<int, int> last_access;
             int i = 0;
             while (getline(reader, line)) {
                 if (firstLine) {
@@ -122,7 +124,7 @@ private:
             }
         }
         {
-            unordered_map<int, int> next_access;
+            map<int, int> next_access;
             int data_size = data.size();
             for (int i = 0; i < data.size(); i++) {
                 int pos = data_size - (i + 1);
@@ -152,7 +154,7 @@ private:
         runAlgorithm<LruStackDist>("lru");
     }
 
-    static void handleCsv(vector<string> &names, unordered_map<string, vector<int>> &y_list, ifstream &filestream) {
+    static void handleCsv(vector<string> &names, map<string, vector<uInt>> &y_list, ifstream &filestream) {
         string line;
         bool first_line = true;
         while (getline(filestream, line)) {
@@ -161,7 +163,10 @@ private:
             int pos = 0;
             while (getline(ss, element, ',')) {
                 if (first_line) {
-                    assert(find(names.begin(), names.end(), element) == names.end());
+                    if(find(names.begin(), names.end(), element) != names.end()){
+                        cout << "DUPLICATE NAME" <<endl;
+                        element+=".1";
+                    }
                     names.push_back(element);
                     y_list[element];
                 } else {
@@ -176,7 +181,7 @@ private:
     }
 
 
-    static void getOrDefaultAndSet(unordered_map<int, int> &history, int new_value, int pageRef,
+    static void getOrDefaultAndSet(map<int, int> &history, int new_value, int pageRef,
                             int default_value, int* value) {
         auto element = history.find(pageRef);
         if (element == history.end()) {

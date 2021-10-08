@@ -8,9 +8,9 @@
 #include <vector>
 #include "lruStackDist.hpp"
 
-void LruStackDist::evaluateRamList(std::vector<Access> &data, std::vector<int> &x_list,
-                  std::vector<int> &read_list,
-                  std::vector<int> &write_list) {
+void LruStackDist::evaluateRamList(std::vector<Access> &data, std::vector<RamSize> &x_list,
+                  std::vector<uInt> &read_list,
+                  std::vector<uInt> &write_list) {
     assert(x_list.size() == read_list.size() && x_list.size() == write_list.size());
     std::vector<int> lruStack, lruStackDist, lru_stack_dirty, dirty_depth;
 
