@@ -46,9 +46,6 @@ struct LRU2: public EvictStrategyContainer<vector<Access>> {
 struct LRU2b: public EvictStrategy {
     unordered_map<PID, std::list<Access*>::iterator> hash_for_list;
     std::list<Access*> ram_list;
-    RamSize ramSize() override{
-        return ram_list.size();
-    }
     void reInit(RamSize ram_size) override{
         ram_list.clear();
         hash_for_list.clear();

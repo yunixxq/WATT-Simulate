@@ -58,6 +58,9 @@ void LruStackDist::evaluateRamList(std::vector<Access> &data, std::vector<RamSiz
 
     int pages = lruStackDist[0];
     int ram_size = 2;
+    if(pages > 100){
+        ram_size = 19;
+    }
     do {
         if (ram_size < 20) {
             ram_size++;

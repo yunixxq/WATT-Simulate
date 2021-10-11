@@ -17,10 +17,6 @@ struct CF_LRU: public EvictStrategy {
         window_length = (unsigned int) (clean_percentage/100.0 * ram_size);
         EvictStrategy::reInit(ram_size);
     }
-    RamSize ramSize() override{
-        return ram_list.size();
-    }
-
 
     void access(Access& access) override{
         if(in_ram[access.pageRef]){

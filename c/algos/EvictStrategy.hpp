@@ -20,10 +20,10 @@ public:
                          std::vector<uInt> &write_list) {
         for(auto& ram_size: x_list){
             reInit(ram_size);
-            assert(ramSize() == 0);
             assert(RAM_SIZE == ram_size);
             assert(dirty_in_ram.size() == 0);
             assert(in_ram.size() == 0);
+            assert(curr_count == 0);
             auto pair = executeStrategy(data);
             read_list.push_back(pair.first);
             write_list.push_back(pair.second);
@@ -34,19 +34,21 @@ protected:
         RAM_SIZE = ram_size;
         dirty_in_ram.clear();
         in_ram.clear();
+        curr_count=0;
     }
-    virtual RamSize ramSize() = 0;
     std::pair<uInt, uInt> executeStrategy(std::vector<Access> access_data){
         uInt page_misses = 0, dirty_evicts = 0;
         for(Access& single_access: access_data){
             checkSizes(single_access.pageRef);
             if(!in_ram[single_access.pageRef]){
                 page_misses++;
-                if(ramSize() >= RAM_SIZE){
+                if(curr_count >= RAM_SIZE){
                     PID pid = evictOne(single_access.pos);
                     if(postRemove(pid)){
                         dirty_evicts++;
                     }
+                }else{
+                    curr_count ++;
                 }
             }
             access(single_access);
@@ -56,7 +58,7 @@ protected:
         return std::pair(page_misses, dirty_evicts + dirtyPages());
     }
 
-    RamSize RAM_SIZE=0;
+    RamSize RAM_SIZE=0, curr_count=0;
     std::vector<bool> dirty_in_ram;
     std::vector<bool> in_ram;
 
@@ -92,9 +94,6 @@ template<class Container>
 class EvictStrategyContainer: public EvictStrategy{
 protected:
     Container ram;
-    RamSize ramSize() override{
-        return ram.size();
-    }
     void reInit(RamSize ram_size) override{
         EvictStrategy::reInit(ram_size);
         ram.clear();
