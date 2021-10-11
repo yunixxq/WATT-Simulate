@@ -8,6 +8,7 @@ import pandas, itertools
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import List, Tuple
+from make_graphs import plotGraph
 
 class Executor(ABC):
 
@@ -376,17 +377,6 @@ def preprocess(zugriffe: list, reversed=True): # Watch out: nextAccess on revers
     zugriffe.reverse()
     return pidAndAccess
 
-def genEvalList(costfactor, elements):
-    
-    def evalLists(missList, writeList):
-        costList = map(lambda read, write: read + write*costfactor, missList, writeList)
-        norm_miss = list(map(lambda x: x/elements, missList))
-        norm_hit = list(map(lambda x: 1-x, norm_miss))
-        norm_costList = list(map(lambda x: x/elements, costList))
-        norm_write = list(map(lambda x: x/elements, writeList))
-        return (norm_hit, norm_miss, norm_costList, norm_write)
-    return evalLists
-
 def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
     
     pre = time.time()
@@ -515,8 +505,10 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
 
 
         for (name, strategy) in [
-                ("rand", Ran), ("opt", Belady),
-                ("cf_lru", lambda: Cf_lru(0.5)), ("lru_wsr", Lru_wsr), # ("strange lru", Lru_strange_1),
+                ("rand", Ran),
+                #("lru_alt", Lru),
+                # ("cf_lru", lambda: Cf_lru(0.5)),
+                ("lru_wsr", Lru_wsr), # ("strange lru", Lru_strange_1),
                 #("lru2", lambda: get_lru_k(K_Entries, 2)),
                 #("lru4", lambda: get_lru_k(K_Entries, 4)),
                 #("lru10", lambda: get_lru_k(K_Entries, 10)),
@@ -529,7 +521,7 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
                 #("lfu5_w5", lambda: get_lfu_k(K_Entries_Write, 5, 0.5)),
                 #("lfu5_w7", lambda: get_lfu_k(K_Entries_Write, 5, 0.7)),
                 # ("zipf_best_read", lambda: get_lfu_k(K_Entries, 10)),
-                ] + strats_h + strats_w:
+                ]: # + strats_h + strats_w:
             if name in yReadList:
                 continue
             print(name)
@@ -551,75 +543,6 @@ def generateCSV(pidAndNextAndWrite, dirName, heatUp=0, write_cost=1):
 
     
 
-
-def plotGraph(name, write_cost = 8):
-    df_read = pandas.read_csv(name+"reads.csv")
-    df_write = pandas.read_csv(name+"writes.csv")
-    elements = df_read["elements"][0]
-    evalList = genEvalList(write_cost, elements)
-
-    for elem in list(df_read["elements"]) + list(df_write["elements"]):
-        assert(elem == elements)
-
-    df_hit = pandas.DataFrame()
-    df_miss = pandas.DataFrame()
-    df_cost = pandas.DataFrame()
-    df_writes = pandas.DataFrame()
-    df_hit["X"] = df_read["X"]
-    df_miss["X"] = df_read["X"]
-    df_cost["X"] = df_read["X"]
-    df_writes["X"] = df_read["X"]
-
-    labels = list(df_read.columns.values)
-    labels.remove("X")
-    labels.remove("elements")
-    labels = sorted(labels, key=lambda x: sum(df_read[x] + df_write[x]))
-    for column in labels:
-        (df_hit[column], df_miss[column], df_cost[column], df_writes[column]) = evalList(df_read[column], df_write[column])
-
-    df_hit.set_index("X", inplace=True)
-    df_miss.set_index("X", inplace=True)
-    df_cost.set_index("X", inplace=True)
-    df_writes.set_index("X", inplace=True)
-
-    def plotGraphInner(df, title, ylabel, file, labels, limit=False, transpose=False):
-        if(transpose):
-            df = df.transpose(copy=True)
-            plt.xticks(rotation=90, fontsize=3)
-            plt.xlabel("Algorithms")
-        else:
-            plt.xlabel("Buffer Size")
-        
-        labels = list(df.columns.values)
-        linewidth = 1
-        if len(labels) > 3:
-            linewidth = 0.5
-        if len(labels) > 14:
-            linewidth = 0.1
-        for label in labels:
-            plt.plot(df.index, df[label], label=label, linewidth=linewidth)
-
-        plt.ylabel(ylabel)
-        if(limit):
-            plt.ylim(0,1)
-        if len(labels) > 10:
-            plt.legend(prop={"size":5})
-        else:
-            plt.legend()
-        plt.title(title)
-        plt.savefig(file)
-        plt.clf()
-
-    plotGraphInner(df_hit, "Hitrate", "Hits", name + "_hits.pdf", labels, limit=True)
-    plotGraphInner(df_miss, "Missrate", "Misses", name + "_misses.pdf", labels, limit=True)
-    plotGraphInner(df_cost, "Cost", "Cost", name + "_cost.pdf", labels)
-    plotGraphInner(df_writes, "Writes", "Writes", name + "_writes.pdf", labels)
-
-
-    plotGraphInner(df_hit, "Hitrate_T", "Hits", name + "_hits_t.pdf", labels, limit=True, transpose=True)
-    plotGraphInner(df_miss, "Missrate_T", "Misses", name + "_misses_t.pdf", labels, limit=True, transpose=True)
-    plotGraphInner(df_cost, "Cost_T", "Cost", name + "_cost_t.pdf", labels, transpose=True)
-    plotGraphInner(df_writes, "Writes_T", "Writes", name + "_writes_t.pdf", labels, transpose=True)
 
 
 def doOneRun(heatUp, all, data, name, write_cost = 1):
