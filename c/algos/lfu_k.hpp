@@ -9,17 +9,24 @@
 using namespace std;
 
 template<int K, int pos_start=0>
-struct LFU_K_ALL: public EvictStrategyContainer<unordered_map<PID, list<RefTime>>> {
+struct LFU_K_ALL: public EvictStrategyContainer<list<pair<PID, list<RefTime>>>> {
+    unordered_map<PID, std::list<pair<PID, list<RefTime>>>::iterator> hash_for_list;
     void access(Access& access) override{
-        list<RefTime>& hist = ram[access.pageRef];
+        list<RefTime> hist;
+        if(in_ram[access.pageRef]) {
+            hist = std::move(hash_for_list[access.pageRef]->second);
+            ram.erase(hash_for_list[access.pageRef]);
+        }
         hist.push_front(access.pos);
         if(hist.size() > K){
             hist.resize(K);
         }
-        assert(*hist.begin() == access.pos);
+        ram.push_back(std::make_pair(access.pageRef, hist));
+        hash_for_list[access.pageRef] = std::prev(ram.end());
+        assert(*hash_for_list[access.pageRef]->second.begin() == access.pos);
     };
     PID evictOne(RefTime curr_time) override{
-        unordered_map<PID, list<RefTime>>::iterator candidate = ram.begin(), runner = ram.begin();
+        list<pair<PID, list<RefTime>>>::iterator candidate = ram.begin(), runner = ram.begin();
         double candidate_freq = get_frequency(candidate->second, curr_time);
 
         while(runner!= ram.end()){
@@ -32,13 +39,11 @@ struct LFU_K_ALL: public EvictStrategyContainer<unordered_map<PID, list<RefTime>
         }
         PID pid = candidate->first;
         ram.erase(candidate);
+        hash_for_list.erase(pid);
         return pid;
     }
     static double get_frequency(list<RefTime>& candidate, RefTime curr_time){
         int pos =pos_start;
-        if(K <2){
-            pos = 1;
-        }
         double best_freq = 0;
         for(auto time: candidate){
             int age = curr_time - time;
@@ -51,3 +56,4 @@ struct LFU_K_ALL: public EvictStrategyContainer<unordered_map<PID, list<RefTime>
     }
 
 };
+

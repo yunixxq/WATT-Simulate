@@ -51,6 +51,7 @@ private:
                 runAlgorithm<LRU>("lru_alt");
                 runAlgorithm<LRU1>("lru_alt1");
                 runAlgorithm<LRU2>("lru_alt2");
+                runAlgorithm<LRU2a>("lru_alt2a");
                 runAlgorithm<LRU2b>("lru_alt2b");
                 runAlgorithm<LRU3>("lru_alt3");
                 runAlgorithm<CF_LRU<10>>("cf_lru10");
