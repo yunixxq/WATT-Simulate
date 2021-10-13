@@ -8,7 +8,7 @@
 #include <vector>
 #include "lruStackDist.hpp"
 
-void LruStackDist::evaluateRamList(std::vector<Access> &data, std::vector<RamSize> &x_list,
+void LruStackDist::evaluateRamList(const std::vector<Access> &data, std::vector<RamSize> &x_list,
                   std::vector<uInt> &read_list,
                   std::vector<uInt> &write_list) {
     assert(x_list.size() == read_list.size() && x_list.size() == write_list.size());

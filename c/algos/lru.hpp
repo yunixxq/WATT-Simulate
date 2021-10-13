@@ -77,21 +77,3 @@ struct LRU3: public EvictStrategyContainer<map<RefTime, PID >> {
         return removeCandidatePidSecond(ram.begin()); //last value of map
     }
 };
-
-/*
-struct LRU4: public EvictStrategy<map<int, std::list<Access>::iterator >> {
-    std::list<Access> accesses;
-    LRU4() :EvictStrategy(){
-
-    }
-    void access(const Access& access) override{
-        if(ram.find(access.))
-        ram[access.pos]=ram[access.lastRef];
-        ram.erase();
-        accesses.push_front(access);
-        ram[access.pos]=access.pageRef;
-    };
-    bool evictOne(int curr_time) override{
-        return removeCandidatePidSecond(ram.begin()); //last value of map
-    }
-};*/

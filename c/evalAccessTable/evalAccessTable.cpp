@@ -6,6 +6,7 @@
 #include <map>
 #include <unordered_map>
 #include <filesystem>
+#include <future>
 #include "../algos/lruStackDist.hpp"
 #include "../algos/random.hpp"
 #include "../algos/lru.hpp"
@@ -73,8 +74,11 @@ private:
         if (y_read_list.find(name) == y_read_list.end()) {
             std::cout << name << std::endl;
             auto t1 = std::chrono::high_resolution_clock::now();
-
-            executor().evaluateRamList(data,y_read_list["X"], y_read_list[name], y_write_list[name]);
+            if constexpr(std::is_base_of<EvictStrategy, executor>::value) {
+                runParallelEvictStrategy<executor>(data, y_read_list["X"], y_read_list[name], y_write_list[name]);
+            } else{
+                executor().evaluateRamList(data,y_read_list["X"], y_read_list[name], y_write_list[name]);
+            }
             printToFile();
 
             auto t2 = std::chrono::high_resolution_clock::now();
@@ -82,6 +86,39 @@ private:
             std::cout << seconds_double.count() << " seconds" << std::endl;
 
         }
+    }
+
+    template<class executor>
+    static void runParallelEvictStrategy(std::vector<Access> &data, std::vector<RamSize> &x_list, std::vector<uInt> &read_list,
+                                  std::vector<uInt> &write_list){
+        static_assert(std::is_base_of<EvictStrategy, executor>::value);
+        bool parallel=true;
+        if(!parallel){
+            executor().evaluateRamList(data, x_list, read_list, write_list);
+        }else{
+            std::vector<std::future<pair<uInt, uInt>>> pairs;
+            for_each(
+                    x_list.begin(),
+                    x_list.end(),
+                    [&](uInt ram_size){
+                        pairs.push_back(async([ram_size, &data](){
+                            pair<uInt, uInt> pair = executor().evaluateOne(data, ram_size);
+                            return pair;
+                        }));
+                    }
+                    );
+            for_each(
+                    pairs.begin(),
+                    pairs.end(),
+                    [&](std::future<pair<uInt, uInt>>& futPair){
+                        futPair.wait();
+                        auto pair = futPair.get();
+                        read_list.push_back(pair.first);
+                        write_list.push_back(pair.second);
+                    }
+                    );
+        }
+
     }
 
     void printAlgosToFile(const string &file, map<string, vector<uInt>> &algo_entries) {

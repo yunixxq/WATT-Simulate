@@ -19,15 +19,15 @@ public:
     virtual void evaluateRamList(std::vector<Access> &data, std::vector<RamSize> &x_list, std::vector<uInt> &read_list,
                          std::vector<uInt> &write_list) {
         for(auto& ram_size: x_list){
-            reInit(ram_size);
-            assert(RAM_SIZE == ram_size);
-            assert(dirty_in_ram.size() == 0);
-            assert(in_ram.size() == 0);
-            assert(curr_count == 0);
-            auto pair = executeStrategy(data);
+            auto pair = evaluateOne(data, ram_size);
             read_list.push_back(pair.first);
             write_list.push_back(pair.second);
         }
+    }
+    std::pair<uInt, uInt> evaluateOne(std::vector<Access> &data, RamSize ram_size){
+        reInit(ram_size);
+        checkConditions(ram_size);
+        return executeStrategy(data);
     }
 protected:
     virtual void reInit(RamSize ram_size){
@@ -36,7 +36,13 @@ protected:
         in_ram.clear();
         curr_count=0;
     }
-    std::pair<uInt, uInt> executeStrategy(std::vector<Access> access_data){
+    void checkConditions(RamSize ram_size){
+        assert(RAM_SIZE == ram_size);
+        assert(dirty_in_ram.size() == 0);
+        assert(in_ram.size() == 0);
+        assert(curr_count == 0);
+    }
+    std::pair<uInt, uInt> executeStrategy(std::vector<Access>& access_data){
         uInt page_misses = 0, dirty_evicts = 0;
         for(Access& single_access: access_data){
             checkSizes(single_access.pageRef);
@@ -166,4 +172,3 @@ protected:
     };
 
 };
-
