@@ -13,6 +13,7 @@
 #include "../algos/opt.hpp"
 #include "../algos/cf_lru.hpp"
 #include "../algos/lru_wsr.hpp"
+#include "../algos/lru_k.hpp"
 
 using namespace std;
 
@@ -60,6 +61,9 @@ private:
         runAlgorithm<CF_LRU<50>>("cf_lru50");
         runAlgorithm<CF_LRU<60>>("cf_lru60");
         runAlgorithm<LRU_WSR>("lru_wsr");
+        runAlgorithm<LRU_K_ALL<1>>("lru_k_1");
+        runAlgorithm<LRU_K_ALL<2>>("lru_k_2");
+        runAlgorithm<LRU_K_ALL<3>>("lru_k_3");
 
         printToFile();
     }
