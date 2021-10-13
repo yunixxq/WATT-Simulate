@@ -43,6 +43,28 @@ struct LRU2: public EvictStrategyContainer<vector<Access>> {
     }
 };
 
+struct LRU2a: public EvictStrategyContainer<std::list<Access*>>{
+    unordered_map<PID, std::list<Access*>::iterator> hash_for_list;
+    void reInit(RamSize ram_size) override{
+        hash_for_list.clear();
+        EvictStrategyContainer::reInit(ram_size);
+    }
+    void access(Access& access) override{
+        if(in_ram[access.pageRef]){
+            ram.erase(hash_for_list[access.pageRef]);
+        }
+        ram.push_back(&access);
+        hash_for_list[access.pageRef] = std::prev(ram.end());
+    };
+    PID evictOne(RefTime curr_time) override{
+        Access* element = *ram.begin();
+        hash_for_list.erase(element->pageRef);
+        ram.erase(ram.begin());
+
+        return element->pageRef;
+    }
+};
+
 struct LRU2b: public EvictStrategy {
     unordered_map<PID, std::list<Access*>::iterator> hash_for_list;
     std::list<Access*> ram_list;
