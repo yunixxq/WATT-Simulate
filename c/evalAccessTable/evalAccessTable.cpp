@@ -14,6 +14,7 @@
 #include "../algos/cf_lru.hpp"
 #include "../algos/lru_wsr.hpp"
 #include "../algos/lru_k.hpp"
+#include "../algos/lfu_k.hpp"
 
 using namespace std;
 
@@ -36,35 +37,42 @@ public:
     };
 private:
     void runFromFilename() {
+        bool only_new=true;
+        bool ignore_old=true;
         bool full_run=false;
         getDataFile();
-        createLists(); // this runs "lru" (lru_stack_trace)
-        runAlgorithm<Random>("random");
-        runAlgorithm<OPT>("opt");
-        if(full_run) {
-            runAlgorithm<OPT2>("opt2");
-            runAlgorithm<OPT3>("opt3");
-            runAlgorithm<LRU>("lru_alt");
-            runAlgorithm<LRU1>("lru_alt1");
-            runAlgorithm<LRU2>("lru_alt2");
-            runAlgorithm<LRU2b>("lru_alt2b");
-            runAlgorithm<LRU3>("lru_alt3");
-            runAlgorithm<CF_LRU<10>>("cf_lru10");
-            runAlgorithm<CF_LRU<20>>("cf_lru20");
-            runAlgorithm<CF_LRU<70>>("cf_lru70");
-            runAlgorithm<CF_LRU<80>>("cf_lru80");
-            runAlgorithm<CF_LRU<90>>("cf_lru90");
-            runAlgorithm<CF_LRU<100>>("cf_lru100");
+        createLists(ignore_old); // this runs "lru" (lru_stack_trace)
+        if(!only_new) {
+            runAlgorithm<Random>("random");
+            runAlgorithm<OPT>("opt");
+            if (full_run) {
+                runAlgorithm<OPT2>("opt2");
+                runAlgorithm<OPT3>("opt3");
+                runAlgorithm<LRU>("lru_alt");
+                runAlgorithm<LRU1>("lru_alt1");
+                runAlgorithm<LRU2>("lru_alt2");
+                runAlgorithm<LRU2b>("lru_alt2b");
+                runAlgorithm<LRU3>("lru_alt3");
+                runAlgorithm<CF_LRU<10>>("cf_lru10");
+                runAlgorithm<CF_LRU<20>>("cf_lru20");
+                runAlgorithm<CF_LRU<70>>("cf_lru70");
+                runAlgorithm<CF_LRU<80>>("cf_lru80");
+                runAlgorithm<CF_LRU<90>>("cf_lru90");
+                runAlgorithm<CF_LRU<100>>("cf_lru100");
+            }
+            runAlgorithm<CF_LRU<30>>("cf_lru30");
+            runAlgorithm<CF_LRU<40>>("cf_lru40");
+            runAlgorithm<CF_LRU<50>>("cf_lru50");
+            runAlgorithm<CF_LRU<60>>("cf_lru60");
+            runAlgorithm<LRU_WSR>("lru_wsr");
+            runAlgorithm<LRU_K_ALL<1>>("lru_k_1");
+            runAlgorithm<LRU_K_ALL<2>>("lru_k_2");
+            runAlgorithm<LRU_K_ALL<3>>("lru_k_3");
         }
-        runAlgorithm<CF_LRU<30>>("cf_lru30");
-        runAlgorithm<CF_LRU<40>>("cf_lru40");
-        runAlgorithm<CF_LRU<50>>("cf_lru50");
-        runAlgorithm<CF_LRU<60>>("cf_lru60");
-        runAlgorithm<LRU_WSR>("lru_wsr");
-        runAlgorithm<LRU_K_ALL<1>>("lru_k_1");
-        runAlgorithm<LRU_K_ALL<2>>("lru_k_2");
-        runAlgorithm<LRU_K_ALL<3>>("lru_k_3");
-
+        runAlgorithm<LFU_K_ALL<1>>("lfu_k_1");
+        runAlgorithm<LFU_K_ALL<2>>("lfu_k_2");
+        runAlgorithm<LFU_K_ALL<10>>("lfu_k_10");
+        runAlgorithm<LFU_K_ALL<20>>("lfu_k_20");
         printToFile();
     }
 
@@ -190,12 +198,12 @@ private:
         }
     }
 
-    void createLists() {
+    void createLists(bool ignore_last_run) {
         vector<string> r_names, w_names;
         ifstream reader, writer;
         reader.open(read_file);
         writer.open(write_file);
-        if (reader.good() && writer.good()) {
+        if (reader.good() && writer.good() && !ignore_last_run) {
             handleCsv(r_names, y_read_list, reader);
             handleCsv(w_names, y_write_list, writer);
             assert(is_permutation(w_names.begin(), w_names.end(), r_names.begin(), r_names.end()));

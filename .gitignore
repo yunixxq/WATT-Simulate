@@ -4,3 +4,4 @@
 *.mps
 *.pyc
 *.txt
+!**/CMakeLists.txt
