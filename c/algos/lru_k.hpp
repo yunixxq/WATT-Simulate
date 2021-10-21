@@ -18,7 +18,7 @@ struct LRU_K_ALL: public EvictStrategyContainer<unordered_map<PID, list<RefTime>
         }
         assert(*hist.begin() == access.pos);
     };
-    PID evictOne(RefTime curr_time) override{
+    PID evictOne(RefTime) override{
         //auto candidate = std::min_element(ram.begin(), ram.end(), compare);
         unordered_map<PID, list<RefTime>>::iterator candidate = ram.begin(), runner = ram.begin();
 

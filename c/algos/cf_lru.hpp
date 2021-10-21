@@ -8,7 +8,7 @@ using namespace std;
 
 template<int clean_percentage>
 struct CF_LRU: public EvictStrategy {
-    unsigned int window_length;
+    uInt window_length;
     unordered_map<PID, std::list<Access*>::iterator> hash_for_list;
     std::list<Access*> ram_list;
     void reInit(RamSize ram_size) override{
@@ -26,10 +26,10 @@ struct CF_LRU: public EvictStrategy {
         hash_for_list[access.pageRef] = std::prev(ram_list.end());
     };
 
-    PID evictOne(RefTime curr_time) override{
+    PID evictOne(RefTime) override{
         std::list<Access*>::iterator candidate = ram_list.begin();
         bool found = false;
-        for(int i= 0; i< window_length; i++){
+        for(uInt i= 0; i< window_length; i++){
             if(!dirty_in_ram[(*candidate)->pageRef]){
                 found=true;
                 break;

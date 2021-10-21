@@ -37,9 +37,9 @@ public:
     };
 private:
     void runFromFilename() {
-        bool only_new=true;
-        bool ignore_old=true;
-        bool full_run=false;
+        bool only_new=false;
+        bool ignore_old=false;
+        bool full_run=true;
         getDataFile();
         createLists(ignore_old); // this runs "lru" (lru_stack_trace)
         if(!only_new) {
@@ -66,14 +66,12 @@ private:
             runAlgorithm<CF_LRU<50>>("cf_lru50");
             runAlgorithm<CF_LRU<60>>("cf_lru60");
             runAlgorithm<LRU_WSR>("lru_wsr");
-            runAlgorithm<LRU_K_ALL<1>>("lru_k_1");
-            runAlgorithm<LRU_K_ALL<2>>("lru_k_2");
-            runAlgorithm<LRU_K_ALL<3>>("lru_k_3");
+
+            runAlgorithm<LFU_K_ALL<1>>("lfu_k_01");
+            runAlgorithm<LFU_K_ALL<2>>("lfu_k_02");
+            runAlgorithm<LFU_K_ALL<10>>("lfu_k_10");
+            runAlgorithm<LFU_K_ALL<20>>("lfu_k_20");
         }
-        runAlgorithm<LFU_K_ALL<1>>("lfu_k_1");
-        runAlgorithm<LFU_K_ALL<2>>("lfu_k_2");
-        runAlgorithm<LFU_K_ALL<10>>("lfu_k_10");
-        runAlgorithm<LFU_K_ALL<20>>("lfu_k_20");
         printToFile();
     }
 
@@ -150,7 +148,7 @@ private:
         }
         out_stream << endl;
         // print entries
-        for (int i = 0; i < y_read_list["X"].size(); i++) {
+        for (uInt i = 0; i < y_read_list["X"].size(); i++) {
             out_stream << y_read_list["X"][i] << "," << data.size();
             for (auto &name: names) {
                 out_stream << "," << algo_entries[name][i];
@@ -192,7 +190,7 @@ private:
         {
             map<int, int> next_access;
             int data_size = data.size();
-            for (int i = 0; i < data.size(); i++) {
+            for (uInt i = 0; i < data.size(); i++) {
                 int pos = data_size - (i + 1);
                 getOrDefaultAndSet(next_access, pos, data[pos].pageRef, data_size, &data[pos].nextRef);
             }

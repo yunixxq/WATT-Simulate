@@ -8,7 +8,7 @@
 
 #endif //C_GENERAL_HPP
 using uInt = unsigned int;
-using PID = int;
+using PID = uInt;
 using RefTime = int;
 using RamSize = uInt;
 

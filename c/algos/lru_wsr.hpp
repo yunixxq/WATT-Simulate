@@ -23,7 +23,7 @@ struct LRU_WSR: public EvictStrategy {
         ram_list.push_back(std::make_tuple(access.pageRef, false));
         hash_for_list[access.pageRef] = std::prev(ram_list.end());
     };
-    PID evictOne(RefTime curr_time) override{
+    PID evictOne(RefTime) override{
         while(true) {
             PID pid;
             bool second;

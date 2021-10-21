@@ -9,6 +9,7 @@
 #endif //C_EVICTSTRATEGY_HPP
 
 #include <map>
+#include <list>
 #include "../evalAccessTable/general.hpp"
 
 class EvictStrategy
@@ -105,70 +106,58 @@ protected:
         ram.clear();
     }
 
-    PID removeCandidate(typename Container::iterator candidate){
-        PID pid = candidate->pageRef;
-        ram.erase(candidate);
-        return pid;
-    }
-    PID removeCandidatePidFirst(typename Container::iterator candidate){
-        PID pid = candidate->first;
-        ram.erase(candidate);
-        return pid;
-    }
-    PID removeCandidatePidSecond(typename Container::iterator candidate){
-        PID pid = candidate->second;
-        ram.erase(candidate);
-        return pid;
-    }
-    template<typename T>
-    typename std::vector<T>::iterator findInVector(PID pid, std::vector<T>& ram){
-        return std::find_if(ram.begin(), ram.end(), [pid](const auto& elem) { return elem.first == pid; });
-    }
-    typename std::vector<Access>::iterator findInVector(PID pid, std::vector<Access>& ram){
-        return std::find_if(ram.begin(), ram.end(), [pid](const Access& elem) { return elem.pageRef == pid; });
-    }
-    template<typename T1, typename T2, typename T3>
-    typename std::map<T1, T2, T3>::iterator findInMap(PID pid, std::map<T1, T2, T3>& ram){
-        return std::find_if(ram.begin(), ram.end(), [pid](const auto& elem) { return elem.first == pid; });
-    }
-
-    template<typename T1, typename T2>
-    bool handleRemoveMap(typename std::map<T1, T2>::iterator it, std::map<T1, T2>& ram){
-        int pid = it->second;
-        ram.erase(it);
-        return postRemove(pid);
-    }
-    template<typename T>
-    bool handleRemoveVector(int pid, std::vector<T>& ram){
-        ram.erase(findInVector(pid, ram));
-        return postRemove(pid);
-    }
-
-    template<typename T1, typename T2>
-    bool inRamUnorderedMap(T1 pid, std::unordered_map<T1, T2>& ram){
-        return ram.find(pid) != ram.end();
-    }
-
-    template<typename T>
-    bool inRamVector(int pid, std::vector<T>& ram){
-        return findInVector(pid, ram) != ram.end();
-    }
-    template<typename T1, typename T2, typename T3>
-    bool inRamMap(T1 pid, std::map<T1, T2, T3>& ram){
-        return findInMap(pid, ram) != ram.end();
-    }
     static bool compare_second(const std::pair<int, int>& l, const std::pair<int, int>& r) { return l.second < r.second; };
-    template<typename T>
-    static bool comparePairPos(const std::pair<T, Access>& l, const std::pair<T,  Access>& r) { return l.second.pos < r.second.pos; };
-    static bool comparePos(const Access& l, const Access& r) { return l.pos < r.pos; };
-    static auto compare_next(const Access& l, const Access& r) { return l.nextRef < r.nextRef; };
-    static auto compare_pos_writeBigger(const Access& l, const Access& r) {
-        if(l.write == r.write){
-            return l.pos < r.pos;
-        }
-        if(l.write){
-            return l.write < r.write;
+};
+
+
+/**
+ * A container with hashmap for the container.
+ * Per default it saves the PID and evicts by LRU
+ * @tparam Container
+ */
+template<class T>
+class EvictStrategyListHash: public EvictStrategy{
+protected:
+    std::list<T> ram;
+    std::unordered_map<PID, typename std::list<T>::iterator> fast_finder;
+    void reInit(RamSize ram_size) override{
+        EvictStrategy::reInit(ram_size);
+        fast_finder.clear();
+        ram.clear();
+    }
+    void access(Access& access) override{
+
+        if(in_ram[access.pageRef]){
+            fast_finder[access.pageRef] = updateElement(fast_finder[access.pageRef], access);
+
+        }else{
+            fast_finder[access.pageRef] = insertElement(access);
         }
     };
+    PID evictOne(RefTime currTime) override{
+        typename std::list<T>::iterator min = getMin(currTime);
+        PID pid = getPidForIterator(min);
+        fast_finder.erase(pid);
+        ram.erase(min);
+
+        return pid;
+    }
+
+    virtual typename std::list<T>::iterator getMin(RefTime) {
+            return ram.begin();
+    }
+    virtual PID getPidForIterator(typename std::list<T>::iterator it){
+        return *it;
+    }
+    virtual typename std::list<T>::iterator insertElement(Access& access){
+        ram.push_back(access.pageRef);
+        return std::prev(ram.end());
+    }
+    virtual typename std::list<T>::iterator updateElement(typename std::list<T>::iterator old, Access& access){
+        ram.erase(old);
+
+        ram.push_back(access.pageRef);
+        return std::prev(ram.end());
+    }
 
 };

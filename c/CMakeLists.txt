@@ -9,11 +9,11 @@ add_library(algos
         algos/lruStackDist.cpp
         )
 add_executable(evalAccessTable evalAccessTable/evalAccessTable.cpp )
+target_compile_options(evalAccessTable PRIVATE -Werror -Wall -Wextra)
 
 
 add_executable(test test/test.cpp)
 
 target_link_libraries(evalAccessTable algos)
 
-add_subdirectory(Boost_Test
-        )
+add_subdirectory(Boost_Test)

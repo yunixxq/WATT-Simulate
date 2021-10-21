@@ -5,41 +5,35 @@
 #include "EvictStrategy.hpp"
 #include <random>
 #include <list>
+#include <unordered_set>
 
 using namespace std;
 
 template<int K, int pos_start=0>
-struct LFU_K_ALL: public EvictStrategyContainer<list<pair<PID, list<RefTime>>>> {
-    unordered_map<PID, std::list<pair<PID, list<RefTime>>>::iterator> hash_for_list;
+struct LFU_K_ALL: public EvictStrategyContainer<std::unordered_set<PID>> {
+    unordered_map<PID, list<RefTime>> history;
     void access(Access& access) override{
-        list<RefTime> hist;
-        if(in_ram[access.pageRef]) {
-            hist = std::move(hash_for_list[access.pageRef]->second);
-            ram.erase(hash_for_list[access.pageRef]);
-        }
+        list<RefTime>& hist = history[access.pageRef];
         hist.push_front(access.pos);
         if(hist.size() > K){
             hist.resize(K);
         }
-        ram.push_back(std::make_pair(access.pageRef, hist));
-        hash_for_list[access.pageRef] = std::prev(ram.end());
-        assert(*hash_for_list[access.pageRef]->second.begin() == access.pos);
+        ram.insert(access.pageRef);
+        assert(*history[access.pageRef].begin() == access.pos);
     };
     PID evictOne(RefTime curr_time) override{
-        list<pair<PID, list<RefTime>>>::iterator candidate = ram.begin(), runner = ram.begin();
-        double candidate_freq = get_frequency(candidate->second, curr_time);
-
-        while(runner!= ram.end()){
-            double runner_freq = get_frequency(runner->second, curr_time);
+        PID candidate = *ram.begin();
+        double candidate_freq = get_frequency(history[candidate], curr_time);
+        for(PID runner: ram){
+            double runner_freq = get_frequency(history[runner], curr_time);
             if(runner_freq < candidate_freq){
                 candidate = runner;
                 candidate_freq = runner_freq;
             }
-            runner++;
         }
-        PID pid = candidate->first;
+        PID pid = candidate;
         ram.erase(candidate);
-        hash_for_list.erase(pid);
+        history.erase(pid);
         return pid;
     }
     static double get_frequency(list<RefTime>& candidate, RefTime curr_time){
@@ -47,8 +41,12 @@ struct LFU_K_ALL: public EvictStrategyContainer<list<pair<PID, list<RefTime>>>> 
         double best_freq = 0;
         for(auto time: candidate){
             int age = curr_time - time;
-            if(pos > best_freq * age ){
-                best_freq = pos/(double)age;
+            double new_freq = pos/(double)age;
+            if(pos == 0){
+                new_freq = 0.1/age;
+            }
+            if(new_freq > best_freq){
+                best_freq = new_freq;
             }
             pos++;
         }
