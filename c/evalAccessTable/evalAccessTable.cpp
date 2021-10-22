@@ -33,24 +33,34 @@ class EvalAccessTable {
 
 public:
     EvalAccessTable(const std::string filename, const std::string out_dir): filename(filename), output_dir(out_dir){
-        runFromFilename();
+        bool test = false;
+        bool full_run = true;
+        if(test) {
+            runFromFilename(true, true);
+        }else if (full_run){
+            runFromFilename(false, true);
+        }else{
+            runFromFilename();
+        }
+
     };
 private:
-    void runFromFilename() {
-        bool only_new=false;
-        bool ignore_old=false;
-        bool full_run=true;
+    void runFromFilename(bool only_new = false, bool ignore_old=false, bool full_run= true, bool run_slow=false) {
         getDataFile();
         createLists(ignore_old); // this runs "lru" (lru_stack_trace)
         if(!only_new) {
             runAlgorithm<Random>("random");
             runAlgorithm<OPT>("opt");
             if (full_run) {
-                runAlgorithm<OPT2>("opt2");
+                if(run_slow){
+                    runAlgorithm<OPT2>("opt2");
+                }
                 runAlgorithm<OPT3>("opt3");
                 runAlgorithm<LRU>("lru_alt");
                 runAlgorithm<LRU1>("lru_alt1");
-                runAlgorithm<LRU2>("lru_alt2");
+                if(run_slow){
+                    runAlgorithm<LRU2>("lru_alt2");
+                }
                 runAlgorithm<LRU2a>("lru_alt2a");
                 runAlgorithm<LRU2b>("lru_alt2b");
                 runAlgorithm<LRU3>("lru_alt3");
@@ -59,7 +69,17 @@ private:
                 runAlgorithm<CF_LRU<70>>("cf_lru70");
                 runAlgorithm<CF_LRU<80>>("cf_lru80");
                 runAlgorithm<CF_LRU<90>>("cf_lru90");
-                runAlgorithm<CF_LRU<100>>("cf_lru100");
+                if(run_slow){
+                    runAlgorithm<CF_LRU<100>>("cf_lru100");
+                }
+                runAlgorithm<LFU_K_ALL_alt<1>>("lfu_k2_01");
+                runAlgorithm<LFU_K_ALL_alt<2>>("lfu_k2_02");
+                runAlgorithm<LFU_K_ALL_alt<10>>("lfu_k2_10");
+                runAlgorithm<LFU_K_ALL_alt<20>>("lfu_k2_20");
+                runAlgorithm<LRU_K_ALL_alt<1>>("lru_k2_01");
+                runAlgorithm<LRU_K_ALL_alt<2>>("lru_k2_02");
+                runAlgorithm<LRU_K_ALL_alt<10>>("lru_k2_10");
+                runAlgorithm<LRU_K_ALL_alt<20>>("lru_k2_20");
             }
             runAlgorithm<CF_LRU<30>>("cf_lru30");
             runAlgorithm<CF_LRU<40>>("cf_lru40");
@@ -71,7 +91,29 @@ private:
             runAlgorithm<LFU_K_ALL<2>>("lfu_k_02");
             runAlgorithm<LFU_K_ALL<10>>("lfu_k_10");
             runAlgorithm<LFU_K_ALL<20>>("lfu_k_20");
+            runAlgorithm<LFU_K_ALL<100>>("lfu_k_100");
+            runAlgorithm<LRU_K_ALL<1>>("lru_k_01");
+            runAlgorithm<LRU_K_ALL<2>>("lru_k_02");
+            runAlgorithm<LRU_K_ALL<10>>("lru_k_10");
+            runAlgorithm<LRU_K_ALL<20>>("lru_k_20");
         }
+        runAlgorithm<LFU_K_ALL<1>>("lfu_k_01");
+        runAlgorithm<LFU_K_ALL<2>>("lfu_k_02");
+        runAlgorithm<LFU_K_ALL<10>>("lfu_k_10");
+        runAlgorithm<LFU_K_ALL<20>>("lfu_k_20");
+        runAlgorithm<LFU_K_ALLZ<>>("lfu_k01_z0", {1, 0});
+        runAlgorithm<LFU_K_ALLZ<>>("lfu_k02_z0", {2, 0});
+        runAlgorithm<LFU_K_ALLZ<>>("lfu_k10_z0", {10, 0});
+        runAlgorithm<LFU_K_ALLZ<>>("lfu_k20_z0", {20, 0});
+        runAlgorithm<LFU_K_ALLZ<>>("lfu_k01_z10", {1, 10});
+        runAlgorithm<LFU_K_ALLZ<>>("lfu_k02_z10", {2, 10});
+        runAlgorithm<LFU_K_ALLZ<>>("lfu_k10_z10", {10, 10});
+        runAlgorithm<LFU_K_ALLZ<>>("lfu_k20_z10", {20, 10});
+        runAlgorithm<LFU_K_ALLZ<>>("lfu_k01_z100", {1, 100});
+        runAlgorithm<LFU_K_ALLZ<>>("lfu_k02_z100", {2, 100});
+        runAlgorithm<LFU_K_ALLZ<>>("lfu_k10_z100", {10, 100});
+        runAlgorithm<LFU_K_ALLZ<>>("lfu_k20_z100", {20, 100});
+
         printToFile();
     }
 
@@ -81,14 +123,14 @@ private:
     }
 
     template<class  executor>
-    void runAlgorithm(const string &name) {
+    void runAlgorithm(const string &name, std::vector<int> args = {}) {
         if (y_read_list.find(name) == y_read_list.end()) {
             std::cout << name << std::endl;
             auto t1 = std::chrono::high_resolution_clock::now();
             if constexpr(std::is_base_of<EvictStrategy, executor>::value) {
-                runParallelEvictStrategy<executor>(data, y_read_list["X"], y_read_list[name], y_write_list[name]);
+                runParallelEvictStrategy<executor>(data, y_read_list["X"], y_read_list[name], y_write_list[name], args);
             } else{
-                executor().evaluateRamList(data,y_read_list["X"], y_read_list[name], y_write_list[name]);
+                executor(args).evaluateRamList(data,y_read_list["X"], y_read_list[name], y_write_list[name]);
             }
             printToFile();
 
@@ -101,19 +143,19 @@ private:
 
     template<class executor>
     static void runParallelEvictStrategy(std::vector<Access> &data, std::vector<RamSize> &x_list, std::vector<uInt> &read_list,
-                                  std::vector<uInt> &write_list){
+                                  std::vector<uInt> &write_list, std::vector<int> args){
         static_assert(std::is_base_of<EvictStrategy, executor>::value);
         bool parallel=true;
         if(!parallel){
-            executor().evaluateRamList(data, x_list, read_list, write_list);
+            executor(args).evaluateRamList(data, x_list, read_list, write_list);
         }else{
             std::vector<std::future<pair<uInt, uInt>>> pairs;
             for_each(
                     x_list.begin(),
                     x_list.end(),
                     [&](uInt ram_size){
-                        pairs.push_back(async([ram_size, &data](){
-                            pair<uInt, uInt> pair = executor().evaluateOne(data, ram_size);
+                        pairs.push_back(async([ram_size, args, &data](){
+                            pair<uInt, uInt> pair = executor(args).evaluateOne(data, ram_size);
                             return pair;
                         }));
                     }

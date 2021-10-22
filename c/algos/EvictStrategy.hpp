@@ -168,7 +168,7 @@ template<int K>
 class EvictStrategyContainerHistory: public EvictStrategyContainer<std::unordered_map<PID, std::list<RefTime>>>{
 using upper = EvictStrategyContainer<std::unordered_map<PID, std::list<RefTime>>>;
 public:
-    EvictStrategyContainerHistory(va_list, int): upper() {}
+    EvictStrategyContainerHistory(StrategyParam): upper() {}
 protected:
     void reInit(RamSize ram_size) override{
         upper::reInit(ram_size);
@@ -209,12 +209,16 @@ protected:
     };
 };
 
-template<int K, int Z>
 class EvictStrategyContainerKeepHistory: public EvictStrategyContainer<std::unordered_map<PID, std::list<RefTime>>>{
     using upper = EvictStrategyContainer<std::unordered_map<PID, std::list<RefTime>>>;
 public:
-    EvictStrategyContainerKeepHistory(va_list, int): upper() {}
+    EvictStrategyContainerKeepHistory(std::vector<int> used): upper() {
+        assert(used.size() >= 2);
+        K = used[0];
+        Z = used[1];
+    }
 protected:
+    int K, Z;
     std::unordered_map<PID, std::pair<std::list<PID>::iterator ,std::list<RefTime>>> out_of_mem_history;
     std::list<PID> out_of_mem_order;
     void reInit(RamSize ram_size) override{
@@ -233,7 +237,7 @@ protected:
         }
         std::   list<RefTime>& hist = ram[access.pageRef];
         hist.push_front(access.pos);
-        if(hist.size() > K){
+        if(hist.size() > (uInt) K){
             hist.resize(K);
         }
         assert(*hist.begin() == access.pos);
@@ -247,7 +251,7 @@ protected:
         element.first = out_of_mem_order.begin();
         element.second = std::move(ram[pid]);
         ram.erase(candidate);
-        while(out_of_mem_order.size() > Z){
+        while(out_of_mem_order.size() > (uInt) Z){
             PID last = out_of_mem_order.back();
             out_of_mem_history.erase(last);
             out_of_mem_order.pop_back();

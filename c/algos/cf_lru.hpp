@@ -8,7 +8,7 @@
 template<int clean_percentage>
 struct CF_LRU: public EvictStrategy {
     using upper = EvictStrategy;
-    CF_LRU(va_list, int): upper() {}
+    CF_LRU(StrategyParam): upper() {}
 
     uInt window_length;
     std::unordered_map<PID, std::list<Access*>::iterator> hash_for_list;

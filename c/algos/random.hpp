@@ -13,7 +13,7 @@
 struct Random: public EvictStrategyContainer<std::unordered_map<unsigned int, bool>> {
 public:
     using upper = EvictStrategyContainer<std::unordered_map<unsigned int, bool>>;
-    Random(va_list, int): upper(){}
+    Random(StrategyParam): upper(){}
 private:
     std::uniform_int_distribution<int> ram_distro;
     std::default_random_engine ran_engine;

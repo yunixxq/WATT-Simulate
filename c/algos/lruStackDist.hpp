@@ -11,7 +11,7 @@
 
 struct LruStackDist
 {
-    LruStackDist(va_list, int) {}
+    LruStackDist(StrategyParam) {}
     void evaluateRamList(const std::vector<Access> &data, std::vector<RamSize> &x_list,
                          std::vector<uInt> &read_list,
                          std::vector<uInt> &write_list);

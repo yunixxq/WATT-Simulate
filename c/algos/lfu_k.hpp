@@ -13,7 +13,7 @@ double get_frequency(std::list<RefTime>& candidate, RefTime curr_time, int pos_s
 template<int K, int pos_start=0>
 struct LFU_K_ALL: public EvictStrategyContainerHistory<K>{
     using upper = EvictStrategyContainerHistory<K>;
-    LFU_K_ALL(va_list unused, int n): upper(unused, n) {}
+    LFU_K_ALL(StrategyParam unused): upper(unused) {}
 
     void chooseEviction(RefTime curr_time, std::unordered_map<PID, std::list<RefTime>>::iterator& candidate, std::unordered_map<PID, std::list<RefTime>>::iterator end) override{
         std::unordered_map<PID, std::list<RefTime>>::iterator runner = candidate;
@@ -29,10 +29,10 @@ struct LFU_K_ALL: public EvictStrategyContainerHistory<K>{
     }
 };
 
-template<int K, int Z, int pos_start=0>
-struct LFU_K_ALLZ: public EvictStrategyContainerKeepHistory<K, Z>{
-    using upper = EvictStrategyContainerKeepHistory<K, Z>;
-    LFU_K_ALLZ(va_list unused, int n): upper(unused, n) {}
+template<int pos_start=0>
+struct LFU_K_ALLZ: public EvictStrategyContainerKeepHistory{
+    using upper = EvictStrategyContainerKeepHistory;
+    LFU_K_ALLZ(StrategyParam unused): upper(unused) {}
 
     void chooseEviction(RefTime curr_time, std::unordered_map<PID, std::list<RefTime>>::iterator& candidate, std::unordered_map<PID, std::list<RefTime>>::iterator end) override{
         std::unordered_map<PID, std::list<RefTime>>::iterator runner = candidate;
@@ -51,7 +51,7 @@ struct LFU_K_ALLZ: public EvictStrategyContainerKeepHistory<K, Z>{
 template<int K, int pos_start=0>
 struct LFU_K_ALL_alt: public EvictStrategyContainer<std::unordered_set<PID>> {
     using upper = EvictStrategyContainer<std::unordered_set<PID>>;
-    LFU_K_ALL_alt(va_list, int): upper() {}
+    LFU_K_ALL_alt(StrategyParam): upper() {}
 
     std::unordered_map<PID, std::list<RefTime>> history;
     void access(Access& access) override{

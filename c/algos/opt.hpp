@@ -7,7 +7,7 @@
 
 struct OPT: public EvictStrategyContainer<std::unordered_map<PID, RefTime>> {
     using upper = EvictStrategyContainer<std::unordered_map<PID, RefTime>>;
-    OPT(va_list, int): upper() {}
+    OPT(StrategyParam): upper() {}
 
     void access(Access& access) override{
         ram[access.pageRef]=access.nextRef;
@@ -22,7 +22,7 @@ struct OPT: public EvictStrategyContainer<std::unordered_map<PID, RefTime>> {
 
 struct OPT2: public EvictStrategyContainer<std::vector<std::pair<PID, RefTime>>> {
     using upper = EvictStrategyContainer<std::vector<std::pair<PID, RefTime>>>;
-    OPT2(va_list, int): upper() {}
+    OPT2(StrategyParam): upper() {}
 
     void access(Access& access) override{
         PID pid = access.pageRef;
@@ -43,7 +43,7 @@ struct OPT2: public EvictStrategyContainer<std::vector<std::pair<PID, RefTime>>>
 
 struct OPT3: public EvictStrategyContainer<std::map<RefTime, PID>> {
     using upper = EvictStrategyContainer<std::map<RefTime, PID>>;
-    OPT3(va_list, int): upper() {}
+    OPT3(StrategyParam): upper() {}
 
     void access(Access& access) override{
         ram.erase(access.pos);

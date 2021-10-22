@@ -11,6 +11,7 @@ using uInt = unsigned int;
 using PID = uInt;
 using RefTime = int;
 using RamSize = uInt;
+using StrategyParam = std::vector<int>;
 
 struct Access {
     PID pageRef=0;

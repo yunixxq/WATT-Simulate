@@ -11,7 +11,7 @@ static bool keepFirst(const std::list<RefTime>& l, const std::list<RefTime>& r);
 template<int K>
 struct LRU_K_ALL: public EvictStrategyContainerHistory<K>{
     using upper = EvictStrategyContainerHistory<K>;
-    LRU_K_ALL(va_list unused, int n): upper(unused, n) {}
+    LRU_K_ALL(StrategyParam unused): upper(unused) {}
 
 
     void chooseEviction(RefTime, std::unordered_map<PID, std::list<RefTime>>::iterator& candidate, std::unordered_map<PID, std::list<RefTime>>::iterator end) override{
@@ -28,7 +28,7 @@ struct LRU_K_ALL: public EvictStrategyContainerHistory<K>{
 template<int K>
 struct LRU_K_ALL_alt: public EvictStrategyContainer<std::unordered_map<PID, std::list<RefTime>>> {
     using upper = EvictStrategyContainer<std::unordered_map<PID, std::list<RefTime>>>;
-    LRU_K_ALL_alt(va_list, int): upper() {}
+    LRU_K_ALL_alt(StrategyParam): upper() {}
 
     void access(Access& access) override{
 std::   list<RefTime>& hist = ram[access.pageRef];
