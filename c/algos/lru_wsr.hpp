@@ -6,11 +6,12 @@
 #include <random>
 #include <list>
 
-using namespace std;
-
 struct LRU_WSR: public EvictStrategy {
-    unordered_map<PID, std::list<tuple<PID, bool>>::iterator> hash_for_list;
-    std::list<tuple<PID, bool>> ram_list;
+    using upper = EvictStrategy;
+    LRU_WSR(va_list, int): upper() {}
+
+    std::unordered_map<PID, std::list<std::tuple<PID, bool>>::iterator> hash_for_list;
+    std::list<std::tuple<PID, bool>> ram_list;
     void reInit(RamSize ram_size) override{
         ram_list.clear();
         hash_for_list.clear();

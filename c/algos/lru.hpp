@@ -6,10 +6,10 @@
 #include <random>
 #include <list>
 
-using namespace std;
-
 // Unordered map<PID> and search min;
-struct LRU: public EvictStrategyContainer<unordered_map<PID, RefTime>> {
+struct LRU: public EvictStrategyContainer<std::unordered_map<PID, RefTime>> {
+    using upper = EvictStrategyContainer<std::unordered_map<PID, RefTime>>;
+    LRU(va_list, int): upper() {}
 
     void access(Access& access) override{
         ram[access.pageRef]=access.pos;
@@ -23,7 +23,9 @@ struct LRU: public EvictStrategyContainer<unordered_map<PID, RefTime>> {
 };
 
 // Unordered map<Access> and search min
-struct LRU1: public EvictStrategyContainer<unordered_map<PID, Access>> {
+struct LRU1: public EvictStrategyContainer<std::unordered_map<PID, Access>> {
+    using upper = EvictStrategyContainer<std::unordered_map<PID, Access>>;
+    LRU1(va_list, int): upper() {}
 
     void access(Access& access) override{
         ram[access.pageRef]=access;
@@ -39,7 +41,9 @@ struct LRU1: public EvictStrategyContainer<unordered_map<PID, Access>> {
 };
 
 // Vector and push back / get first (sloooow)
-struct LRU2: public EvictStrategyContainer<vector<Access>> {
+struct LRU2: public EvictStrategyContainer<std::vector<Access>> {
+    using upper = EvictStrategyContainer<std::vector<Access>>;
+    LRU2(va_list, int): upper() {}
 
     void access(Access& access) override{
         PID pid = access.pageRef;
@@ -58,7 +62,10 @@ struct LRU2: public EvictStrategyContainer<vector<Access>> {
 
 // list and push back / get first
 struct LRU2a: public EvictStrategyContainer<std::list<PID>>{
-    unordered_map<PID, std::list<PID>::iterator> hash_for_list;
+    using upper = EvictStrategyContainer<std::list<PID>>;
+    LRU2a(va_list, int): upper() {}
+
+    std::unordered_map<PID, std::list<PID>::iterator> hash_for_list;
     void reInit(RamSize ram_size) override{
         hash_for_list.clear();
         EvictStrategyContainer::reInit(ram_size);
@@ -81,11 +88,14 @@ struct LRU2a: public EvictStrategyContainer<std::list<PID>>{
 
 // list and push back / get first with hashmap for easy finding
 struct LRU2b: public EvictStrategyListHash<PID> {
-
+    using upper = EvictStrategyListHash<PID>;
+    LRU2b(va_list, int): upper() {}
 };
 
 // Map by reftime (autosort), getfirst
-struct LRU3: public EvictStrategyContainer<map<RefTime, PID >> {
+struct LRU3: public EvictStrategyContainer<std::map<RefTime, PID >> {
+    using upper = EvictStrategyContainer<std::map<RefTime, PID >>;
+    LRU3(va_list, int): upper() {}
 
     void access(Access& access) override{
         ram.erase(access.lastRef);
@@ -99,4 +109,3 @@ struct LRU3: public EvictStrategyContainer<map<RefTime, PID >> {
 
     }
 };
-

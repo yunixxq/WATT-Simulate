@@ -4,12 +4,14 @@
 
 #include "EvictStrategy.hpp"
 #include <random>
-using namespace std;
 
 template<int clean_percentage>
 struct CF_LRU: public EvictStrategy {
+    using upper = EvictStrategy;
+    CF_LRU(va_list, int): upper() {}
+
     uInt window_length;
-    unordered_map<PID, std::list<Access*>::iterator> hash_for_list;
+    std::unordered_map<PID, std::list<Access*>::iterator> hash_for_list;
     std::list<Access*> ram_list;
     void reInit(RamSize ram_size) override{
         ram_list.clear();

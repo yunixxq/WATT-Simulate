@@ -9,15 +9,18 @@
 
 #include "EvictStrategy.hpp"
 #include <random>
-using namespace std;
 
-struct Random: public EvictStrategyContainer<unordered_map<unsigned int, bool>> {
-    uniform_int_distribution<int> ram_distro;
-    default_random_engine ran_engine;
+struct Random: public EvictStrategyContainer<std::unordered_map<unsigned int, bool>> {
+public:
+    using upper = EvictStrategyContainer<std::unordered_map<unsigned int, bool>>;
+    Random(va_list, int): upper(){}
+private:
+    std::uniform_int_distribution<int> ram_distro;
+    std::default_random_engine ran_engine;
 
     void reInit(RamSize ram_size) override{
         EvictStrategyContainer::reInit(ram_size);
-        ram_distro = uniform_int_distribution<int>(0, ram_size-1);
+        ram_distro = std::uniform_int_distribution<int>(0, ram_size-1);
     }
 
     void access(Access& access) override{
