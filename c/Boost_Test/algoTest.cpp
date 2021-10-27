@@ -5,36 +5,50 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
+#include "../evalAccessTable/evalAccessTable.hpp"
+#include "../algos/lru.hpp"
+#include "../algos/lru_k.hpp"
 #include "../algos/lfu_k.hpp"
 
-BOOST_AUTO_TEST_SUITE(LFU_K_suite)
-    BOOST_AUTO_TEST_CASE(frequencys){
-        std::vector<std::list<RefTime>> testers;
-        testers.push_back({1});
-        testers.push_back({2,1});
-        testers.push_back({3,2,1});
-        testers.push_back({4,3,2,1});
-        std::vector<double> result0 = {0, 1/(double)5, 2/(double)5, 3/(double)5};
-        std::vector<double> result1 = {1/(double)5, 2/(double)5, 3/(double)5, 4/(double)5};
-        std::vector<double> result2 = {2/(double)5, 3/(double)5, 4/(double)5, 5/(double)5};
+EvalAccessTable init(){
+    std::string file = "./../tpcc_64_-5.csv";
+    EvalAccessTable test = EvalAccessTable(file, "/var/tmp", false);
+    test.init(false);
+    return std::move(test);
+}
 
-        std::vector K_0 ={LFU_K_ALL<0,0>::get_frequency, LFU_K_ALL<1,0>::get_frequency, LFU_K_ALL<2,0>::get_frequency};
-        std::vector K_1 ={LFU_K_ALL<0,1>::get_frequency, LFU_K_ALL<1,1>::get_frequency, LFU_K_ALL<2,1>::get_frequency};
-        std::vector K_2 ={LFU_K_ALL<0,2>::get_frequency, LFU_K_ALL<1,2>::get_frequency, LFU_K_ALL<2,2>::get_frequency};
-        for(int i=0; i<4; i++){
-            double freq;
-            for(auto algo: K_0) {
-                freq = algo(testers[i], 6);
-                BOOST_CHECK_EQUAL(freq, result0[i]);
-            }
-            for(auto algo: K_1) {
-                freq = algo(testers[i], 6);
-                BOOST_CHECK_EQUAL(freq, result1[i]);
-            }
-            for(auto algo: K_2) {
-                freq = algo(testers[i], 6);
-                BOOST_CHECK_EQUAL(freq, result2[i]);
-            }
-        }
+template<class algo>
+bool compareTwoAlgos(EvalAccessTable& instance, std::vector<uInt>& reads, std::vector<uInt>& writes, std::string name, std::vector<int> args = {}){
+    instance.runAlgorithm<algo>(name, args);
+    return (instance.getReads(name) == reads) && (instance.getWrites(name) == writes);
+
+}
+
+BOOST_AUTO_TEST_SUITE(compare_algo)
+    BOOST_AUTO_TEST_CASE(lru) {
+        EvalAccessTable test = init();
+
+        std::vector<uInt> lru_reads, lru_writes;
+        lru_reads = test.getReads("lru");
+        lru_writes = test.getWrites("lru");
+
+        BOOST_TEST(compareTwoAlgos<LRU>(test, lru_reads, lru_writes, "lru_0"));
+        BOOST_TEST(compareTwoAlgos<LRU1>(test, lru_reads, lru_writes, "lru_1"));
+        BOOST_TEST(compareTwoAlgos<LRU2>(test, lru_reads, lru_writes, "lru_2"));
+        BOOST_TEST(compareTwoAlgos<LRU2a>(test, lru_reads, lru_writes, "lru_2a"));
+        BOOST_TEST(compareTwoAlgos<LRU2b>(test, lru_reads, lru_writes, "lru_2b"));
+        BOOST_TEST(compareTwoAlgos<LRU3>(test, lru_reads, lru_writes, "lru_3"));
+    }
+    BOOST_AUTO_TEST_CASE(lru_oter) {
+        EvalAccessTable test = init();
+
+        std::vector<uInt> lru_reads, lru_writes;
+        lru_reads = test.getReads("lru");
+        lru_writes = test.getWrites("lru");
+        BOOST_TEST(compareTwoAlgos<LRU_K>(test, lru_reads, lru_writes, "lru_K_0", {1, 0}));
+        BOOST_TEST(compareTwoAlgos<LRU_K_alt>(test, lru_reads, lru_writes, "lru_K2_0", {1}));
+        // BOOST_TEST(compareTwoAlgos<LFU_K<>>(test, lru_reads, lru_writes, "lfu_K_0", {1}));
+        // BOOST_TEST(compareTwoAlgos<LFU_K_Z<>>(test, lru_reads, lru_writes, "lfu_K_0", {1, 0}));
+
     }
 BOOST_AUTO_TEST_SUITE_END()

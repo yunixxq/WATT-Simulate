@@ -3,6 +3,8 @@
 //
 #pragma once
 
+#include <vector>
+
 #ifndef C_GENERAL_HPP
 #define C_GENERAL_HPP
 

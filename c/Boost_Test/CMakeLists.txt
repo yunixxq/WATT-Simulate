@@ -3,6 +3,5 @@ find_package (Boost REQUIRED COMPONENTS unit_test_framework)
 
 include_directories (${Boost_INCLUDE_DIRS})
 
-add_executable (Algo_tests algoTest.cpp)
+add_executable (Algo_tests algoTest.cpp ../algos/lruStackDist.cpp ../evalAccessTable/evalAccessTable.cpp ../algos/lfu_k.cpp)
 target_link_libraries (Algo_tests ${Boost_LIBRARIES})
-target_link_libraries (Algo_tests algos)

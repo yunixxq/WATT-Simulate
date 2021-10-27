@@ -8,10 +8,9 @@
 
 static bool keepFirst(const std::list<RefTime>& l, const std::list<RefTime>& r);
 
-template<int K>
-struct LRU_K_ALL: public EvictStrategyContainerHistory<K>{
-    using upper = EvictStrategyContainerHistory<K>;
-    LRU_K_ALL(StrategyParam unused): upper(unused) {}
+struct LRU_K: public EvictStrategyContainerKeepHistory{
+    using upper = EvictStrategyContainerKeepHistory;
+    LRU_K(StrategyParam unused): upper(unused) {}
 
 
     void chooseEviction(RefTime, std::unordered_map<PID, std::list<RefTime>>::iterator& candidate, std::unordered_map<PID, std::list<RefTime>>::iterator end) override{
@@ -25,10 +24,13 @@ struct LRU_K_ALL: public EvictStrategyContainerHistory<K>{
     }
 };
 
-template<int K>
-struct LRU_K_ALL_alt: public EvictStrategyContainer<std::unordered_map<PID, std::list<RefTime>>> {
+struct LRU_K_alt: public EvictStrategyContainer<std::unordered_map<PID, std::list<RefTime>>> {
     using upper = EvictStrategyContainer<std::unordered_map<PID, std::list<RefTime>>>;
-    LRU_K_ALL_alt(StrategyParam): upper() {}
+    LRU_K_alt(std::vector<int> used): upper(){
+        assert(used.size() >= 1);
+        K = (uInt) used[0];
+    }
+    uInt K;
 
     void access(Access& access) override{
 std::   list<RefTime>& hist = ram[access.pageRef];

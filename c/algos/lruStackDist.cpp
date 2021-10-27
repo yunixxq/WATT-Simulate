@@ -18,7 +18,7 @@ void LruStackDist::evaluateRamList(const std::vector<Access> &data, std::vector<
         // read
         // find pos;
         auto elem = std::find(lruStack.begin(), lruStack.end(), access.pageRef);
-        int pos = 0;
+        uInt pos = 0;
         if (elem != lruStack.end()) {
             pos = elem - lruStack.begin() + 1;
             lruStack.erase(elem);
@@ -41,7 +41,7 @@ void LruStackDist::evaluateRamList(const std::vector<Access> &data, std::vector<
         if (dirty_depth.size() <= access.pageRef) {
             dirty_depth.resize(access.pageRef + 1, 0); // clean
         }
-        int prev_dirty_depth = dirty_depth[access.pageRef];
+        uInt prev_dirty_depth = dirty_depth[access.pageRef];
         // is fresh write? => init
         // has no prev dirty_depth: keep 0;
         // else: move down in stack;
@@ -79,15 +79,15 @@ void LruStackDist::evaluateRamList(const std::vector<Access> &data, std::vector<
 
     } while (ram_size < pages);
     // sum it up, buttercup!
-    for (auto &ram_size: x_list) {
+    for (auto &ram_sizes: x_list) {
         int misses = 0, evicts = 0;
-        for (int i = 0; i < lruStackDist.size(); i++) {
-            if (i > ram_size || i <= 0) {
+        for (uInt i = 0; i < lruStackDist.size(); i++) {
+            if (i > ram_sizes || i== 0) {
                 misses += lruStackDist[i];
             }
         }
-        for (int i = 0; i < lru_stack_dirty.size(); i++) {
-            if (i > ram_size || i <= 0) {
+        for (uInt i = 0; i < lru_stack_dirty.size(); i++) {
+            if (i > ram_sizes || i == 0) {
                 evicts += lru_stack_dirty[i];
             }
         }
