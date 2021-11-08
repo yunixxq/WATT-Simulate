@@ -81,16 +81,13 @@ def do_run(in_file, out_file):
     assert(len(cleanUnfixes + dirtyUnfixes) == len(unfixes))
     
     generateOutput(unfixes, out_file)
-    #print("Fixes: "+ str(len(fixes)))
-    #print("Unfixes: "+ str(len(unfixes)))
-    #print("UnfixesClean: "+ str(len(cleanUnfixes)))
-    #print("UnfixesDirty: "+ str(len(dirtyUnfixes)))
-    #print("Refixes: "+ str(len(refixes)))
-    #print ("fix + refix: " + str(len(fixes) + len(refixes)))
-    #print("Pages: " + str(len(pages)))
+    if False:
+        print("Fixes: "+ str(len(fixes)))
+        print("Unfixes: "+ str(len(unfixes)))
+        print("UnfixesClean: "+ str(len(cleanUnfixes)))
+        print("UnfixesDirty: "+ str(len(dirtyUnfixes)))
+        print("Refixes: "+ str(len(refixes)))
+        print ("fix + refix: " + str(len(fixes) + len(refixes)))
+        print("Pages: " + str(len(pages)))
 
-    #df = {"pages": pids, "is_write": is_write}
-    #df = pandas.DataFrame(data=df)
-    #df.to_csv(out_file, index=False)
-
-do_run("tpce-1", "test.csv")
+do_run("tpce-3", "test.csv")

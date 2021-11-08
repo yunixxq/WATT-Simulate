@@ -43,4 +43,4 @@ def do_run(in_file, out_file):
     df = pandas.DataFrame(data=df)
     df.to_csv(out_file, index=False)
 
-do_run("10000011.txt", "out.csv")
+do_run("traces/test.txt", "tpcc_64_-5.csv")
