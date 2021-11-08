@@ -8,9 +8,9 @@
 
 static bool keepFirst(const std::list<RefTime>& l, const std::list<RefTime>& r);
 
-struct LRU_K: public EvictStrategyContainerKeepHistory{
+struct LRU_K_Z: public EvictStrategyContainerKeepHistory{
     using upper = EvictStrategyContainerKeepHistory;
-    LRU_K(StrategyParam unused): upper(unused) {}
+    LRU_K_Z(StrategyParam unused): upper(unused) {}
 
 
     void chooseEviction(RefTime, std::unordered_map<PID, std::list<RefTime>>::iterator& candidate, std::unordered_map<PID, std::list<RefTime>>::iterator end) override{

@@ -31,14 +31,14 @@ EvalAccessTable::EvalAccessTable(std::string  filename, std::string  out_dir, bo
         if(!do_run){
             return;
         }
-        bool test = true;
+        bool test = false;
         bool full_run = false;
         if(test) {
             runFromFilename(true, true);
         }else if (full_run){
             runFromFilename(false, true);
         }else{
-            runFromFilename();
+            runFromFilename(false, false, false, false);
         }
 
     };
@@ -74,14 +74,14 @@ void EvalAccessTable::runFromFilename(bool only_new, bool ignore_old, bool full_
             if(run_slow){
                 runAlgorithm<CF_LRU<100>>("cf_lru100");
             }
-            runAlgorithm<LFU_K_alt<>>("lfu_k2_01", {1});
-            runAlgorithm<LFU_K_alt<>>("lfu_k2_02", {2});
-            runAlgorithm<LFU_K_alt<>>("lfu_k2_10", {10});
-            runAlgorithm<LFU_K_alt<>>("lfu_k2_20", {20});
-            runAlgorithm<LRU_K_alt>("lru_k2_01", {1});
-            runAlgorithm<LRU_K_alt>("lru_k2_02", {2});
-            runAlgorithm<LRU_K_alt>("lru_k2_10", {10});
-            runAlgorithm<LRU_K_alt>("lru_k2_20", {20});
+            runAlgorithm<LFU_K_alt<>>("lfu_k_alt01", {1});
+            runAlgorithm<LFU_K_alt<>>("lfu_k_alt02", {2});
+            runAlgorithm<LFU_K_alt<>>("lfu_k_alt10", {10});
+            runAlgorithm<LFU_K_alt<>>("lfu_k_alt20", {20});
+            runAlgorithm<LRU_K_alt>("lru_k_alt01", {1});
+            runAlgorithm<LRU_K_alt>("lru_k_alt02", {2});
+            runAlgorithm<LRU_K_alt>("lru_k_alt10", {10});
+            runAlgorithm<LRU_K_alt>("lru_k_alt20", {20});
         }
         runAlgorithm<CF_LRU<30>>("cf_lru30");
         runAlgorithm<CF_LRU<40>>("cf_lru40");
@@ -96,7 +96,7 @@ void EvalAccessTable::runFromFilename(bool only_new, bool ignore_old, bool full_
         for(int z: {-20, -10, -2, 1, 10, 20, 100}){
             runAlgorithm<LFU_K_Z<>>("lfu_k" + std::to_string(k) + "_z" + std::to_string(z), {k, z});
             runAlgorithm<LFU_K_Z2<>>("lfu2_k" + std::to_string(k) + "_z" + std::to_string(z), {k, z});
-            runAlgorithm<LRU_K>("lru_k" + std::to_string(k) + "_z" + std::to_string(z), {k, z});
+            runAlgorithm<LRU_K_Z>("lru_k" + std::to_string(k) + "_z" + std::to_string(z), {k, z});
 
         }
     }
