@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <filesystem>
 #include "../algos/lruStackDist.hpp"
+#include "../algos/staticOpt.hpp"
 #include "../algos/random.hpp"
 #include "../algos/lru.hpp"
 #include "../algos/opt.hpp"
@@ -50,6 +51,7 @@ void EvalAccessTable::init(bool ignore_last_run){
 void EvalAccessTable::runFromFilename(bool only_new, bool ignore_old, bool full_run, bool run_slow) {
     init(ignore_old);
     runAlgorithm<OPT>("opt");
+    runAlgorithm<StaticOpt>("StaticOpt");
     if(!only_new) {
         runAlgorithm<Random>("random");
         runAlgorithm<OPT>("opt");
