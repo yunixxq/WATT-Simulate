@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import List, Tuple
 from make_graphs import plotGraph
+from functools import cmp_to_key
 
 class Executor(ABC):
 
@@ -294,13 +295,20 @@ class StaticOpt(Executor):
         accesses = {}
         writes = {}
         cost = {}
-        for pid in set(pidList):
-            accesses[pid] = pidList.count(pid)
-            writes[pid] = writeList.count(pid)
+        for (pid, next, write) in pidAndNextAndWrite:
+            if pid in accesses:
+                accesses[pid] +=1
+                if write:
+                    writes[pid] +=1
+            else:
+                accesses[pid] = 1
+                writes[pid] = 1 if write else 0
+        for pid in accesses:
             cost[pid] = accesses[pid] + writes[pid]*write_cost
-        pidByCost = sorted(cost, key=lambda x: -cost.get(x))
-        print("Static page ranking")
-        print(pidByCost)
+        compFunc = lambda a,b: b-a if cost[a] == cost[b] else cost[b] - cost[a]
+        pidByCost = sorted(cost, key=cmp_to_key(compFunc))
+        # print("Static page ranking")
+        #print(pidByCost)
         returner=[]
         for ramSize in ramSizes:
             pageMisses, dirtyEvicts = (0,0)
