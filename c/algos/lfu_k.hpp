@@ -75,9 +75,12 @@ struct LFU_K_Z2: public EvictStrategyContainerKeepHistoryWrites{
 template<int pos_start=0>
 struct LFU_K_Z_D1: public EvictStrategyContainerKeepHistory{
     using upper = EvictStrategyContainerKeepHistory;
-    LFU_K_Z_D1(StrategyParam unused): upper(unused) {}
+    LFU_K_Z_D1(std::vector<int> used): upper(used) {
+        assert(used.size() >= 3);
+        dirty_freq_factor = used[2] / 10.0;
+    }
 
-    double dirty_freq_factor = 1.2;
+    double dirty_freq_factor = 1.0;
 
     void chooseEviction(RefTime curr_time, std::unordered_map<PID, std::list<RefTime>>::iterator& candidate, std::unordered_map<PID, std::list<RefTime>>::iterator end) override{
         std::unordered_map<PID, std::list<RefTime>>::iterator runner = candidate;
