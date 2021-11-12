@@ -1,7 +1,7 @@
 #!/bin/python3
 
 import matplotlib.pyplot as plt
-import os, shutil, random, time, json, csv
+import os, shutil, random, time, json, csv, sys
 from joblib import Parallel, delayed
 import pandas
 
@@ -50,17 +50,14 @@ def getAccessFromFile(file):
     return zugriffe
 
 def generateOutput(unfixes, out_file):
-    print("GetPages")
     pages = list(set(map(getPidStr, unfixes)))
-    print("GeneratePageHash for " + str(len(pages)) + " pages")
+    print("Dataset contains " + str(len(pages)) + " pages")
+    print("Dataset contains " + str(len(unfixes)) + " unfixes")
     page_hash = {}
     for page in range(0, len(pages)):
         page_hash[pages[page]] = page
-    print("getPids")
     pids = list(map(lambda x: page_hash[getPidStr(x)], unfixes))
-    print("getWrites")
     is_write = list(map(lambda x: isUnfixDirty(x), unfixes))
-    print("writeDataframe")
     df = {"pages": pids, "is_write": is_write}
     df = pandas.DataFrame(data=df)
     df.to_csv(out_file, index=False)
@@ -77,7 +74,8 @@ def do_run(in_file, out_file):
     dirtyUnfixes = list(filter(lambda x: isUnfixDirty(x), lines))
     refixes = list(filter(lambda x: isRefix(x), lines))
 
-    assert(len(fixes + refixes) == len(unfixes))
+    if(len(fixes + refixes) != len(unfixes)):
+        print("Trace might be from broken run! not all fixed pages get unfixed")
     assert(len(cleanUnfixes + dirtyUnfixes) == len(unfixes))
     
     generateOutput(unfixes, out_file)
@@ -90,4 +88,11 @@ def do_run(in_file, out_file):
         print ("fix + refix: " + str(len(fixes) + len(refixes)))
         print("Pages: " + str(len(pages)))
 
-do_run("tpce-3", "test.csv")
+
+if __name__ == "__main__":
+    if len(sys.argv) ==3:
+        print("Converting: ", sys.argv[1], " to ", sys.argv[2])
+        do_run(sys.argv[1], sys.argv[2])
+    else:
+        print("Usage:")
+        print(sys.argv[0], " shore-kits-trace-in normalized-trace-out.csv")
