@@ -49,47 +49,42 @@ def getAccessFromFile(file):
     zugriffe = datei.readlines()
     return zugriffe
 
-def generateOutput(unfixes, out_file):
-    pages = list(set(map(getPidStr, unfixes)))
-    print("Dataset contains " + str(len(pages)) + " pages")
-    print("Dataset contains " + str(len(unfixes)) + " unfixes")
+def getUnfixesFromFile(file):
+    datei = open(file, "r")
+    zugriffe = datei.readlines()
+    unfixes = list(filter(lambda x: isUnfix(x), zugriffe))
+    pidsStrings = list(map(lambda x: getPidStr(x), unfixes))
+    is_write = list(map(lambda x: isUnfixDirty(x), unfixes))
+
+    return (pidsStrings, is_write)
+
+def generatePageHash(pageStrings):
+    pages = list(set(pageStrings))
     page_hash = {}
     for page in range(0, len(pages)):
         page_hash[pages[page]] = page
+    return page_hash
+
+def generateOutput(unfixes, out_file):
+    page_hash = generatePageHash(map(getPidStr, unfixes))
+
+    print("Dataset contains " + str(len(page_hash)) + " pages")
+    print("Dataset contains " + str(len(list(unfixes))) + " unfixes")
+
     pids = list(map(lambda x: page_hash[getPidStr(x)], unfixes))
     is_write = list(map(lambda x: isUnfixDirty(x), unfixes))
     df = {"pages": pids, "is_write": is_write}
     df = pandas.DataFrame(data=df)
     df.to_csv(out_file, index=False)
 
-    
 def do_run(in_file, out_file):
+    (pidStrings, is_write) = getUnfixesFromFile(in_file)
+    page_hash = generatePageHash(pidStrings)
 
-    lines = getAccessFromFile(in_file)
-    print(getErrors(lines)[:10])
-
-    unfixes = list(filter(lambda x: isUnfix(x), lines))
-
-    if len(lines) < 1000000:
-        fixes = list(filter(lambda x: isFix(x), lines))
-        cleanUnfixes = list(filter(lambda x: isUnfixClean(x), lines))
-        dirtyUnfixes = list(filter(lambda x: isUnfixDirty(x), lines))
-        refixes = list(filter(lambda x: isRefix(x), lines))
-        if(len(fixes + refixes) != len(unfixes)):
-            print("Trace might be from broken run! not all fixed pages get unfixed")
-        assert(len(cleanUnfixes + dirtyUnfixes) == len(unfixes))
-        
-    
-    generateOutput(unfixes, out_file)
-    if False:
-        print("Fixes: "+ str(len(fixes)))
-        print("Unfixes: "+ str(len(unfixes)))
-        print("UnfixesClean: "+ str(len(cleanUnfixes)))
-        print("UnfixesDirty: "+ str(len(dirtyUnfixes)))
-        print("Refixes: "+ str(len(refixes)))
-        print ("fix + refix: " + str(len(fixes) + len(refixes)))
-        print("Pages: " + str(len(pages)))
-
+    pids = list(map(lambda x: page_hash[x], pidStrings))
+    df = {"pages": pids, "is_write": is_write}
+    df = pandas.DataFrame(data=df)
+    df.to_csv(out_file, index=False)
 
 if __name__ == "__main__":
     if len(sys.argv) ==3:
