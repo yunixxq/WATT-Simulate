@@ -68,15 +68,17 @@ def do_run(in_file, out_file):
     lines = getAccessFromFile(in_file)
     print(getErrors(lines)[:10])
 
-    fixes = list(filter(lambda x: isFix(x), lines))
     unfixes = list(filter(lambda x: isUnfix(x), lines))
-    cleanUnfixes = list(filter(lambda x: isUnfixClean(x), lines))
-    dirtyUnfixes = list(filter(lambda x: isUnfixDirty(x), lines))
-    refixes = list(filter(lambda x: isRefix(x), lines))
 
-    if(len(fixes + refixes) != len(unfixes)):
-        print("Trace might be from broken run! not all fixed pages get unfixed")
-    assert(len(cleanUnfixes + dirtyUnfixes) == len(unfixes))
+    if len(lines) < 1000000:
+        fixes = list(filter(lambda x: isFix(x), lines))
+        cleanUnfixes = list(filter(lambda x: isUnfixClean(x), lines))
+        dirtyUnfixes = list(filter(lambda x: isUnfixDirty(x), lines))
+        refixes = list(filter(lambda x: isRefix(x), lines))
+        if(len(fixes + refixes) != len(unfixes)):
+            print("Trace might be from broken run! not all fixed pages get unfixed")
+        assert(len(cleanUnfixes + dirtyUnfixes) == len(unfixes))
+        
     
     generateOutput(unfixes, out_file)
     if False:
