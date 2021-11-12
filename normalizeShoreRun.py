@@ -51,11 +51,9 @@ def getAccessFromFile(file):
 
 def getUnfixesFromFile(file):
     datei = open(file, "r")
-    zugriffe = datei.readlines()
-    unfixes = list(filter(lambda x: isUnfix(x), zugriffe))
+    unfixes = list(filter(lambda x: isUnfix(x), datei.readlines()))
     pidsStrings = list(map(lambda x: getPidStr(x), unfixes))
     is_write = list(map(lambda x: isUnfixDirty(x), unfixes))
-
     return (pidsStrings, is_write)
 
 def generatePageHash(pageStrings):
@@ -64,18 +62,6 @@ def generatePageHash(pageStrings):
     for page in range(0, len(pages)):
         page_hash[pages[page]] = page
     return page_hash
-
-def generateOutput(unfixes, out_file):
-    page_hash = generatePageHash(map(getPidStr, unfixes))
-
-    print("Dataset contains " + str(len(page_hash)) + " pages")
-    print("Dataset contains " + str(len(list(unfixes))) + " unfixes")
-
-    pids = list(map(lambda x: page_hash[getPidStr(x)], unfixes))
-    is_write = list(map(lambda x: isUnfixDirty(x), unfixes))
-    df = {"pages": pids, "is_write": is_write}
-    df = pandas.DataFrame(data=df)
-    df.to_csv(out_file, index=False)
 
 def do_run(in_file, out_file):
     (pidStrings, is_write) = getUnfixesFromFile(in_file)
