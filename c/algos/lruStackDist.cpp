@@ -5,7 +5,6 @@
 #include <filesystem>
 #include <cassert>
 #include <iostream>
-#include <vector>
 #include "lruStackDist.hpp"
 
 void LruStackDist::evaluateRamList(const std::vector<Access> &data, std::vector<RamSize> &x_list,

@@ -3,8 +3,6 @@
 //
 
 #include "EvictStrategy.hpp"
-#include <random>
-#include <list>
 
 // Unordered map<PID> and search min;
 struct LRU: public EvictStrategyContainer<std::unordered_map<PID, RefTime>> {

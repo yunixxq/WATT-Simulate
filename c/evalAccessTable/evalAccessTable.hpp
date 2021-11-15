@@ -5,11 +5,8 @@
 
 #include <chrono>
 #include <future>
-#include <map>
-#include <vector>
 #include <iostream>
-#include "general.hpp"
-#include "../algos/EvictStrategy.hpp"
+#include "../algos/Generators.hpp"
 
 #ifndef C_EVALACCESSTABLE_HPP
 #define C_EVALACCESSTABLE_HPP
@@ -35,21 +32,32 @@ private:
     void createLists(bool ignore_last_run);
 public:
     void init(bool ignore_last_run);
-    template<class executor>
-    void runAlgorithm(const std::string &name, std::vector<int> args = {}) {
+    template<class T>
+    void runAlgorithmNonParallel(const std::string &name, T executor) {
         if (y_read_list.find(name) == y_read_list.end()) {
             std::cout << name << std::endl;
             auto t1 = std::chrono::high_resolution_clock::now();
-            if constexpr(std::is_base_of<EvictStrategy, executor>::value) {
-                std::vector<Access>& datacopy = data;
-                auto evalFunc = [args, &datacopy](RamSize ram_size) {
-                    return executor(args).evaluateOne(datacopy, ram_size);
+            executor.evaluateRamList(data, y_read_list["X"], y_read_list[name], y_write_list[name]);
+            printToFile();
 
-                };
-                runParallelEvictStrategy(y_read_list["X"], y_read_list[name], y_write_list[name], evalFunc);
-            } else {
-                executor(args).evaluateRamList(data, y_read_list["X"], y_read_list[name], y_write_list[name]);
-            }
+            auto t2 = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> seconds_double = t2 - t1;
+            std::cout << seconds_double.count() << " seconds" << std::endl;
+
+        }
+    }
+
+    template<class T>
+    void runAlgorithm(const std::string &name, std::function<T()> generator) {
+        if (y_read_list.find(name) == y_read_list.end()) {
+            std::cout << name << std::endl;
+            auto t1 = std::chrono::high_resolution_clock::now();
+            std::vector<Access>& datacopy = data;
+            auto evalFunc = [generator, &datacopy](RamSize ram_size) {
+                return generator().evaluateOne(datacopy, ram_size);
+
+            };
+            runParallelEvictStrategy(y_read_list["X"], y_read_list[name], y_write_list[name], evalFunc);
             printToFile();
 
             auto t2 = std::chrono::high_resolution_clock::now();

@@ -2,13 +2,7 @@
 // Created by dev on 06.10.21.
 //
 
-#include <filesystem>
-#include <cassert>
-#include <iostream>
-#include <vector>
-#include <numeric>
 #include "staticOpt.hpp"
-
 void StaticOpt::evaluateRamList(const std::vector<Access> &data,
                                 std::vector<RamSize> &x_list,
                                 [[maybe_unused]] std::vector<uInt> &read_list,

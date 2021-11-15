@@ -10,9 +10,11 @@
 
 #include <map>
 #include <list>
+#include <unordered_set>
+#include <random>
 #include <cassert>
 #include <unordered_map>
-#include "../evalAccessTable/general.hpp"
+#include "general.hpp"
 
 class EvictStrategy
 {

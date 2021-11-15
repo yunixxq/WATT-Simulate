@@ -2,17 +2,14 @@
 // Created by dev on 06.10.21.
 //
 #include "EvictStrategy.hpp"
-#include <random>
-#include <list>
-#include <unordered_set>
 
 double get_frequency(std::list<RefTime>& candidate, RefTime curr_time, int pos_start);
 double get_frequency_write(std::list<std::pair<RefTime, bool>>& candidate, RefTime curr_time, int pos_start);
 
-template<int pos_start=0>
 struct LFU_K: public EvictStrategyContainerHistory{
     using upper = EvictStrategyContainerHistory;
-    LFU_K(StrategyParam unused): upper(unused) {}
+    int pos_start;
+    LFU_K(StrategyParam unused, int pos_start = 0): upper(unused), pos_start(pos_start) {}
 
     void chooseEviction(RefTime curr_time, std::unordered_map<PID, std::list<RefTime>>::iterator& candidate, std::unordered_map<PID, std::list<RefTime>>::iterator end) override{
         std::unordered_map<PID, std::list<RefTime>>::iterator runner = candidate;
@@ -28,12 +25,11 @@ struct LFU_K: public EvictStrategyContainerHistory{
     }
 };
 
-
-template<int pos_start=0>
 struct LFU_K_Z: public EvictStrategyContainerKeepHistory{
     using upper = EvictStrategyContainerKeepHistory;
     using map_type = std::list<RefTime>;
-    LFU_K_Z(StrategyParam unused): upper(unused) {}
+    int pos_start;
+    LFU_K_Z(StrategyParam unused, int pos_start = 0): upper(unused), pos_start(pos_start) {}
 
     void chooseEviction(RefTime curr_time, std::unordered_map<PID, map_type>::iterator& candidate, std::unordered_map<PID, map_type>::iterator end) override{
         std::unordered_map<PID, map_type>::iterator runner = candidate;
@@ -49,13 +45,11 @@ struct LFU_K_Z: public EvictStrategyContainerKeepHistory{
     }
 };
 
-
-template<int pos_start=0>
-struct LFU_K_Z2: public EvictStrategyContainerKeepHistoryWrites{
+struct LFU2_K_Z: public EvictStrategyContainerKeepHistoryWrites{
     using upper = EvictStrategyContainerKeepHistoryWrites;
     using map_type = std::list<std::pair<RefTime, bool>>;
-
-    LFU_K_Z2(StrategyParam unused): upper(unused) {}
+    int pos_start;
+    LFU2_K_Z(StrategyParam unused, int pos_start = 0): upper(unused), pos_start(pos_start) {}
 
     void chooseEviction(RefTime curr_time, std::unordered_map<PID, map_type>::iterator& candidate, std::unordered_map<PID, map_type>::iterator end) override{
         std::unordered_map<PID, map_type>::iterator runner = candidate;
@@ -71,11 +65,10 @@ struct LFU_K_Z2: public EvictStrategyContainerKeepHistoryWrites{
     }
 };
 
-
-template<int pos_start=0>
-struct LFU_K_Z_D1: public EvictStrategyContainerKeepHistory{
+struct LFU_K_Z_D: public EvictStrategyContainerKeepHistory{
     using upper = EvictStrategyContainerKeepHistory;
-    LFU_K_Z_D1(std::vector<int> used): upper(used) {
+    int pos_start;
+    LFU_K_Z_D(std::vector<int> used, int pos_start = 0): upper(used), pos_start(pos_start) {
         assert(used.size() >= 3);
         dirty_freq_factor = used[2] / 10.0;
     }
@@ -102,10 +95,10 @@ struct LFU_K_Z_D1: public EvictStrategyContainerKeepHistory{
     }
 };
 
-template<int pos_start=0>
-struct LFU_K_Z_D2: public EvictStrategyContainerKeepHistory{
+struct LFU2_K_Z_D: public EvictStrategyContainerKeepHistory{
     using upper = EvictStrategyContainerKeepHistory;
-    LFU_K_Z_D2(StrategyParam unused): upper(unused) {}
+    int pos_start;
+    LFU2_K_Z_D(StrategyParam unused, int pos_start = 0): upper(unused), pos_start(pos_start)    {}
 
     uInt age_improver = 4;
 
@@ -141,11 +134,10 @@ struct LFU_K_Z_D2: public EvictStrategyContainerKeepHistory{
 
 };
 
-
-template<int pos_start=0>
-struct LFU_K_alt: public EvictStrategyContainer<std::unordered_set<PID>> {
+struct LFUalt_K: public EvictStrategyContainer<std::unordered_set<PID>> {
     using upper = EvictStrategyContainer<std::unordered_set<PID>>;
-    LFU_K_alt(std::vector<int> used): upper() {
+    int pos_start;
+    LFUalt_K(std::vector<int> used, int pos_start = 0): upper(), pos_start(pos_start) {
         assert(used.size() >= 1);
         K = used[0];
     }

@@ -3,8 +3,6 @@
 //
 
 #include "EvictStrategy.hpp"
-#include <random>
-#include <list>
 
 static bool keepFirst(const std::list<RefTime>& l, const std::list<RefTime>& r);
 
@@ -24,9 +22,9 @@ struct LRU_K_Z: public EvictStrategyContainerKeepHistory{
     }
 };
 
-struct LRU_K_alt: public EvictStrategyContainer<std::unordered_map<PID, std::list<RefTime>>> {
+struct LRUalt_K: public EvictStrategyContainer<std::unordered_map<PID, std::list<RefTime>>> {
     using upper = EvictStrategyContainer<std::unordered_map<PID, std::list<RefTime>>>;
-    LRU_K_alt(std::vector<int> used): upper(){
+    LRUalt_K(std::vector<int> used): upper(){
         assert(used.size() >= 1);
         K = (uInt) used[0];
     }

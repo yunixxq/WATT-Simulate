@@ -8,7 +8,6 @@
 #endif //C_RANDOM_HPP
 
 #include "EvictStrategy.hpp"
-#include <random>
 
 struct Random: public EvictStrategyContainer<std::unordered_map<unsigned int, bool>> {
 public:

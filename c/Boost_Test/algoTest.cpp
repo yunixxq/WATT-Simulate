@@ -1,14 +1,10 @@
 //
 // Created by dev on 13.10.21.
 //
-
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
 #include "../evalAccessTable/evalAccessTable.hpp"
-#include "../algos/lru.hpp"
-#include "../algos/lru_k.hpp"
-#include "../algos/lfu_k.hpp"
 
 EvalAccessTable init(){
     std::string file = "./../tpcc_64_-5.csv";
@@ -17,87 +13,108 @@ EvalAccessTable init(){
     return std::move(test);
 }
 
-template<class algo>
-bool compareToOther(EvalAccessTable& instance, std::string other, std::string name, std::vector<int> args = {}){
-    instance.runAlgorithm<algo>(name, args);
+template<class T>
+bool compareToOther(EvalAccessTable& instance, std::function<T()> generator, std::string name, std::string other){
+    instance.runAlgorithm(name, generator);
     return (instance.getReads(name) == instance.getReads(other)) && (instance.getWrites(name) == instance.getWrites(other));
 
 }
 
-template<class algo>
-void runAlgo(EvalAccessTable& instance, std::string name, std::vector<int> args = {}){
-    instance.runAlgorithm<algo>(name, args);
+template<class T>
+void runAlgo(EvalAccessTable& instance, std::function<T()> generator, std::string name){
+    instance.runAlgorithm(name, generator);
 }
 
 BOOST_AUTO_TEST_SUITE(compare_algo)
     BOOST_AUTO_TEST_CASE(lru) {
         EvalAccessTable instance = init();
 
-        BOOST_TEST(compareToOther<LRU>(instance, "lru", "lru_0"));
-        BOOST_TEST(compareToOther<LRU1>(instance, "lru", "lru_1"));
-        BOOST_TEST(compareToOther<LRU2>(instance, "lru", "lru_2"));
-        BOOST_TEST(compareToOther<LRU2a>(instance, "lru", "lru_2a"));
-        BOOST_TEST(compareToOther<LRU2b>(instance, "lru", "lru_2b"));
-        BOOST_TEST(compareToOther<LRU3>(instance, "lru", "lru_3"));
+        BOOST_TEST(compareToOther(instance, LRU_Generator(), "lru_0", "lru"));
+        BOOST_TEST(compareToOther(instance, LRU1_Generator(), "lru_1", "lru"));
+        BOOST_TEST(compareToOther(instance, LRU2_Generator(), "lru_2", "lru"));
+        BOOST_TEST(compareToOther(instance, LRU2a_Generator(), "lru_2a", "lru"));
+        BOOST_TEST(compareToOther(instance, LRU2b_Generator(), "lru_2b", "lru"));
+        BOOST_TEST(compareToOther(instance, LRU3_Generator(), "lru_3", "lru"));
     }
     BOOST_AUTO_TEST_CASE(lru_sim) {
         EvalAccessTable instance = init();
 
-        BOOST_TEST(compareToOther<LRU_K_Z>(instance, "lru", "lru_K1_Z0", {1, 0}));
-        BOOST_TEST(compareToOther<LRU_K_Z>(instance, "lru", "lru_K1_Z10", {1, 10}));
-        BOOST_TEST(compareToOther<LRU_K_Z>(instance, "lru", "lru_K1_Z-10", {1, -10}));
-        BOOST_TEST(compareToOther<LRU_K_alt>(instance, "lru", "lru_K_ALT_1", {1}));
+        BOOST_TEST(compareToOther(instance, LRU_K_Z_Generator(1,0), "lru_K1_Z0",  "lru"));
+        BOOST_TEST(compareToOther(instance, LRU_K_Z_Generator(1,10), "lru_K1_Z10",  "lru"));
+        BOOST_TEST(compareToOther(instance, LRU_K_Z_Generator(1,-10), "lru_K1_Z-10",  "lru"));
+        BOOST_TEST(compareToOther(instance, LRUalt_K_Generator(1), "lru_K_ALT_1", "lru"));
 
-        BOOST_TEST(compareToOther<LFU_K<>>(instance, "lru", "lfu_K_1", {1}));
-        BOOST_TEST(compareToOther<LFU_K_Z<>>(instance, "lru", "lfu_K1_Z0", {1, 0}));
-        BOOST_TEST(compareToOther<LFU_K_Z<>>(instance, "lru", "lfu_K1_Z10", {1, 10}));
-        BOOST_TEST(compareToOther<LFU_K_Z<>>(instance, "lru", "lfu_K1_Z-10", {1, -10}));
-        BOOST_TEST(compareToOther<LFU_K_Z2<>>(instance, "lru", "lfu2_K1_Z0", {1, 0}));
-        BOOST_TEST(compareToOther<LFU_K_Z2<>>(instance, "lru", "lfu2_K1_Z10", {1, 10}));
-        BOOST_TEST(compareToOther<LFU_K_Z2<>>(instance, "lru", "lfu2_K1_Z-10", {1, -10}));
-        BOOST_TEST(compareToOther<LFU_K_alt<>>(instance, "lru", "lfu_K_ALT_1", {1, -10}));
-        BOOST_TEST(compareToOther<LFU_K_Z_D1<>>(instance, "lru", "lfu_K1_Z0_D10", {1, 0, 10}));
-        BOOST_TEST(compareToOther<LFU_K_Z_D1<>>(instance, "lru", "lfu_K1_Z10_D10", {1, 10, 10}));
+        BOOST_TEST(compareToOther(instance, LFU_K_Generator(1), "lfu_K1", "lru"));
+        BOOST_TEST(compareToOther(instance, LFU_K_Z_Generator(1,0), "lfu_K1_Z0", "lru"));
+        BOOST_TEST(compareToOther(instance, LFU_K_Z_Generator(1,10), "lfu_K1_Z10", "lru"));
+        BOOST_TEST(compareToOther(instance, LFU_K_Z_Generator(1,-10), "lfu_K1_Z-10", "lru"));
+        BOOST_TEST(compareToOther(instance, LFU2_K_Z_Generator(1, 0), "lfu2_K1_Z0", "lru"));
+        BOOST_TEST(compareToOther(instance, LFU2_K_Z_Generator(1, 10), "lfu2_K1_Z10", "lru"));
+        BOOST_TEST(compareToOther(instance, LFU2_K_Z_Generator(1, -10), "lfu2_K1_Z-10", "lru"));
+        BOOST_TEST(compareToOther(instance, LFUalt_K_Generator(1), "lfu_K_ALT_1", "lru"));
+        BOOST_TEST(compareToOther(instance, LFU1_K_Z_D_Generator(1, 0, 10), "lfu_K1_Z0_D10", "lru"));
+        BOOST_TEST(compareToOther(instance, LFU1_K_Z_D_Generator(1, 10, 10), "lfu_K1_Z10_D10", "lru"));
 
     }
     BOOST_AUTO_TEST_CASE(lru_ks) {
         EvalAccessTable instance = init();
-        runAlgo<LRU_K_Z>(instance, "lru_K1_Z0", {1,0});
-        BOOST_TEST(compareToOther<LRU_K_alt>(instance, "lru_K1_Z0", "lru_K_ALT_1", {1}));
-        runAlgo<LRU_K_Z>(instance, "lru_K2_Z0", {2,0});
-        BOOST_TEST(compareToOther<LRU_K_alt>(instance, "lru_K2_Z0", "lru_K_ALT_2", {2}));
-        runAlgo<LRU_K_Z>(instance, "lru_K10_Z0", {10,0});
-        BOOST_TEST(compareToOther<LRU_K_alt>(instance, "lru_K10_Z0", "lru_K_ALT_10", {10}));
+        runAlgo(instance, LRU_K_Z_Generator(1,0), "lru_K1_Z0");
+        BOOST_TEST(compareToOther(instance, LRUalt_K_Generator(1), "lru_K_ALT_1", "lru_K1_Z0"));
+
+        runAlgo(instance, LRU_K_Z_Generator(2,0), "lru_K2_Z0");
+        BOOST_TEST(compareToOther(instance, LRUalt_K_Generator(2), "lru_K_ALT_2", "lru_K2_Z0"));
+
+        runAlgo(instance, LRU_K_Z_Generator(10,0), "lru_K10_Z0");
+        BOOST_TEST(compareToOther(instance, LRUalt_K_Generator(10), "lru_K_ALT_10", "lru_K10_Z0"));
     }
     BOOST_AUTO_TEST_CASE(lfu_ks) {
         EvalAccessTable instance = init();
         // InRam History
-        runAlgo<LFU_K<>>(instance, "lfu_K1", {1});
-        BOOST_TEST(compareToOther<LFU_K_Z<>>(instance, "lfu_K1", "lfu_K1_Z0", {1, 0}));
-        BOOST_TEST(compareToOther<LFU_K_Z2<>>(instance, "lfu_K1", "lfu2_K1_Z0", {1, 0}));
-        runAlgo<LFU_K<>>(instance, "lfu_K2", {2});
-        BOOST_TEST(compareToOther<LFU_K_Z<>>(instance, "lfu_K2", "lfu_K2_Z0", {2, 0}));
-        BOOST_TEST(compareToOther<LFU_K_Z2<>>(instance, "lfu_K2", "lfu2_K2_Z0", {2, 0}));
-        runAlgo<LFU_K<>>(instance, "lfu_K10", {10});
-        BOOST_TEST(compareToOther<LFU_K_Z<>>(instance, "lfu_K10", "lfu_K10_Z0", {10, 0}));
-        BOOST_TEST(compareToOther<LFU_K_Z2<>>(instance, "lfu_K10", "lfu2_K10_Z0", {10, 0}));
+
+        int K = 1;
+        int Z = 0;
+        runAlgo(instance, LFU_K_Generator(K), "lfu_K" + std::to_string(K));
+        BOOST_TEST(compareToOther(instance, LFU_K_Z_Generator(K, Z), "lfu_K"+std::to_string(K)+"_Z"+std::to_string(Z), "lfu_K" + std::to_string(K)));
+        BOOST_TEST(compareToOther(instance, LFU2_K_Z_Generator(K, Z), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z), "lfu_K" + std::to_string(K)));
+
+        K = 2;
+        Z = 0;
+        runAlgo(instance, LFU_K_Generator(K), "lfu_K" + std::to_string(K));
+        BOOST_TEST(compareToOther(instance, LFU_K_Z_Generator(K, Z), "lfu_K"+std::to_string(K)+"_Z"+std::to_string(Z), "lfu_K" + std::to_string(K)));
+        BOOST_TEST(compareToOther(instance, LFU2_K_Z_Generator(K, Z), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z), "lfu_K" + std::to_string(K)));
+
+        K = 10;
+        Z = 0;
+        runAlgo(instance, LFU_K_Generator(K), "lfu_K" + std::to_string(K));
+        BOOST_TEST(compareToOther(instance, LFU_K_Z_Generator(K, Z), "lfu_K"+std::to_string(K)+"_Z"+std::to_string(Z), "lfu_K" + std::to_string(K)));
+        BOOST_TEST(compareToOther(instance, LFU2_K_Z_Generator(K, Z), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z), "lfu_K" + std::to_string(K)));
 
         // Out of Ram History
-        runAlgo<LFU_K_Z<>>(instance, "lfu_K1_Z1", {1, 1});
-        BOOST_TEST(compareToOther<LFU_K_Z2<>>(instance, "lfu_K1_Z1", "lfu2_K1_Z1", {1, 1}));
+        K = 1;
+        Z = 1;
+        runAlgo(instance, LFU_K_Z_Generator(K, Z), "lfu_K"+std::to_string(K)+"_Z"+std::to_string(Z));
+        BOOST_TEST(compareToOther(instance, LFU2_K_Z_Generator(K, Z), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z), "lfu_K" + std::to_string(K) + "_Z" + std::to_string(Z)));
 
-        runAlgo<LFU_K_Z<>>(instance, "lfu_K1_Z10", {1, 10});
-        BOOST_TEST(compareToOther<LFU_K_Z2<>>(instance, "lfu_K1_Z10", "lfu2_K1_Z10", {1, 10}));
+        K = 1;
+        Z = 10;
+        runAlgo(instance, LFU_K_Z_Generator(K, Z), "lfu_K"+std::to_string(K)+"_Z"+std::to_string(Z));
+        BOOST_TEST(compareToOther(instance, LFU2_K_Z_Generator(K, Z), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z), "lfu_K" + std::to_string(K) + "_Z" + std::to_string(Z)));
 
-        runAlgo<LFU_K_Z<>>(instance, "lfu_K2_Z10", {2, 10});
-        BOOST_TEST(compareToOther<LFU_K_Z2<>>(instance, "lfu_K2_Z10", "lfu2_K2_Z10", {2, 10}));
+        K = 2;
+        Z = 10;
+        runAlgo(instance, LFU_K_Z_Generator(K, Z), "lfu_K"+std::to_string(K)+"_Z"+std::to_string(Z));
+        BOOST_TEST(compareToOther(instance, LFU2_K_Z_Generator(K, Z), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z), "lfu_K" + std::to_string(K) + "_Z" + std::to_string(Z)));
 
-        runAlgo<LFU_K_Z<>>(instance, "lfu_K2_Z-10", {2, -10});
-        BOOST_TEST(compareToOther<LFU_K_Z2<>>(instance, "lfu_K2_Z-10", "lfu2_K2_Z-10", {2, -10}));
+        K = 2;
+        Z = -10;
+        runAlgo(instance, LFU_K_Z_Generator(K, Z), "lfu_K"+std::to_string(K)+"_Z"+std::to_string(Z));
+        BOOST_TEST(compareToOther(instance, LFU2_K_Z_Generator(K, Z), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z), "lfu_K" + std::to_string(K) + "_Z" + std::to_string(Z)));
 
-        runAlgo<LFU_K_Z<>>(instance, "lfu_K10_Z10", {10, 10});
-        BOOST_TEST(compareToOther<LFU_K_Z2<>>(instance, "lfu_K10_Z10", "lfu2_K10_Z10", {10, 10}));
-        BOOST_TEST(compareToOther<LFU_K_Z_D1<>>(instance, "lfu_K10_Z10", "lfu_K10_Z10_D10", {10, 10, 10}));
+        K = 10;
+        Z = 10;
+        runAlgo(instance, LFU_K_Z_Generator(K, Z), "lfu_K"+std::to_string(K)+"_Z"+std::to_string(Z));
+        BOOST_TEST(compareToOther(instance, LFU2_K_Z_Generator(K, Z), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z), "lfu_K" + std::to_string(K) + "_Z" + std::to_string(Z)));
+        BOOST_TEST(compareToOther(instance, LFU1_K_Z_D_Generator(K, Z, 10), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z) + "_D10", "lfu_K" + std::to_string(K) + "_Z" + std::to_string(Z)));
  }
 
 BOOST_AUTO_TEST_SUITE_END()

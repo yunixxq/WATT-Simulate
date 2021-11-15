@@ -3,12 +3,11 @@
 //
 
 #include "EvictStrategy.hpp"
-#include <random>
 
-template<int clean_percentage>
 struct CF_LRU: public EvictStrategy {
     using upper = EvictStrategy;
-    CF_LRU(StrategyParam): upper() {}
+    int clean_percentage;
+    CF_LRU(int clean_percentage): upper(), clean_percentage(clean_percentage) {}
 
     uInt window_length;
     std::unordered_map<PID, std::list<Access*>::iterator> hash_for_list;

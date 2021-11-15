@@ -3,8 +3,6 @@
 //
 
 #include "EvictStrategy.hpp"
-#include <random>
-#include <list>
 
 struct LRU_WSR: public EvictStrategy {
     using upper = EvictStrategy;

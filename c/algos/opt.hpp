@@ -3,7 +3,6 @@
 //
 
 #include "EvictStrategy.hpp"
-#include <random>
 
 struct OPT: public EvictStrategyContainer<std::unordered_map<PID, RefTime>> {
     using upper = EvictStrategyContainer<std::unordered_map<PID, RefTime>>;
