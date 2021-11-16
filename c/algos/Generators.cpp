@@ -9,12 +9,18 @@ template<class T> std::function<T()> defGenerator(){
         return T({});
     };
 }
-template<class T> std::function<T()> defGeneratorOne(auto first){
+template<class T> std::function<T()> defGeneratorOne(std::vector<int> first){
     return [first](){
         return T(first);
     };
 }
-template<class T> std::function<T()> defGeneratorTwo(auto first, auto second){
+template<class T> std::function<T()> defGeneratorTwo(std::vector<int> first, int second){
+    return [first, second](){
+        return T(first, second);
+    };
+}
+
+template<class T> std::function<T()> defGeneratorTwo(int first, int second){
     return [first, second](){
         return T(first, second);
     };
