@@ -1,8 +1,6 @@
 #!/bin/python3
 
-import matplotlib.pyplot as plt
-import os, shutil, random, time, json, csv, sys
-from joblib import Parallel, delayed
+import sys
 import pandas
 
 def isFix(zugriff):

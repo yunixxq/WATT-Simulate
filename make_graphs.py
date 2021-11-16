@@ -2,7 +2,7 @@
 
 import matplotlib.pyplot as plt
 from numpy import double
-import pandas
+import pandas, sys
 from PyPDF2 import PdfFileMerger
 
 def genEvalList(costfactor, elements):
@@ -96,6 +96,16 @@ def plotGraph(name, write_cost = 8):
     merger.close()
 
 if __name__ == "__main__":
-    filepath = "./c/cmake-build-debug/out/"
-    write_cost = 1
-    plotGraph(filepath, write_cost)
+    if len(sys.argv) ==2:
+        write_cost = 1
+        filepath = sys.argv[1]
+        plotGraph(filepath, write_cost)
+
+    elif len(sys.argv) ==3:
+        write_cost = int(sys.argv[2])
+        filepath = sys.argv[1]
+        plotGraph(filepath, write_cost)
+
+    else:
+        print("Usage:")
+        print(sys.argv[0], " directory [write_factor_integer]")

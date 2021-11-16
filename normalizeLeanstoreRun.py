@@ -1,7 +1,7 @@
 #!/bin/python3
 
 import matplotlib.pyplot as plt
-import os, shutil, random, time, json, csv
+import sys
 from joblib import Parallel, delayed
 import pandas
 
@@ -43,4 +43,13 @@ def do_run(in_file, out_file):
     df = pandas.DataFrame(data=df)
     df.to_csv(out_file, index=False)
 
-do_run("traces/test.txt", "tpcc_64_-5.csv")
+# do_run("traces/test.txt", "tpcc_64_-5.csv")
+
+
+if __name__ == "__main__":
+    if len(sys.argv) ==3:
+        print("Converting: ", sys.argv[1], " to ", sys.argv[2])
+        do_run(sys.argv[1], sys.argv[2])
+    else:
+        print("Usage:")
+        print(sys.argv[0], " leanstore-trace-in normalized-trace-out.csv")
