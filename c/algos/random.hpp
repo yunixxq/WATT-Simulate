@@ -24,10 +24,18 @@ private:
 
     void access(Access& access) override{
         ram[access.pageRef]=true;
+        assert(ram.size() == curr_count);
     };
     PID evictOne(RefTime) override{
         unsigned int increment_by = ram_distro(ran_engine);
-        auto candidate = std::next(ram.begin(), increment_by);
+        auto candidate =ram.begin();
+        if(increment_by > 0){
+            candidate = std::next(candidate, increment_by);
+        }
+        assert(increment_by < RAM_SIZE);
+        assert(curr_count == RAM_SIZE);
+        assert(ram.size() ==RAM_SIZE);
+        assert(candidate != ram.end());
         PID pid = candidate->first;
         ram.erase(candidate);
         return pid;

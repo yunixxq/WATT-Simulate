@@ -115,10 +115,10 @@ protected:
     }
 
     void checkSizes(PID pid){
-        if(dirty_in_ram.size() < pid){
+        if(dirty_in_ram.size() <= pid){
             dirty_in_ram.resize(pid+1, false);
         }
-        if(in_ram.size() < pid){
+        if(in_ram.size() <= pid){
             in_ram.resize(pid+1, false);
         }
     }
