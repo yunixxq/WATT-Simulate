@@ -4,12 +4,11 @@
 #include "EvictStrategy.hpp"
 
 double get_frequency(std::list<RefTime>& candidate, RefTime curr_time, int pos_start);
-double get_frequency_write(std::list<std::pair<RefTime, bool>>& candidate, RefTime curr_time, int pos_start);
 
 struct LFU_K: public EvictStrategyContainerHistory{
     using upper = EvictStrategyContainerHistory;
     int pos_start;
-    LFU_K(StrategyParam unused, int pos_start = 0): upper(unused), pos_start(pos_start) {}
+    LFU_K(int K, int pos_start = 0): upper(K), pos_start(pos_start) {}
 
     void chooseEviction(RefTime curr_time, std::unordered_map<PID, std::list<RefTime>>::iterator& candidate, std::unordered_map<PID, std::list<RefTime>>::iterator end) override{
         std::unordered_map<PID, std::list<RefTime>>::iterator runner = candidate;
@@ -29,7 +28,7 @@ struct LFU_K_Z: public EvictStrategyContainerKeepHistory{
     using upper = EvictStrategyContainerKeepHistory;
     using map_type = std::list<RefTime>;
     int pos_start;
-    LFU_K_Z(StrategyParam unused, int pos_start = 0): upper(unused), pos_start(pos_start) {}
+    LFU_K_Z(int K, int Z, int pos_start = 0): upper(K,Z), pos_start(pos_start) {}
 
     void chooseEviction(RefTime curr_time, std::unordered_map<PID, map_type>::iterator& candidate, std::unordered_map<PID, map_type>::iterator end) override{
         std::unordered_map<PID, map_type>::iterator runner = candidate;
@@ -45,17 +44,19 @@ struct LFU_K_Z: public EvictStrategyContainerKeepHistory{
     }
 };
 
-struct LFU2_K_Z: public EvictStrategyContainerKeepHistoryWrites{
-    using upper = EvictStrategyContainerKeepHistoryWrites;
-    using map_type = std::list<std::pair<RefTime, bool>>;
-    int pos_start;
-    LFU2_K_Z(StrategyParam unused, int pos_start = 0): upper(unused), pos_start(pos_start) {}
+struct LFU2_K_Z: public EvictStrategyContainerKeepHistoryReadWrites{
+    using upper = EvictStrategyContainerKeepHistoryReadWrites;
+    using history_type = std::pair<std::list<RefTime>, std::list<RefTime>>;
+    using ram_type = std::unordered_map<PID, history_type>;
 
-    void chooseEviction(RefTime curr_time, std::unordered_map<PID, map_type>::iterator& candidate, std::unordered_map<PID, map_type>::iterator end) override{
-        std::unordered_map<PID, map_type>::iterator runner = candidate;
-        double candidate_freq = get_frequency_write(candidate->second, curr_time, pos_start);
+    int pos_start;
+    LFU2_K_Z(int K, int Z, int pos_start = 0): upper(K, 0, Z), pos_start(pos_start) {}
+
+    virtual void chooseEviction(RefTime curr_time, ram_type::iterator& candidate, ram_type::iterator end){
+        ram_type::iterator runner = candidate;
+        double candidate_freq = get_frequency(candidate->second.first, curr_time, pos_start);
         while(runner!= end){
-            double runner_freq = get_frequency_write(runner->second, curr_time, pos_start);
+            double runner_freq = get_frequency(runner->second.first, curr_time, pos_start);
             if(runner_freq < candidate_freq){
                 candidate = runner;
                 candidate_freq = runner_freq;
@@ -63,14 +64,46 @@ struct LFU2_K_Z: public EvictStrategyContainerKeepHistoryWrites{
             ++runner;
         }
     }
+
 };
 
+struct LFU_2K_Z: public EvictStrategyContainerKeepHistoryReadWrites{
+    using upper = EvictStrategyContainerKeepHistoryReadWrites;
+    using history_type = std::pair<std::list<RefTime>, std::list<RefTime>>;
+    using ram_type = std::unordered_map<PID, history_type>;
+
+    int pos_start;
+    LFU_2K_Z(uInt KR, uInt KW, int Z, bool write_as_read, int pos_start = 0): upper(KR, KW, Z, write_as_read), pos_start(pos_start) {}
+
+    virtual void chooseEviction(RefTime curr_time, ram_type::iterator& candidate, ram_type::iterator end){
+        ram_type::iterator runner = candidate;
+        double candidate_freq = eval_freq(candidate, curr_time);
+        while(runner!= end){
+            double runner_freq = eval_freq(runner, curr_time);
+            if(runner_freq < candidate_freq){
+                candidate = runner;
+                candidate_freq = runner_freq;
+            }
+            ++runner;
+        }
+    }
+    double eval_freq(ram_type::iterator candidate, RefTime curr_time){
+        double candidate_freq_R = get_frequency(candidate->second.first, curr_time, pos_start);
+        double candidate_freq_W = get_frequency(candidate->second.second, curr_time, pos_start);
+        double candidate_freq = candidate_freq_R + candidate_freq_W;
+        if(!write_as_read){
+            candidate_freq += candidate_freq_W;
+        }
+        return candidate_freq;
+    }
+
+};
+/*
 struct LFU_K_Z_D: public EvictStrategyContainerKeepHistory{
     using upper = EvictStrategyContainerKeepHistory;
     int pos_start;
-    LFU_K_Z_D(std::vector<int> used, int pos_start = 0): upper(used), pos_start(pos_start) {
-        assert(used.size() >= 3);
-        dirty_freq_factor = used[2] / 10.0;
+    LFU_K_Z_D(int K, int Z, int D, int pos_start = 0): upper(K,Z), pos_start(pos_start) {
+        dirty_freq_factor = D / 10.0;
     }
 
     double dirty_freq_factor = 1.0;
@@ -98,7 +131,7 @@ struct LFU_K_Z_D: public EvictStrategyContainerKeepHistory{
 struct LFU2_K_Z_D: public EvictStrategyContainerKeepHistory{
     using upper = EvictStrategyContainerKeepHistory;
     int pos_start;
-    LFU2_K_Z_D(StrategyParam unused, int pos_start = 0): upper(unused), pos_start(pos_start)    {}
+    LFU2_K_Z_D(int K, int Z, [[maybe_unused]] int D, int pos_start = 0): upper(K, Z), pos_start(pos_start)    {}
 
     uInt age_improver = 4;
 
@@ -133,14 +166,11 @@ struct LFU2_K_Z_D: public EvictStrategyContainerKeepHistory{
     }
 
 };
-
+*/
 struct LFUalt_K: public EvictStrategyContainer<std::unordered_set<PID>> {
     using upper = EvictStrategyContainer<std::unordered_set<PID>>;
     int pos_start;
-    LFUalt_K(std::vector<int> used, int pos_start = 0): upper(), pos_start(pos_start) {
-        assert(used.size() >= 1);
-        K = used[0];
-    }
+    LFUalt_K(int K, int pos_start = 0): upper(), pos_start(pos_start), K(K) {}
     uInt K;
 
     std::unordered_map<PID, std::list<RefTime>> history;

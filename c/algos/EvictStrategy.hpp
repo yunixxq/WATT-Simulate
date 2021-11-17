@@ -16,6 +16,38 @@
 #include <unordered_map>
 #include "general.hpp"
 
+static bool keepFirst(const std::list<RefTime>& l, const std::list<RefTime>& r) {
+    if(l.size()== r.size()){
+        return *(l.rbegin()) < *(r.rbegin()); // higher is younger
+    }else{
+        return l.size() < r.size(); // bigger is better
+    }
+};
+
+static void push_frontAndResize(const Access& access, std::list<RefTime>& hist, uInt K) {
+    hist.push_front(access.pos);
+    if(hist.size() > K){
+        hist.resize(K);
+    }
+};
+
+template<class T>
+static void handle_out_of_ram(
+        auto candidate,
+        std::list<PID>& out_of_mem_order,
+        std::unordered_map<PID, std::pair<std::list<PID>::iterator ,T>>& out_of_mem_history,
+        uInt hist_size){
+    out_of_mem_order.push_front(candidate->first);
+    auto& element = out_of_mem_history[candidate->first];
+    element.first = out_of_mem_order.begin();
+    element.second = std::move(candidate->second);
+    while(out_of_mem_order.size() > hist_size){
+        PID last = out_of_mem_order.back();
+        out_of_mem_history.erase(last);
+        out_of_mem_order.pop_back();
+    }
+}
+
 class EvictStrategy
 {
 public:
@@ -171,10 +203,7 @@ class EvictStrategyContainerHistory: public EvictStrategyContainer<std::unordere
 using upper = EvictStrategyContainer<std::unordered_map<PID, std::list<RefTime>>>;
 uInt K;
 public:
-    EvictStrategyContainerHistory(std::vector<int> used): upper() {
-        assert(used.size() >= 1);
-        K = (uInt) used[0];
-    }
+    EvictStrategyContainerHistory(int K): upper(), K(K) {}
 protected:
     void reInit(RamSize ram_size) override{
         upper::reInit(ram_size);
@@ -205,30 +234,20 @@ protected:
             ++runner;
         }// */
     }
-
-    bool keepFirst(const std::list<RefTime>& l, const std::list<RefTime>& r) {
-        if(l.size()== r.size()){
-            return *(l.rbegin()) < *(r.rbegin()); // higher is younger
-        }else{
-            return l.size() < r.size(); // bigger is better
-        }
-    };
 };
 
 class EvictStrategyContainerKeepHistory: public EvictStrategyContainer<std::unordered_map<PID, std::list<RefTime>>>{
-    using upper = EvictStrategyContainer<std::unordered_map<PID, std::list<RefTime>>>;
+    using history_type = std::list<RefTime>;
+    using ram_type = std::unordered_map<PID, history_type>;
+    using upper = EvictStrategyContainer<ram_type>;
     using map_type = std::list<RefTime>;
 public:
-    EvictStrategyContainerKeepHistory(std::vector<int> used): upper() {
-        assert(used.size() >= 2);
-        K = used[0];
-        Z = used[1];
-    }
+    EvictStrategyContainerKeepHistory(int K, int Z): upper(), K(K), Z(Z) {}
 protected:
     uInt K;
     int Z;
     uInt hist_size;
-    std::unordered_map<PID, std::pair<std::list<PID>::iterator, map_type>> out_of_mem_history;
+    std::unordered_map<PID, std::pair<std::list<PID>::iterator, history_type>> out_of_mem_history;
     std::list<PID> out_of_mem_order;
     void reInit(RamSize ram_size) override{
         upper::reInit(ram_size);
@@ -250,31 +269,23 @@ protected:
             }
         }
         std::   list<RefTime>& hist = ram[access.pageRef];
-        hist.push_front(access.pos);
-        if(hist.size() > (uInt) K){
-            hist.resize(K);
-        }
+        push_frontAndResize(access, hist, K);
         assert(*hist.begin() == access.pos);
-    };
+    }
+
     PID evictOne(RefTime curr_time) override{
-        std::unordered_map<PID, map_type>::iterator candidate = ram.begin();
+        ram_type::iterator candidate = ram.begin();
         chooseEviction(curr_time, candidate, ram.end());
+
+        handle_out_of_ram(candidate, out_of_mem_order, out_of_mem_history, hist_size);
+
         PID pid = candidate->first;
-        out_of_mem_order.push_front(pid);
-        auto& element = out_of_mem_history[pid];
-        element.first = out_of_mem_order.begin();
-        element.second = std::move(ram[pid]);
         ram.erase(candidate);
-        while(out_of_mem_order.size() > hist_size){
-            PID last = out_of_mem_order.back();
-            out_of_mem_history.erase(last);
-            out_of_mem_order.pop_back();
-        }
         return pid;
     }
 
-    virtual void chooseEviction(RefTime, std::unordered_map<PID, map_type>::iterator& candidate, std::unordered_map<PID, map_type>::iterator end){
-        std::unordered_map<PID, map_type>::iterator runner = candidate;
+    virtual void chooseEviction(RefTime, ram_type::iterator& candidate, ram_type::iterator end){
+        ram_type::iterator runner = candidate;
 
         while(runner!= end){
             if(keepFirst(runner->second, candidate->second)){
@@ -283,39 +294,28 @@ protected:
             ++runner;
         }// */
     }
-
-    bool keepFirst(const std::list<RefTime>& l, const std::list<RefTime>& r) {
-        if(l.size()== r.size()){
-            return *(l.rbegin()) < *(r.rbegin()); // higher is younger
-        }else{
-            return l.size() < r.size(); // bigger is better
-        }
-    };
 };
 
-class EvictStrategyContainerKeepHistoryWrites: public EvictStrategyContainer<std::unordered_map<PID, std::list<std::pair<RefTime, bool>>>>{
-    using upper = EvictStrategyContainer<std::unordered_map<PID, std::list<std::pair<RefTime, bool>>>>;
+
+// First list is for reads, second for writes
+class EvictStrategyContainerKeepHistoryReadWrites: public EvictStrategyContainer<std::unordered_map<PID, std::pair<std::list<RefTime>, std::list<RefTime>>>>{
+    using history_type = std::pair<std::list<RefTime>, std::list<RefTime>>;
+    using ram_type = std::unordered_map<PID, history_type>;
+    using upper = EvictStrategyContainer<ram_type>;
 public:
-    EvictStrategyContainerKeepHistoryWrites(std::vector<int> used): upper() {
-        assert(used.size() >= 2);
-        K = used[0];
-        Z = used[1];
-    }
+    EvictStrategyContainerKeepHistoryReadWrites(uInt KR=1, uInt KW=1, int Z=0, bool write_as_read=false): upper(), K_R(KR), K_W(KW), Z(Z), write_as_read(write_as_read) {}
 protected:
-    uInt K;
-    int Z;
+    const uInt K_R, K_W;
+    const int Z;
+    const bool write_as_read; // write counts as read?
     uInt hist_size;
-    std::unordered_map<PID, std::pair<std::list<PID>::iterator ,std::list<std::pair<RefTime, bool>>>> out_of_mem_history;
+    std::unordered_map<PID, std::pair<std::list<PID>::iterator ,history_type>> out_of_mem_history;
     std::list<PID> out_of_mem_order;
     void reInit(RamSize ram_size) override{
         upper::reInit(ram_size);
         out_of_mem_history.clear();
         out_of_mem_order.clear();
-        if(Z>=0){
-            hist_size = (uInt) Z*ram_size;
-        }else{
-            hist_size = (uInt) ram_size / (-Z);
-        }
+        hist_size = (uInt) (Z>=0? ram_size * Z : ram_size / (-Z));
     }
     void access(Access& access) override{
         if(!in_ram[access.pageRef]){
@@ -326,46 +326,34 @@ protected:
                 out_of_mem_history.erase(old_value);
             }
         }
-        std::list<std::pair<RefTime, bool>>& hist = ram[access.pageRef];
-        hist.push_front(std::make_pair(access.pos, access.write));
-        if(hist.size() > (uInt) K){
-            hist.resize(K);
+        push_frontAndResize(
+                access,
+                access.write ? ram[access.pageRef].second : ram[access.pageRef].first,
+                access.write ? K_W: K_R);
+        if(write_as_read && access.write){
+            push_frontAndResize(access, ram[access.pageRef].first, K_R);
         }
-        assert(hist.begin()->first == access.pos);
     };
     PID evictOne(RefTime curr_time) override{
-        std::unordered_map<PID, std::list<std::pair<RefTime, bool>>>::iterator candidate = ram.begin();
+        ram_type::iterator candidate = ram.begin();
         chooseEviction(curr_time, candidate, ram.end());
+
+        handle_out_of_ram(candidate, out_of_mem_order, out_of_mem_history, hist_size);
+
         PID pid = candidate->first;
-        out_of_mem_order.push_front(pid);
-        auto& element = out_of_mem_history[pid];
-        element.first = out_of_mem_order.begin();
-        element.second = std::move(ram[pid]);
         ram.erase(candidate);
-        while(out_of_mem_order.size() > hist_size){
-            PID last = out_of_mem_order.back();
-            out_of_mem_history.erase(last);
-            out_of_mem_order.pop_back();
-        }
         return pid;
     }
 
-    virtual void chooseEviction(RefTime, std::unordered_map<PID, std::list<std::pair<RefTime, bool>>>::iterator& candidate, std::unordered_map<PID, std::list<std::pair<RefTime, bool>>>::iterator end){
-        std::unordered_map<PID, std::list<std::pair<RefTime, bool>>>::iterator runner = candidate;
+    virtual void chooseEviction(RefTime, ram_type::iterator& candidate, ram_type::iterator end){
+        ram_type::iterator runner = candidate;
 
         while(runner!= end){
-            if(keepFirst(runner->second, candidate->second)){
+            if(keepFirst(runner->second.first, candidate->second.first)){
                 candidate = runner;
             }
             ++runner;
         }// */
     }
 
-    bool keepFirst(const std::list<std::pair<RefTime, bool>>& l, const std::list<std::pair<RefTime, bool>>& r) {
-        if(l.size()== r.size()){
-            return l.rbegin()->first < r.rbegin()->first; // higher is younger
-        }else{
-            return l.size() < r.size(); // bigger is better
-        }
-    };
 };

@@ -52,8 +52,8 @@ BOOST_AUTO_TEST_SUITE(compare_algo)
         BOOST_TEST(compareToOther(instance, LFU2_K_Z_Generator(1, 10), "lfu2_K1_Z10", "lru"));
         BOOST_TEST(compareToOther(instance, LFU2_K_Z_Generator(1, -10), "lfu2_K1_Z-10", "lru"));
         BOOST_TEST(compareToOther(instance, LFUalt_K_Generator(1), "lfu_K_ALT_1", "lru"));
-        BOOST_TEST(compareToOther(instance, LFU1_K_Z_D_Generator(1, 0, 10), "lfu_K1_Z0_D10", "lru"));
-        BOOST_TEST(compareToOther(instance, LFU1_K_Z_D_Generator(1, 10, 10), "lfu_K1_Z10_D10", "lru"));
+        // BOOST_TEST(compareToOther(instance, LFU1_K_Z_D_Generator(1, 0, 10), "lfu_K1_Z0_D10", "lru"));
+        // BOOST_TEST(compareToOther(instance, LFU1_K_Z_D_Generator(1, 10, 10), "lfu_K1_Z10_D10", "lru"));
 
     }
     BOOST_AUTO_TEST_CASE(lru_ks) {
@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_SUITE(compare_algo)
         Z = 10;
         runAlgo(instance, LFU_K_Z_Generator(K, Z), "lfu_K"+std::to_string(K)+"_Z"+std::to_string(Z));
         BOOST_TEST(compareToOther(instance, LFU2_K_Z_Generator(K, Z), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z), "lfu_K" + std::to_string(K) + "_Z" + std::to_string(Z)));
-        BOOST_TEST(compareToOther(instance, LFU1_K_Z_D_Generator(K, Z, 10), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z) + "_D10", "lfu_K" + std::to_string(K) + "_Z" + std::to_string(Z)));
+        // BOOST_TEST(compareToOther(instance, LFU1_K_Z_D_Generator(K, Z, 10), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z) + "_D10", "lfu_K" + std::to_string(K) + "_Z" + std::to_string(Z)));
  }
 
 BOOST_AUTO_TEST_SUITE_END()

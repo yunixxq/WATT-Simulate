@@ -4,67 +4,63 @@
 
 #include "Generators.hpp"
 
-template<class T> std::function<T()> defGenerator(){
-    return [](){
-        return T({});
-    };
-}
-template<class T> std::function<T()> defGeneratorOne(std::vector<int> first){
-    return [first](){
-        return T(first);
-    };
-}
-template<class T> std::function<T()> defGeneratorTwo(std::vector<int> first, int second){
-    return [first, second](){
-        return T(first, second);
-    };
-}
-
-template<class T> std::function<T()> defGeneratorTwo(int first, int second){
-    return [first, second](){
-        return T(first, second);
-    };
-}
+template<class T> std::function<T()> defGenerator(){return [](){return T();};}
 
 std::function<OPT()> Opt_Generator() {return defGenerator<OPT>();}
 std::function<StaticOpt()> StaticOpt_Generator(){return defGenerator<StaticOpt>();}
 std::function<Random()> Random_Generator(){return defGenerator<Random>();}
 
 std::function<CF_LRU()> CfLRUGenerator(int percentage) {
-    return [percentage](){
-        return CF_LRU(percentage);
-    };
+    return [percentage](){return CF_LRU(percentage);};
 }
 std::function<LRU_WSR()> LRU_WSR_Generator() {return defGenerator<LRU_WSR>();}
 
 std::function<LFU_K()> LFU_K_Generator(int K){
-    return defGeneratorOne<LFU_K>(std::vector<int>{K});
+    return [K](){return LFU_K(K);};
+
 }
 
-std::function<LFU_K_Z()> LFU_K_Z_Generator(int K, int out_of_ram_history_length){
-    return defGeneratorOne<LFU_K_Z>(std::vector<int>{K, out_of_ram_history_length});
+std::function<LFU_K_Z()> LFU_K_Z_Generator(int K, int Z){
+    return [K, Z](){
+        return LFU_K_Z(K, Z);
+    };
+
 }
 
-std::function<LFU2_K_Z()> LFU2_K_Z_Generator(int K, int out_of_ram_history_length){
-    return defGeneratorOne<LFU2_K_Z>(std::vector<int>{K, out_of_ram_history_length});
+std::function<LFU2_K_Z()> LFU2_K_Z_Generator(int K, int Z){
+    return [K, Z](){
+        return LFU2_K_Z(K, Z);
+    };
+
 }
 
-std::function<LFUalt_K()> LFUalt_K_Generator(int K, int start_pos){
-    return defGeneratorTwo<LFUalt_K>(std::vector<int>{K}, start_pos);
+std::function<LFUalt_K()> LFUalt_K_Generator(int K){
+    return [K](){
+        return LFUalt_K(K);
+    };
+
 }
 
-std::function<LRU_K_Z()> LRU_K_Z_Generator(int K, int out_of_ram_history_length){
-    return defGeneratorOne<LRU_K_Z>(std::vector<int>{K, out_of_ram_history_length});
-}
+std::function<LRU_K_Z()> LRU_K_Z_Generator(int K, int Z){
+    return [K, Z](){
+        return LRU_K_Z(K, Z);
+    };
 
+}
+std::function<LFU_2K_Z()> LRU_2K_Z_Generator(uInt KR, uInt KW, int Z, bool write_as_read){
+    return [KR, KW, Z, write_as_read](){
+        return LFU_2K_Z(KR, KW, Z, write_as_read);
+    };}
+
+/*
 std::function<LFU_K_Z_D()> LFU1_K_Z_D_Generator(int K, int Z, int D){
-    return defGeneratorOne<LFU_K_Z_D>(std::vector<int>{K, Z, D});
+    return defGeneratorThree<LFU_K_Z_D>(K, Z, D);
 }
 
 std::function<LFU2_K_Z_D()> LFU2_K_Z_D_Generator(int K, int Z, int D){
-    return defGeneratorOne<LFU2_K_Z_D>(std::vector<int>{K, Z, D});
+    return defGeneratorThree<LFU2_K_Z_D>(K, Z, D);
 }
-
+*/
 std::function<LRU()> LRU_Generator() {return defGenerator<LRU>();}
 std::function<LRU1()> LRU1_Generator() {return defGenerator<LRU1>();}
 std::function<LRU2()> LRU2_Generator() {return defGenerator<LRU2>();}
@@ -76,7 +72,8 @@ std::function<OPT2()> Opt2_Generator() {return defGenerator<OPT2>();}
 
 // Old and unused
 // Has no out_of_memory_history
-std::function<LRUalt_K()> LRUalt_K_Generator(int K){return defGeneratorOne<LRUalt_K>(std::vector<int>{K});
+std::function<LRUalt_K()> LRUalt_K_Generator(int K){
+    return [K](){return LRUalt_K(K);};
 }
 
 // Broken ones

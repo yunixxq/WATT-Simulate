@@ -6,7 +6,7 @@
 
 struct LRU_WSR: public EvictStrategy {
     using upper = EvictStrategy;
-    LRU_WSR(StrategyParam): upper() {}
+    LRU_WSR(): upper() {}
 
     std::unordered_map<PID, std::list<std::tuple<PID, bool>>::iterator> hash_for_list;
     std::list<std::tuple<PID, bool>> ram_list;

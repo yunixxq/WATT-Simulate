@@ -33,10 +33,12 @@ std::function<LRU_WSR()> LRU_WSR_Generator();
 std::function<LFU_K()> LFU_K_Generator(int K);
 std::function<LFU_K_Z()> LFU_K_Z_Generator(int K, int out_of_ram_history_length);
 std::function<LFU2_K_Z()> LFU2_K_Z_Generator(int K, int out_of_ram_history_length);
-std::function<LFUalt_K()> LFUalt_K_Generator(int K, int start_pos = 0);
+std::function<LFUalt_K()> LFUalt_K_Generator(int K);
 std::function<LRU_K_Z()> LRU_K_Z_Generator(int K, int out_of_ram_history_length);
-std::function<LFU_K_Z_D()> LFU1_K_Z_D_Generator(int K, int Z, int D);
-std::function<LFU2_K_Z_D()> LFU2_K_Z_D_Generator(int K, int Z, int D);
+std::function<LFU_2K_Z()> LRU_2K_Z_Generator(uInt K_read, uInt K_write, int out_of_ram_history_length, bool writes_as_reads);
+
+//std::function<LFU_K_Z_D()> LFU1_K_Z_D_Generator(int K, int Z, int D);
+// std::function<LFU2_K_Z_D()> LFU2_K_Z_D_Generator(int K, int Z, int D);
 
 // Redundant ones (differ in implementation)
 std::function<LRU()> LRU_Generator();
