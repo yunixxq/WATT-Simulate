@@ -34,21 +34,32 @@ void EvalAccessTable::init(bool ignore_last_run){
     createLists(ignore_last_run); // this runs "lru" (lru_stack_trace)
 }
 void EvalAccessTable::runFromFilename(bool only_new, bool ignore_old, bool full_run, bool run_slow) {
+    // full_run runs not usefull + duplicates
     init(ignore_old);
-    runAlgorithm("opt", Opt_Generator());
     runAlgorithmNonParallel("StaticOpt", StaticOpt());
+    runAlgorithm("opt", Opt_Generator());
+
+    for(int k: {20, 2, 1}){
+        runAlgorithm("lfu_k_" + std::to_string(k), LFU_K_Generator(k));
+        for(int z: {100, 10, 1}){
+            runAlgorithm("lfu_k" + std::to_string(k) + "_z" + std::to_string(z), LFU_K_Z_Generator(k, z));
+            // runAlgorithm("lfu2_k" + std::to_string(k) + "_z" + std::to_string(z), LFU2_K_Z_Generator(k, z));
+            runAlgorithm("lru_k" + std::to_string(k) + "_z" + std::to_string(z), LRU_K_Z_Generator(k, z));
+            runAlgorithm("lfu_2k" + std::to_string(k) + "_z" + std::to_string(z) + "T", LRU_2K_Z_Generator(k, k, z, true));
+            runAlgorithm("lfu_2k" + std::to_string(k) + "_z" + std::to_string(z) + "F", LRU_2K_Z_Generator(k, k, z, false));
+        }
+    }
+
     if(!only_new) {
         runAlgorithm("random", Random_Generator());
+        runAlgorithm("cf_lru30", CfLRUGenerator(30));
+        runAlgorithm("cf_lru40", CfLRUGenerator(40));
+        runAlgorithm("cf_lru50", CfLRUGenerator(50));
+        runAlgorithm("cf_lru60", CfLRUGenerator(60));
+        runAlgorithm("lru_wsr", LRU_WSR_Generator());
         if (full_run) {
-            if(run_slow){
-                runAlgorithm("opt2", Opt2_Generator());
-            }
-            runAlgorithm("opt3", Opt3_Generator());
             runAlgorithm("lru_alt", LRU_Generator());
             runAlgorithm("lru_alt1", LRU1_Generator());
-            if(run_slow){
-                runAlgorithm("lru_alt2", LRU2_Generator());
-            }
             runAlgorithm("lru_alt2a", LRU2a_Generator());
             runAlgorithm("lru_alt2b", LRU2b_Generator());
             runAlgorithm("lru_alt3", LRU3_Generator());
@@ -57,9 +68,6 @@ void EvalAccessTable::runFromFilename(bool only_new, bool ignore_old, bool full_
             runAlgorithm("cf_lru70", CfLRUGenerator(70));
             runAlgorithm("cf_lru80", CfLRUGenerator(80));
             runAlgorithm("cf_lru90", CfLRUGenerator(90));
-            if(run_slow){
-                runAlgorithm("cf_lru100", CfLRUGenerator(100));
-            }
             runAlgorithm("lfu_k_alt01", LFUalt_K_Generator(1));
             runAlgorithm("lfu_k_alt02", LFUalt_K_Generator(2));
             runAlgorithm("lfu_k_alt10", LFUalt_K_Generator(10));
@@ -68,27 +76,14 @@ void EvalAccessTable::runFromFilename(bool only_new, bool ignore_old, bool full_
             runAlgorithm("lru_k_alt02", LRUalt_K_Generator(2));
             runAlgorithm("lru_k_alt10", LRUalt_K_Generator(10));
             runAlgorithm("lru_k_alt20", LRUalt_K_Generator(20));
-        }
-        runAlgorithm("cf_lru30", CfLRUGenerator(30));
-        runAlgorithm("cf_lru40", CfLRUGenerator(40));
-        runAlgorithm("cf_lru50", CfLRUGenerator(50));
-        runAlgorithm("cf_lru60", CfLRUGenerator(60));
-
-        runAlgorithm("lru_wsr", LRU_WSR_Generator());
-
-    }
-    
-    for(int k: {1,2,10,20}){
-        runAlgorithm("lfu_k_" + std::to_string(k), LFU_K_Generator(k));
-        for(int z: {-20, -10, -2, 1, 10, 20, 100}){
-            runAlgorithm("lfu_k" + std::to_string(k) + "_z" + std::to_string(z), LFU_K_Z_Generator(k, z));
-            runAlgorithm("lfu2_k" + std::to_string(k) + "_z" + std::to_string(z), LFU2_K_Z_Generator(k, z));
-            runAlgorithm("lru_k" + std::to_string(k) + "_z" + std::to_string(z), LRU_K_Z_Generator(k, z));
-            runAlgorithm("lfu_2k" + std::to_string(k) + "_z" + std::to_string(z) + "T", LRU_2K_Z_Generator(k, k, z, true));
-            runAlgorithm("lfu_2k" + std::to_string(k) + "_z" + std::to_string(z) + "F", LRU_2K_Z_Generator(k, k, z, false));
+            // runAlgorithm("opt3", Opt3_Generator());// broken
+            if(run_slow){
+                runAlgorithm("opt2", Opt2_Generator());
+                runAlgorithm("lru_alt2", LRU2_Generator());
+                runAlgorithm("cf_lru100", CfLRUGenerator(100));
+            }
         }
     }
-
     printToFile();
 }
 
