@@ -3,7 +3,6 @@
 //
 
 #include "EvictStrategy.hpp"
-
 struct LRU_WSR: public EvictStrategy {
     using upper = EvictStrategy;
     LRU_WSR(): upper() {}
@@ -33,6 +32,7 @@ struct LRU_WSR: public EvictStrategy {
                 return pid;
             }
             ram_list.push_back(std::make_tuple(pid, true));
+            hash_for_list[pid] = std::prev(ram_list.end());
         }
     }
 };
