@@ -15,7 +15,7 @@ using RefTime = int;
 using RamSize = uInt;
 
 struct Access {
-    PID pageRef=0;
+    PID pid=0;
     RefTime nextRef=0;
     RefTime lastRef=-1;
     RefTime pos=0;

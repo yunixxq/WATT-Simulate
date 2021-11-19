@@ -9,7 +9,7 @@ struct OPT: public EvictStrategyContainer<std::unordered_map<PID, RefTime>> {
     OPT(): upper() {}
 
     void access(Access& access) override{
-        ram[access.pageRef]=access.nextRef;
+        ram[access.pid]=access.nextRef;
     };
     PID evictOne(int) override{
         auto candidate = std::max_element(ram.begin(), ram.end(), compare_second);
@@ -24,7 +24,7 @@ struct OPT2: public EvictStrategyContainer<std::vector<std::pair<PID, RefTime>>>
     OPT2(): upper() {}
 
     void access(Access& access) override{
-        PID pid = access.pageRef;
+        PID pid = access.pid;
         auto it = std::find_if(ram.begin(), ram.end(), [pid](const auto& elem) { return elem.first == pid; });
 
         if(it != ram.end()){
@@ -46,7 +46,7 @@ struct OPT3: public EvictStrategyContainer<std::map<RefTime, PID>> {
 
     void access(Access& access) override{
         ram.erase(access.pos);
-        ram[access.nextRef]=access.pageRef;
+        ram[access.nextRef]=access.pid;
     };
     PID evictOne(int) override{
         auto candidate = --(ram.rbegin().base());

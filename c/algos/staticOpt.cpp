@@ -11,8 +11,8 @@ void StaticOpt::evaluateRamList(const std::vector<Access> &data,
     std::vector<PID> pageIds;
     PID maxPageId = 0;
     for(auto &access: data){
-        if(maxPageId < access.pageRef){
-            maxPageId = access.pageRef;
+        if(maxPageId < access.pid){
+            maxPageId = access.pid;
         }
     }
     reads.resize(maxPageId + 1);
@@ -24,9 +24,9 @@ void StaticOpt::evaluateRamList(const std::vector<Access> &data,
     }
 
     for (auto &access: data) {
-        reads[access.pageRef]++;
+        reads[access.pid]++;
         if(access.write){
-            writes[access.pageRef]++;
+            writes[access.pid]++;
         }
     }
     double write_cost = 1;

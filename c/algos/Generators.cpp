@@ -11,46 +11,31 @@ std::function<StaticOpt()> StaticOpt_Generator(){return defGenerator<StaticOpt>(
 std::function<Random()> Random_Generator(){return defGenerator<Random>();}
 
 std::function<CF_LRU()> CfLRUGenerator(int percentage) {
-    return [percentage](){return CF_LRU(percentage);};
-}
+    return [percentage](){return CF_LRU(percentage);};}
+
 std::function<LRU_WSR()> LRU_WSR_Generator() {return defGenerator<LRU_WSR>();}
 
 std::function<LFU_K()> LFU_K_Generator(int K){
-    return [K](){return LFU_K(K);};
-
-}
+    return [K](){return LFU_K(K);};}
 
 std::function<LFU_K_Z()> LFU_K_Z_Generator(int K, int Z){
-    return [K, Z](){
-        return LFU_K_Z(K, Z);
-    };
-
-}
+    return [K, Z](){return LFU_K_Z(K, Z);};}
 
 std::function<LFU2_K_Z()> LFU2_K_Z_Generator(int K, int Z){
-    return [K, Z](){
-        return LFU2_K_Z(K, Z);
-    };
-
-}
+    return [K, Z](){return LFU2_K_Z(K, Z);};}
 
 std::function<LFUalt_K()> LFUalt_K_Generator(int K){
-    return [K](){
-        return LFUalt_K(K);
-    };
-
-}
+    return [K](){return LFUalt_K(K);};}
 
 std::function<LRU_K_Z()> LRU_K_Z_Generator(int K, int Z){
-    return [K, Z](){
-        return LRU_K_Z(K, Z);
-    };
+    return [K, Z](){return LRU_K_Z(K, Z);};}
 
-}
 std::function<LFU_2K_Z()> LRU_2K_Z_Generator(uInt KR, uInt KW, int Z, bool write_as_read){
-    return [KR, KW, Z, write_as_read](){
-        return LFU_2K_Z(KR, KW, Z, write_as_read);
-    };}
+    return [KR, KW, Z, write_as_read](){return LFU_2K_Z(KR, KW, Z, write_as_read);};}
+
+std::function<leanEvict()> Lean_Generator(uInt cooling_percentage){
+    return [cooling_percentage](){return leanEvict(cooling_percentage);};}
+
 
 /*
 std::function<LFU_K_Z_D()> LFU1_K_Z_D_Generator(int K, int Z, int D){

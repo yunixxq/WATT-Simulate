@@ -10,7 +10,7 @@ struct LRU: public EvictStrategyContainer<std::unordered_map<PID, RefTime>> {
     LRU(): upper() {}
 
     void access(Access& access) override{
-        ram[access.pageRef]=access.pos;
+        ram[access.pid]=access.pos;
     };
     PID evictOne(RefTime) override{
         auto candidate = std::min_element(ram.begin(), ram.end(), compare_second);
@@ -26,7 +26,7 @@ struct LRU1: public EvictStrategyContainer<std::unordered_map<PID, Access>> {
     LRU1(): upper() {}
 
     void access(Access& access) override{
-        ram[access.pageRef]=access;
+        ram[access.pid]=access;
     };
     PID evictOne(RefTime) override{
         auto candidate = std::min_element(ram.begin(), ram.end(), comparePairPos<PID>);
@@ -44,15 +44,15 @@ struct LRU2: public EvictStrategyContainer<std::vector<Access>> {
     LRU2(): upper() {}
 
     void access(Access& access) override{
-        PID pid = access.pageRef;
-        if(in_ram[access.pageRef]){
-            auto it = std::find_if(ram.begin(), ram.end(), [pid](const Access& elem) { return elem.pageRef == pid; });
+        PID pid = access.pid;
+        if(in_ram[access.pid]){
+            auto it = std::find_if(ram.begin(), ram.end(), [pid](const Access& elem) { return elem.pid == pid; });
             ram.erase(it);
         }
         ram.push_back(access);
     };
     PID evictOne(RefTime) override{
-        PID pid = ram.begin()->pageRef;
+        PID pid = ram.begin()->pid;
         ram.erase(ram.begin());
         return pid;
     }
@@ -69,11 +69,11 @@ struct LRU2a: public EvictStrategyContainer<std::list<PID>>{
         EvictStrategyContainer::reInit(ram_size);
     }
     void access(Access& access) override{
-        if(in_ram[access.pageRef]){
-            ram.erase(hash_for_list[access.pageRef]);
+        if(in_ram[access.pid]){
+            ram.erase(hash_for_list[access.pid]);
         }
-        ram.push_back(access.pageRef);
-        hash_for_list[access.pageRef] = std::prev(ram.end());
+        ram.push_back(access.pid);
+        hash_for_list[access.pid] = std::prev(ram.end());
     };
     PID evictOne(RefTime) override{
         PID pid = *ram.begin();
@@ -97,7 +97,7 @@ struct LRU3: public EvictStrategyContainer<std::map<RefTime, PID >> {
 
     void access(Access& access) override{
         ram.erase(access.lastRef);
-        ram[access.pos]=access.pageRef;
+        ram[access.pos]=access.pid;
     };
     PID evictOne(RefTime) override{
         auto candidate = ram.begin();

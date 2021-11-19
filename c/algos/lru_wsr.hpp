@@ -15,11 +15,11 @@ struct LRU_WSR: public EvictStrategy {
         EvictStrategy::reInit(ram_size);
     }
     void access(Access& access) override{
-        if(in_ram[access.pageRef]){
-            ram_list.erase(hash_for_list[access.pageRef]);
+        if(in_ram[access.pid]){
+            ram_list.erase(hash_for_list[access.pid]);
         }
-        ram_list.push_back(std::make_tuple(access.pageRef, false));
-        hash_for_list[access.pageRef] = std::prev(ram_list.end());
+        ram_list.push_back(std::make_tuple(access.pid, false));
+        hash_for_list[access.pid] = std::prev(ram_list.end());
     };
     PID evictOne(RefTime) override{
         while(true) {

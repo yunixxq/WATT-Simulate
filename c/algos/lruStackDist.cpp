@@ -16,14 +16,14 @@ void LruStackDist::evaluateRamList(const std::vector<Access> &data, std::vector<
     for (auto &access: data) {
         // read
         // find pos;
-        auto elem = std::find(lruStack.begin(), lruStack.end(), access.pageRef);
+        auto elem = std::find(lruStack.begin(), lruStack.end(), access.pid);
         uInt pos = 0;
         if (elem != lruStack.end()) {
             pos = elem - lruStack.begin() + 1;
             lruStack.erase(elem);
         }
         // put to pos 0;
-        lruStack.emplace(lruStack.begin(), access.pageRef);
+        lruStack.emplace(lruStack.begin(), access.pid);
         if (lruStackDist.size() <= pos) {
             lruStackDist.resize(pos + 1, 0);
             lru_stack_dirty.resize(pos + 1, 0);
@@ -37,15 +37,15 @@ void LruStackDist::evaluateRamList(const std::vector<Access> &data, std::vector<
         // se we have an extra counter, to mark, where the page went down in stack since last write.
         // when write happens, we mark the last position
         // in the End: we have to write all out => add a constant
-        if (dirty_depth.size() <= access.pageRef) {
-            dirty_depth.resize(access.pageRef + 1, 0); // clean
+        if (dirty_depth.size() <= access.pid) {
+            dirty_depth.resize(access.pid + 1, 0); // clean
         }
-        uInt prev_dirty_depth = dirty_depth[access.pageRef];
+        uInt prev_dirty_depth = dirty_depth[access.pid];
         // is fresh write? => init
         // has no prev dirty_depth: keep 0;
         // else: move down in stack;
-        dirty_depth[access.pageRef] = access.write ? 1 : (prev_dirty_depth == 0 ? 0 : std::max(pos,
-                                                                                               prev_dirty_depth));
+        dirty_depth[access.pid] = access.write ? 1 : (prev_dirty_depth == 0 ? 0 : std::max(pos,
+                                                                                           prev_dirty_depth));
         if (access.write) {
             if (prev_dirty_depth != 0) {
                 lru_stack_dirty[std::max(prev_dirty_depth, pos)]++;

@@ -38,6 +38,7 @@ void EvalAccessTable::runFromFilename(bool only_new, bool ignore_old, bool full_
     init(ignore_old);
     runAlgorithmNonParallel("StaticOpt", StaticOpt());
     runAlgorithm("opt", Opt_Generator());
+    runAlgorithm("lean20", Lean_Generator(20));
 
     for(int k: {20, 2, 1}){
         runAlgorithm("lfu_k_" + std::to_string(k), LFU_K_Generator(k));
@@ -123,6 +124,7 @@ void EvalAccessTable::getDataFile() {
     {
         ifstream reader;
         reader.open(filename);
+        assert(reader.good());
         string line;
         bool firstLine = true;
         map<int, int> last_access;
@@ -137,12 +139,12 @@ void EvalAccessTable::getDataFile() {
             stringstream ss(line);
             string value;
             getline(ss, value, ',');
-            access.pageRef = stoi(value);
+            access.pid = stoi(value);
             getline(ss, value);
             access.write = (value.find("rue") != std::string::npos);
             access.pos = i;
 
-            getOrDefaultAndSet(last_access, i, access.pageRef, -1, &access.lastRef);
+            getOrDefaultAndSet(last_access, i, access.pid, -1, &access.lastRef);
 
             i++;
         }
@@ -152,7 +154,7 @@ void EvalAccessTable::getDataFile() {
         int data_size = data.size();
         for (uInt i = 0; i < data.size(); i++) {
             int pos = data_size - (i + 1);
-            getOrDefaultAndSet(next_access, pos, data[pos].pageRef, data_size, &data[pos].nextRef);
+            getOrDefaultAndSet(next_access, pos, data[pos].pid, data_size, &data[pos].nextRef);
         }
     }
 }

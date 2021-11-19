@@ -20,18 +20,18 @@ struct CF_LRU: public EvictStrategy {
     }
 
     void access(Access& access) override{
-        if(in_ram[access.pageRef]){
-            ram_list.erase(hash_for_list[access.pageRef]);
+        if(in_ram[access.pid]){
+            ram_list.erase(hash_for_list[access.pid]);
         }
         ram_list.push_back(&access);
-        hash_for_list[access.pageRef] = std::prev(ram_list.end());
+        hash_for_list[access.pid] = std::prev(ram_list.end());
     };
 
     PID evictOne(RefTime) override{
         std::list<Access*>::iterator candidate = ram_list.begin();
         bool found = false;
         for(uInt i= 0; i< window_length; i++){
-            if(!dirty_in_ram[(*candidate)->pageRef]){
+            if(!dirty_in_ram[(*candidate)->pid]){
                 found=true;
                 break;
             }
@@ -41,7 +41,7 @@ struct CF_LRU: public EvictStrategy {
         if(!found){
             candidate = ram_list.begin();
         }
-        PID pid = (*candidate)->pageRef;
+        PID pid = (*candidate)->pid;
         hash_for_list.erase(pid);
         ram_list.erase(candidate);
         return pid;

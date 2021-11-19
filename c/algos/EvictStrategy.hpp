@@ -82,8 +82,8 @@ protected:
     std::pair<uInt, uInt> executeStrategy(std::vector<Access>& access_data){
         uInt page_misses = 0, dirty_evicts = 0;
         for(Access& single_access: access_data){
-            checkSizes(single_access.pageRef);
-            if(!in_ram[single_access.pageRef]){
+            checkSizes(single_access.pid);
+            if(!in_ram[single_access.pid]){
                 page_misses++;
                 if(curr_count >= RAM_SIZE){
                     PID pid = evictOne(single_access.pos);
@@ -95,8 +95,8 @@ protected:
                 }
             }
             access(single_access);
-            dirty_in_ram[single_access.pageRef] = dirty_in_ram[single_access.pageRef] || single_access.write;
-            in_ram[single_access.pageRef] = true;
+            dirty_in_ram[single_access.pid] = dirty_in_ram[single_access.pid] || single_access.write;
+            in_ram[single_access.pid] = true;
         }
         return std::pair(page_misses, dirty_evicts + dirtyPages());
     }
@@ -164,11 +164,11 @@ protected:
         fast_finder.clear();
     }
     void access(Access& access) override{
-        if(upper::in_ram[access.pageRef]){
-            fast_finder[access.pageRef] = updateElement(fast_finder[access.pageRef], access);
+        if(upper::in_ram[access.pid]){
+            fast_finder[access.pid] = updateElement(fast_finder[access.pid], access);
 
         }else{
-            fast_finder[access.pageRef] = insertElement(access);
+            fast_finder[access.pid] = insertElement(access);
         }
     };
     PID evictOne(RefTime currTime) override{
@@ -187,29 +187,30 @@ protected:
         return *it;
     }
     virtual typename std::list<T>::iterator insertElement(Access& access){
-        upper::ram.push_back(access.pageRef);
+        upper::ram.push_back(access.pid);
         return std::prev(upper::ram.end());
     }
     virtual typename std::list<T>::iterator updateElement(typename std::list<T>::iterator old, Access& access){
         upper::ram.erase(old);
 
-        upper::ram.push_back(access.pageRef);
+        upper::ram.push_back(access.pid);
         return std::prev(upper::ram.end());
     }
 
 };
 
 class EvictStrategyContainerHistory: public EvictStrategyContainer<std::unordered_map<PID, std::list<RefTime>>>{
-using upper = EvictStrategyContainer<std::unordered_map<PID, std::list<RefTime>>>;
-uInt K;
 public:
+    using container_type = std::unordered_map<PID, std::list<RefTime>>;
+    using upper = EvictStrategyContainer<container_type>;
     EvictStrategyContainerHistory(int K): upper(), K(K) {}
 protected:
+    uInt K;
     void reInit(RamSize ram_size) override{
         upper::reInit(ram_size);
     }
     void access(Access& access) override{
-        std::   list<RefTime>& hist = ram[access.pageRef];
+        std::   list<RefTime>& hist = ram[access.pid];
         hist.push_front(access.pos);
         if(hist.size() > K){
             hist.resize(K);
@@ -217,7 +218,7 @@ protected:
         assert(*hist.begin() == access.pos);
     };
     PID evictOne(RefTime curr_time) override{
-        std::unordered_map<PID, std::list<RefTime>>::iterator candidate = ram.begin();
+        container_type::iterator candidate = ram.begin();
         chooseEviction(curr_time, candidate, ram.end());
         PID pid = candidate->first;
         ram.erase(candidate);
@@ -225,7 +226,7 @@ protected:
     }
 
     virtual void chooseEviction(RefTime, std::unordered_map<PID, std::list<RefTime>>::iterator& candidate, std::unordered_map<PID, std::list<RefTime>>::iterator end){
-        std::unordered_map<PID, std::list<RefTime>>::iterator runner = candidate;
+        container_type::iterator runner = candidate;
 
         while(runner!= end){
             if(keepFirst(runner->second, candidate->second)){
@@ -260,15 +261,15 @@ protected:
         }
     }
     void access(Access& access) override{
-        if(!in_ram[access.pageRef]){
-            auto old_value = out_of_mem_history.find(access.pageRef);
+        if(!in_ram[access.pid]){
+            auto old_value = out_of_mem_history.find(access.pid);
             if(old_value!= out_of_mem_history.end()){
                 out_of_mem_order.erase(old_value->second.first);
-                ram[access.pageRef] = old_value->second.second;
+                ram[access.pid] = old_value->second.second;
                 out_of_mem_history.erase(old_value);
             }
         }
-        std::   list<RefTime>& hist = ram[access.pageRef];
+        std::   list<RefTime>& hist = ram[access.pid];
         push_frontAndResize(access, hist, K);
         assert(*hist.begin() == access.pos);
     }
@@ -318,20 +319,20 @@ protected:
         hist_size = (uInt) (Z>=0? ram_size * Z : ram_size / (-Z));
     }
     void access(Access& access) override{
-        if(!in_ram[access.pageRef]){
-            auto old_value = out_of_mem_history.find(access.pageRef);
+        if(!in_ram[access.pid]){
+            auto old_value = out_of_mem_history.find(access.pid);
             if(old_value!= out_of_mem_history.end()){
                 out_of_mem_order.erase(old_value->second.first);
-                ram[access.pageRef] = old_value->second.second;
+                ram[access.pid] = old_value->second.second;
                 out_of_mem_history.erase(old_value);
             }
         }
         push_frontAndResize(
                 access,
-                access.write ? ram[access.pageRef].second : ram[access.pageRef].first,
+                access.write ? ram[access.pid].second : ram[access.pid].first,
                 access.write ? K_W: K_R);
         if(write_as_read && access.write){
-            push_frontAndResize(access, ram[access.pageRef].first, K_R);
+            push_frontAndResize(access, ram[access.pid].first, K_R);
         }
     };
     PID evictOne(RefTime curr_time) override{

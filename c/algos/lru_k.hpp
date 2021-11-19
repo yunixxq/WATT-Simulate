@@ -15,7 +15,7 @@ struct LRUalt_K: public EvictStrategyContainer<std::unordered_map<PID, std::list
     uInt K;
 
     void access(Access& access) override{
-std::   list<RefTime>& hist = ram[access.pageRef];
+std::   list<RefTime>& hist = ram[access.pid];
         hist.push_front(access.pos);
         if(hist.size() > K){
             hist.resize(K);

@@ -10,8 +10,8 @@ struct LFU_K: public EvictStrategyContainerHistory{
     int pos_start;
     LFU_K(int K, int pos_start = 0): upper(K), pos_start(pos_start) {}
 
-    void chooseEviction(RefTime curr_time, std::unordered_map<PID, std::list<RefTime>>::iterator& candidate, std::unordered_map<PID, std::list<RefTime>>::iterator end) override{
-        std::unordered_map<PID, std::list<RefTime>>::iterator runner = candidate;
+    void chooseEviction(RefTime curr_time, container_type::iterator& candidate, container_type::iterator end) override{
+        container_type::iterator runner = candidate;
         double candidate_freq = get_frequency(candidate->second, curr_time, pos_start);
         while(runner!= end){
             double runner_freq = get_frequency(runner->second, curr_time, pos_start);
@@ -26,12 +26,12 @@ struct LFU_K: public EvictStrategyContainerHistory{
 
 struct LFU_K_Z: public EvictStrategyContainerKeepHistory{
     using upper = EvictStrategyContainerKeepHistory;
-    using map_type = std::list<RefTime>;
+    using container_type = EvictStrategyContainerHistory::container_type;
     int pos_start;
     LFU_K_Z(int K, int Z, int pos_start = 0): upper(K,Z), pos_start(pos_start) {}
 
-    void chooseEviction(RefTime curr_time, std::unordered_map<PID, map_type>::iterator& candidate, std::unordered_map<PID, map_type>::iterator end) override{
-        std::unordered_map<PID, map_type>::iterator runner = candidate;
+    void chooseEviction(RefTime curr_time, container_type::iterator& candidate, container_type::iterator end) override{
+        container_type::iterator runner = candidate;
         double candidate_freq = get_frequency(candidate->second, curr_time, pos_start);
         while(runner!= end){
             double runner_freq = get_frequency(runner->second, curr_time, pos_start);
@@ -175,13 +175,13 @@ struct LFUalt_K: public EvictStrategyContainer<std::unordered_set<PID>> {
 
     std::unordered_map<PID, std::list<RefTime>> history;
     void access(Access& access) override{
-        std::list<RefTime>& hist = history[access.pageRef];
+        std::list<RefTime>& hist = history[access.pid];
         hist.push_front(access.pos);
         if(hist.size() > K){
             hist.resize(K);
         }
-        ram.insert(access.pageRef);
-        assert(*history[access.pageRef].begin() == access.pos);
+        ram.insert(access.pid);
+        assert(*history[access.pid].begin() == access.pos);
     };
     PID evictOne(RefTime curr_time) override{
         PID candidate = *ram.begin();

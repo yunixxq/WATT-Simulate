@@ -8,10 +8,10 @@
 #endif //C_RANDOM_HPP
 
 #include "EvictStrategy.hpp"
-
-struct Random: public EvictStrategyContainer<std::unordered_map<unsigned int, bool>> {
+using type = std::unordered_set<PID>;
+using upper = EvictStrategyContainer<type>;
+struct Random: public upper{
 public:
-    using upper = EvictStrategyContainer<std::unordered_map<unsigned int, bool>>;
     Random(): upper(){}
 private:
     std::uniform_int_distribution<int> ram_distro;
@@ -23,7 +23,7 @@ private:
     }
 
     void access(Access& access) override{
-        ram[access.pageRef]=true;
+        ram.insert(access.pid);
         assert(ram.size() == curr_count);
     };
     PID evictOne(RefTime) override{
@@ -36,7 +36,7 @@ private:
         assert(curr_count == RAM_SIZE);
         assert(ram.size() ==RAM_SIZE);
         assert(candidate != ram.end());
-        PID pid = candidate->first;
+        PID pid = *candidate;
         ram.erase(candidate);
         return pid;
     }
