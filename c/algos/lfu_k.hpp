@@ -52,7 +52,7 @@ struct LFU2_K_Z: public EvictStrategyContainerKeepHistoryReadWrites{
     int pos_start;
     LFU2_K_Z(int K, int Z, int pos_start = 0): upper(K, 0, Z), pos_start(pos_start) {}
 
-    virtual void chooseEviction(RefTime curr_time, ram_type::iterator& candidate, ram_type::iterator end){
+    void chooseEviction(RefTime curr_time, ram_type::iterator& candidate, ram_type::iterator end)  override{
         ram_type::iterator runner = candidate;
         double candidate_freq = get_frequency(candidate->second.first, curr_time, pos_start);
         while(runner!= end){
@@ -75,11 +75,89 @@ struct LFU_2K_Z: public EvictStrategyContainerKeepHistoryReadWrites{
     int pos_start;
     LFU_2K_Z(uInt KR, uInt KW, int Z, bool write_as_read, int pos_start = 0): upper(KR, KW, Z, write_as_read), pos_start(pos_start) {}
 
-    virtual void chooseEviction(RefTime curr_time, ram_type::iterator& candidate, ram_type::iterator end){
+    void chooseEviction(RefTime curr_time, ram_type::iterator& candidate, ram_type::iterator end) override{
         ram_type::iterator runner = candidate;
         double candidate_freq = eval_freq(candidate, curr_time);
         while(runner!= end){
             double runner_freq = eval_freq(runner, curr_time);
+            if(runner_freq < candidate_freq){
+                candidate = runner;
+                candidate_freq = runner_freq;
+            }
+            ++runner;
+        }
+    }
+    double eval_freq(ram_type::iterator candidate, RefTime curr_time){
+        double candidate_freq_R = get_frequency(candidate->second.first, curr_time, pos_start);
+        double candidate_freq_W = get_frequency(candidate->second.second, curr_time, pos_start);
+        double candidate_freq = candidate_freq_R + candidate_freq_W;
+        if(!write_as_read){
+            candidate_freq += candidate_freq_W;
+        }
+        return candidate_freq;
+    }
+
+};
+
+struct LFU_2K_Z_rand: public EvictStrategyContainerKeepHistoryReadWrites{
+    using upper = EvictStrategyContainerKeepHistoryReadWrites;
+    using history_type = std::pair<std::list<RefTime>, std::list<RefTime>>;
+    using ram_type = std::unordered_map<PID, history_type>;
+
+    LFU_2K_Z_rand(uInt KR, uInt KW, int Z, uInt randSelector, bool write_as_read, int pos_start = 0):
+        upper(KR, KW, Z, write_as_read),
+        pos_start(pos_start),
+        randSelector(randSelector),
+        lower_bound(20),
+        upper_bound(100){}
+
+    const int pos_start;
+    const uInt randSelector;
+    const uInt lower_bound, upper_bound;
+
+    uInt rand_list_length;
+    std::uniform_int_distribution<int> ram_distro;
+    std::default_random_engine ran_engine;
+    void reInit(RamSize ram_size) override{
+        upper::reInit(ram_size);
+        ram_distro = std::uniform_int_distribution<int>(0, ram_size-1);
+        rand_list_length = (uInt) ram_size * randSelector / 100;
+        if(rand_list_length > upper_bound){
+            rand_list_length = upper_bound;
+        }
+        if (rand_list_length < lower_bound){
+            rand_list_length= lower_bound;
+        }
+        if (rand_list_length > ram_size){
+            rand_list_length = ram_size;
+        }
+    }
+
+    PID evictOne(RefTime curr_time) override{
+        std::vector<ram_type::iterator> elements;
+        do{
+            unsigned int increment_by = ram_distro(ran_engine);
+            auto candidate =ram.begin();
+            if(increment_by > 0){
+                candidate = std::next(candidate, increment_by);
+            }
+            elements.push_back(candidate);
+        }while (elements.size() < rand_list_length);
+        std::vector<ram_type::iterator>::iterator candidate = elements.begin();
+        chooseEvictionLOCAL(curr_time, candidate, elements.end());
+
+        handle_out_of_ram(*candidate, out_of_mem_order, out_of_mem_history, hist_size);
+
+        PID pid = (*candidate)->first;
+        ram.erase(*candidate);
+        return pid;
+    }
+
+    void chooseEvictionLOCAL(RefTime curr_time, std::vector<ram_type::iterator>::iterator& candidate, std::vector<ram_type::iterator>::iterator end){
+        std::vector<ram_type::iterator>::iterator runner = candidate;
+        double candidate_freq = eval_freq(*candidate, curr_time);
+        while(runner!= end){
+            double runner_freq = eval_freq(*runner, curr_time);
             if(runner_freq < candidate_freq){
                 candidate = runner;
                 candidate_freq = runner_freq;

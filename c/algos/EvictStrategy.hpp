@@ -335,7 +335,7 @@ protected:
             push_frontAndResize(access, ram[access.pid].first, K_R);
         }
     };
-    PID evictOne(RefTime curr_time) override{
+    virtual PID evictOne(RefTime curr_time) override{
         ram_type::iterator candidate = ram.begin();
         chooseEviction(curr_time, candidate, ram.end());
 

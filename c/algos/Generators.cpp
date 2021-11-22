@@ -33,6 +33,9 @@ std::function<LRU_K_Z()> LRU_K_Z_Generator(int K, int Z){
 std::function<LFU_2K_Z()> LRU_2K_Z_Generator(uInt KR, uInt KW, int Z, bool write_as_read){
     return [KR, KW, Z, write_as_read](){return LFU_2K_Z(KR, KW, Z, write_as_read);};}
 
+std::function<LFU_2K_Z_rand()> LRU_2K_Z_rand_Generator(uInt KR, uInt KW, int Z, uInt rand, bool writes_as_reads){
+    return [KR, KW, Z, rand, writes_as_reads](){return LFU_2K_Z_rand(KR, KW, Z, rand, writes_as_reads);};}
+
 std::function<leanEvict()> Lean_Generator(uInt cooling_percentage){
     return [cooling_percentage](){return leanEvict(cooling_percentage);};}
 
