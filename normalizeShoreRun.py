@@ -61,11 +61,27 @@ def generatePageHash(pageStrings):
         page_hash[pages[page]] = page
     return page_hash
 
+def removeDuplicates(pids, writes):
+    pids2 = []
+    writes2 = []
+    pid_last = -1
+    write_last = False
+    for (pid, write) in zip(pids, writes):
+        if not (pid_last == pid and write_last == write):
+            pids2.append(pid)
+            writes2.append(write)
+        pid_last = pid
+        write_last = write
+    return (pids, writes)
+
+
+
 def do_run(in_file, out_file):
     (pidStrings, is_write) = getUnfixesFromFile(in_file)
     page_hash = generatePageHash(pidStrings)
 
     pids = list(map(lambda x: page_hash[x], pidStrings))
+    (pids, is_write) = removeDuplicates(pids, is_write)
     df = {"pages": pids, "is_write": is_write}
     df = pandas.DataFrame(data=df)
     df.to_csv(out_file, index=False)
