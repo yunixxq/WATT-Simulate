@@ -1,5 +1,6 @@
 #!/bin/python3
 
+from os import access
 import matplotlib.pyplot as plt
 import sys
 from joblib import Parallel, delayed
@@ -18,7 +19,7 @@ def getCommand(zugriff):
     return zugriff.split(":")[0].split(" ", 1)[1]
 
 def getPid(zugriff): # Remove /n at end
-    return int(zugriff.split(": ")[1])
+    return int(zugriff.split(": ")[1].replace('.', ''))
 
 def getAccesses(zugriffe):
     return list(filter(lambda x: isRead(x) or isWrite(x), zugriffe))
@@ -33,12 +34,43 @@ def getAccessFromFile(file):
     datei = open(file, "r")
     zugriffe = datei.readlines()
     return getAccesses(zugriffe)
+
+def removePreWriteRead(pids, is_write):
+    delete_access = False
+    accesses_ago = 0
+    delete_pid = 0
+    pid_out = []
+    is_write_out = []
+    for (pid, write) in list(zip(pids, is_write)).reverse():
+        if delete_access:
+            if delete_pid == pid:
+                delete_access = False
+                if accesses_ago > 1:
+                    print("PID access ", pid, " removed, was Write: ", write, " write was ", accesses_ago, " ago.")
+                continue
+            else:
+                accesses_ago += 1
+
+        pid_out.append(pid)
+        is_write_out.append(write)
+        if write:
+            delete_access = True
+            accesses_ago = 0
+            delete_pid = pid
+    return (pid_out, is_write_out)
+        
+
     
 def do_run(in_file, out_file):
-
+    print("Reading lines")
     valid_lines = getAccessFromFile(in_file)
-    pids = map(lambda x: getPid(x), valid_lines)
-    is_write = map(lambda x: isWrite(x), valid_lines)
+    print("Getting pids")
+    pids = list(map(lambda x: getPid(x), valid_lines))
+    print("Getting writes")
+    is_write = list(map(lambda x: isWrite(x), valid_lines))
+    print("Removing preWriteReads")
+    (pids, is_write) = removePreWriteRead(pids, is_write)
+    print("printing to file")
     df = {"pages": pids, "is_write": is_write}
     df = pandas.DataFrame(data=df)
     df.to_csv(out_file, index=False)
