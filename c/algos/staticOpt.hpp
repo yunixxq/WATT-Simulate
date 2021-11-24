@@ -11,8 +11,7 @@
 
 struct StaticOpt
 {
-    StaticOpt() {}
-    void evaluateRamList(const std::vector<Access> &data, std::vector<RamSize> &x_list,
-                         std::vector<uInt> &read_list,
-                         std::vector<uInt> &write_list);
+    StaticOpt() = default;
+    void evaluateRamList(const std::vector<Access> &data, const ramListType &ramList,
+                                           rwListSubType &readWriteList);
 };

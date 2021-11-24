@@ -3,10 +3,8 @@
 //
 
 #include "staticOpt.hpp"
-void StaticOpt::evaluateRamList(const std::vector<Access> &data,
-                                std::vector<RamSize> &x_list,
-                                [[maybe_unused]] std::vector<uInt> &read_list,
-                                [[maybe_unused]]std::vector<uInt> &write_list) {
+void StaticOpt::evaluateRamList(const std::vector<Access> &data, const ramListType &ramList,
+                                rwListSubType &readWriteList) {
     std::vector<int> reads, writes;
     std::vector<PID> pageIds;
     PID maxPageId = 0;
@@ -15,13 +13,8 @@ void StaticOpt::evaluateRamList(const std::vector<Access> &data,
             maxPageId = access.pid;
         }
     }
-    reads.resize(maxPageId + 1);
-    writes.resize(maxPageId + 1);
-
-    for(PID i = 0; i < maxPageId; i++){
-        reads[i] = 0;
-        writes[i] = 0;
-    }
+    reads.resize(maxPageId + 1, 0);
+    writes.resize(maxPageId + 1, 0);
 
     for (auto &access: data) {
         reads[access.pid]++;
@@ -49,18 +42,12 @@ void StaticOpt::evaluateRamList(const std::vector<Access> &data,
             return first > second;
         }
     });
-    /*
-    std::cout << "PIDS: ";
-    for(PID i = 0; i < pageIds.size(); i++){
-       std::cout << pageIds[i] << ", ";
-    }
-    std::cout << std::endl;
-    */
-    for(RamSize ram: x_list){
+
+    for(RamSize ram_size: ramList){
         uInt pageMisses = 0, dirtyEvicts = 0;
-        if(pageIds.size() > ram){
+        if(pageIds.size() > ram_size){
             for(uInt pos = 0; pos < pageIds.size(); pos++){
-                if(pos < ram -1){
+                if(pos < ram_size -1){
                     pageMisses++;
                     if(writes[pageIds[pos]] > 0){
                         dirtyEvicts++;
@@ -79,7 +66,6 @@ void StaticOpt::evaluateRamList(const std::vector<Access> &data,
                 }
             }
         }
-        read_list.emplace_back(pageMisses);
-        write_list.emplace_back(dirtyEvicts);
+        readWriteList[ram_size] = std::make_pair(pageMisses, dirtyEvicts);
     }
 }

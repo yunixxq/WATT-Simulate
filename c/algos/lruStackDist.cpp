@@ -7,10 +7,9 @@
 #include <iostream>
 #include "lruStackDist.hpp"
 
-void LruStackDist::evaluateRamList(const std::vector<Access> &data, std::vector<RamSize> &x_list,
-                  std::vector<uInt> &read_list,
-                  std::vector<uInt> &write_list) {
-    assert(x_list.size() == read_list.size() && x_list.size() == write_list.size());
+void LruStackDist::evaluateRamList(const std::vector<Access> &data, ramListType &ramList,
+                     rwListSubType &readWriteList){
+    assert(ramList.size() == 0 && readWriteList.size() == 0);
     std::vector<int> lruStack, lruStackDist, lru_stack_dirty, dirty_depth;
 
     for (auto &access: data) {
@@ -54,47 +53,45 @@ void LruStackDist::evaluateRamList(const std::vector<Access> &data, std::vector<
         }
     }
 
-    int pages = lruStackDist[0];
-    int ram_size = 20;
-    if(pages > 1000){
-        ram_size = 100;
-    }
-    if(pages > 10000){
-        ram_size = 1000;
-    }
-    x_list.push_back(ram_size);
-
-    do {
-        if (ram_size < 100) {
-            ram_size += 10;
-        } else if (ram_size < 1000) {
-            ram_size += 100;
-        } else if (ram_size < 10000) {
-            ram_size += 1000;
-        } else if (ram_size < 100000) {
-            ram_size += 10000;
-        } else {
-            ram_size += 100000;
+    {
+        int pages = lruStackDist[0];
+        int ram_size = 20;
+        if (pages > 1000) {
+            ram_size = 100;
         }
-        x_list.push_back(ram_size);
+        if (pages > 10000) {
+            ram_size = 1000;
+        }
+        ramList.emplace(ram_size);
 
-    } while (ram_size < pages);
-    // sum it up, buttercup!
-    for (auto &ram_sizes: x_list) {
+        do {
+            if (ram_size < 100) {
+                ram_size += 10;
+            } else if (ram_size < 1000) {
+                ram_size += 100;
+            } else if (ram_size < 10000) {
+                ram_size += 1000;
+            } else if (ram_size < 100000) {
+                ram_size += 10000;
+            } else {
+                ram_size += 100000;
+            }
+            ramList.emplace(ram_size);
+
+        } while (ram_size < pages);
+    }// sum it up, buttercup!
+    for (auto &ram_size: ramList) {
         int misses = 0, evicts = 0;
         for (uInt i = 0; i < lruStackDist.size(); i++) {
-            if (i > ram_sizes || i== 0) {
+            if (i > ram_size || i== 0) {
                 misses += lruStackDist[i];
             }
         }
         for (uInt i = 0; i < lru_stack_dirty.size(); i++) {
-            if (i > ram_sizes || i == 0) {
+            if (i > ram_size || i == 0) {
                 evicts += lru_stack_dirty[i];
             }
         }
-        read_list.push_back(misses);
-        write_list.push_back(evicts);
-
+        readWriteList[ram_size] = std::make_pair(misses, evicts);
     }
-    assert(x_list.size() == read_list.size() && x_list.size() == write_list.size());
 }
