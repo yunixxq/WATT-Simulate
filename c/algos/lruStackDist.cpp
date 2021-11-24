@@ -44,8 +44,7 @@ void LruStackDist::evaluateRamList(const std::vector<Access> &data, std::vector<
         // is fresh write? => init
         // has no prev dirty_depth: keep 0;
         // else: move down in stack;
-        dirty_depth[access.pid] = access.write ? 1 : (prev_dirty_depth == 0 ? 0 : std::max(pos,
-                                                                                           prev_dirty_depth));
+        dirty_depth[access.pid] = access.write ? 1 : (prev_dirty_depth == 0 ? 0 : std::max(pos, prev_dirty_depth));
         if (access.write) {
             if (prev_dirty_depth != 0) {
                 lru_stack_dirty[std::max(prev_dirty_depth, pos)]++;
@@ -56,14 +55,17 @@ void LruStackDist::evaluateRamList(const std::vector<Access> &data, std::vector<
     }
 
     int pages = lruStackDist[0];
-    int ram_size = 2;
-    if(pages > 100){
-        ram_size = 19;
+    int ram_size = 20;
+    if(pages > 1000){
+        ram_size = 100;
     }
+    if(pages > 10000){
+        ram_size = 1000;
+    }
+    x_list.push_back(ram_size);
+
     do {
-        if (ram_size < 20) {
-            ram_size++;
-        } else if (ram_size < 100) {
+        if (ram_size < 100) {
             ram_size += 10;
         } else if (ram_size < 1000) {
             ram_size += 100;
