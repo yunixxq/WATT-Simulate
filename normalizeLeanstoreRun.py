@@ -41,11 +41,11 @@ def removePreWriteRead(pids, is_write):
     delete_pid = 0
     pid_out = []
     is_write_out = []
-    for (pid, write) in list(zip(pids, is_write)).reverse():
+    for (pid, write) in reversed(list(zip(pids, is_write))):
         if delete_access:
             if delete_pid == pid:
                 delete_access = False
-                if accesses_ago > 1:
+                if accesses_ago > 2 or write:
                     print("PID access ", pid, " removed, was Write: ", write, " write was ", accesses_ago, " ago.")
                 continue
             else:
@@ -57,7 +57,7 @@ def removePreWriteRead(pids, is_write):
             delete_access = True
             accesses_ago = 0
             delete_pid = pid
-    return (pid_out, is_write_out)
+    return (reversed(pid_out), reversed(is_write_out))
         
 
     
