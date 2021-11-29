@@ -7,41 +7,52 @@ from PyPDF2 import PdfFileMerger
 
 def genEvalList(costfactor, elements):
     
-    def evalLists(missList, writeList):
-        costList = map(lambda read, write: read + write*costfactor, missList, writeList)
-        norm_miss = list(map(lambda x: x/elements, missList))
+    def evalLists(ramHash):
+        ramList = sorted(ramHash.keys())
+        reads = 0
+        writes = 1
+        norm_write = list(map(lambda ramValue: ramHash[ramValue][writes]/elements, ramList))
+        norm_miss = list(map(lambda ramValue: ramHash[ramValue][reads]/elements, ramList))
         norm_hit = list(map(lambda x: 1-x, norm_miss))
-        norm_costList = list(map(lambda x: x/elements, costList))
-        norm_write = list(map(lambda x: x/elements, writeList))
+        norm_costList = list(map(lambda read, write: read + write*costfactor, norm_miss, norm_write))
         return (norm_hit, norm_miss, norm_costList, norm_write)
     return evalLists
     
 
 
 def plotGraph(name, write_cost = 8):
-    df_read = pandas.read_csv(name+"reads.csv")
-    df_write = pandas.read_csv(name+"writes.csv")
-    elements = df_read["elements"][0]
+    df_all = pandas.read_csv(name, sep=r'\s*,\s', engine="python")
+    elements = df_all["elements"][0]
     evalList = genEvalList(write_cost, elements)
 
-    for elem in list(df_read["elements"]) + list(df_write["elements"]):
+    for elem in list(df_all["elements"]):
         assert(elem == elements)
 
+    ramSizes = sorted(list(set(df_all["ramSize"])))
     df_hit = pandas.DataFrame()
     df_miss = pandas.DataFrame()
     df_cost = pandas.DataFrame()
     df_writes = pandas.DataFrame()
-    df_hit["X"] = df_read["X"]
-    df_miss["X"] = df_read["X"]
-    df_cost["X"] = df_read["X"]
-    df_writes["X"] = df_read["X"]
+    df_hit["X"] = ramSizes
+    df_miss["X"] = ramSizes
+    df_cost["X"] = ramSizes
+    df_writes["X"] = ramSizes
 
-    labels = list(df_read.columns.values)
-    labels.remove("X")
-    labels.remove("elements")
-    labels = sorted(labels, key=lambda x: sum(df_read[x] + df_write[x]))
+    algos = {}
+    
+    for (algo, ramSize, elements, reads, writes) in df_all[["algo", "ramSize", "elements", "reads", "writes"]].values:
+        if algo not in algos:
+            algos[algo] = {}
+        algos[algo][ramSize] = (reads, writes, elements)        
+        
+    labels = list(algos.keys())
+    labels = sorted(labels, key=lambda algo:
+        sum(
+        map(
+            lambda read: read[0] + read[1] *write_cost,
+            algos[algo].values())))
     for column in labels:
-        (df_hit[column], df_miss[column], df_cost[column], df_writes[column]) = evalList(df_read[column], df_write[column])
+        (df_hit[column], df_miss[column], df_cost[column], df_writes[column]) = evalList(algos[column])
 
     df_hit.set_index("X", inplace=True)
     df_miss.set_index("X", inplace=True)
@@ -108,4 +119,4 @@ if __name__ == "__main__":
 
     else:
         print("Usage:")
-        print(sys.argv[0], " directory [write_factor_integer]")
+        print(sys.argv[0], " outputfile.csv [write_factor_integer]")
