@@ -16,12 +16,12 @@
 struct leanEvict: public EvictStrategyContainer<std::unordered_set<PID>> {
 public:
     using upper = EvictStrategyContainer<std::unordered_set<PID>>;
-    leanEvict(uInt coolingPercentage = 20): upper(), coolingPercentage(coolingPercentage){}
+    leanEvict(uint coolingPercentage = 20): upper(), coolingPercentage(coolingPercentage){}
 private:
-    uInt coolingPercentage = 0;
+    uint coolingPercentage = 0;
     std::uniform_int_distribution<int> ram_distro;
     std::default_random_engine ran_engine;
-    uInt hotSpace, coolingSpace, hotSize;
+    uint hotSpace, coolingSpace, hotSize;
     std::vector<bool> is_hot;
     std::list<PID> cooling_list;
     std::unordered_map<PID, std::list<PID>::iterator> cooling_list_pointer;

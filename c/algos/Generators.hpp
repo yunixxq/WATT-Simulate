@@ -36,9 +36,10 @@ std::function<LFU_K_Z()> LFU_K_Z_Generator(int K, int out_of_ram_history_length)
 std::function<LFU2_K_Z()> LFU2_K_Z_Generator(int K, int out_of_ram_history_length);
 std::function<LFUalt_K()> LFUalt_K_Generator(int K);
 std::function<LRU_K_Z()> LRU_K_Z_Generator(int K, int out_of_ram_history_length);
-std::function<LFU_2K_Z()> LRU_2K_Z_Generator(uInt K_read, uInt K_write, int out_of_ram_history_length, bool writes_as_reads);
-std::function<LFU_2K_Z_rand()> LRU_2K_Z_rand_Generator(uInt K_read, uInt K_write, int out_of_ram_history_length, uInt randSelector, bool writes_as_reads);
-std::function<leanEvict()> Lean_Generator(uInt cooling_percentage);
+std::function<LFU_2K_Z()> LRU_2K_Z_Generator(uint K_read, uint K_write, int out_of_ram_history_length, bool writes_as_reads);
+std::function<LFU_2K_Z_rand()> LRU_2K_Z_rand_Generator(uint K_read, uint K_write, int out_of_ram_history_length, uint randSelector, bool writes_as_reads);
+std::function<LFU_2K_Z_real()> LRU_2K_Z_real_Generator(uint KR, uint KW, int Z, uint randSize, uint randSelector = 1, bool write_as_read = true, uint epoch_size = 1, int pos_start = 0);
+std::function<leanEvict()> Lean_Generator(uint cooling_percentage);
 
 //std::function<LFU_K_Z_D()> LFU1_K_Z_D_Generator(int K, int Z, int D);
 // std::function<LFU2_K_Z_D()> LFU2_K_Z_D_Generator(int K, int Z, int D);

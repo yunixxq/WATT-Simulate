@@ -16,7 +16,7 @@ EvalAccessTable init(){
 template<class T>
 bool compareToOther(EvalAccessTable& instance, std::function<T()> generator, std::string name, std::string other){
     instance.runAlgorithm(name, generator);
-    return (instance.getReads(name) == instance.getReads(other)) && (instance.getWrites(name) == instance.getWrites(other));
+    return (instance.getValues(name) == instance.getValues(other));
 
 }
 

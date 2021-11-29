@@ -12,12 +12,11 @@
 #define C_GENERAL_HPP
 
 #endif //C_GENERAL_HPP
-using uInt = unsigned int;
-using PID = uInt;
+using PID = uint;
 using RefTime = int;
-using RamSize = uInt;
+using RamSize = uint;
 using ramListType = std::unordered_set<RamSize>;
-using rwListSubType = std::unordered_map<RamSize, std::pair<uInt, uInt>>;
+using rwListSubType = std::unordered_map<RamSize, std::pair<uint, uint>>;
 using rwListType = std::unordered_map<std::string, rwListSubType>;
 
 struct Access {

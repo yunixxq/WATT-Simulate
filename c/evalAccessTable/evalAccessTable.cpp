@@ -38,9 +38,10 @@ void EvalAccessTable::runFromFilename(bool only_new, bool ignore_old, bool full_
     runAlgorithmNonParallel("StaticOpt", StaticOpt());
     runAlgorithm("opt", Opt_Generator());
     runAlgorithm("lean20", Lean_Generator(20));
+    runAlgorithm("lfu_k_real", LRU_2K_Z_real_Generator(8, 4, 1000000, 5, 5, true, 100000));
+    runAlgorithm("lfu_k_real_e1", LRU_2K_Z_real_Generator(8, 4, 1000000, 5, 5, true, 1));
 
     for(int k: {1000, 100, 20, 2, 1}){
-        runAlgorithm("lfu_k_" + std::to_string(k), LFU_K_Generator(k));
         for(int z: {1000, 100, 10, 1}){
             runAlgorithm("lfu_k" + std::to_string(k) + "_z" + std::to_string(z), LFU_K_Z_Generator(k, z));
             // runAlgorithm("lfu2_k" + std::to_string(k) + "_z" + std::to_string(z), LFU2_K_Z_Generator(k, z));
@@ -49,6 +50,7 @@ void EvalAccessTable::runFromFilename(bool only_new, bool ignore_old, bool full_
             runAlgorithm("lfu_2k" + std::to_string(k) + "_z" + std::to_string(z) + "F", LRU_2K_Z_Generator(k, k, z, false));
             runAlgorithm("lfu_2k" + std::to_string(k) + "_z" + std::to_string(z) + "R", LRU_2K_Z_rand_Generator(k, k, z, 5,true));
         }
+        runAlgorithm("lfu_k_" + std::to_string(k), LFU_K_Generator(k));
     }
 
     if(!only_new) {
@@ -141,7 +143,7 @@ void EvalAccessTable::getDataFile() {
     {
         map<int, int> next_access;
         int data_size = data.size();
-        for (uInt i = 0; i < data.size(); i++) {
+        for (uint i = 0; i < data.size(); i++) {
             int pos = data_size - (i + 1);
             getOrDefaultAndSet(next_access, pos, data[pos].pid, data_size, &data[pos].nextRef);
         }
@@ -160,7 +162,7 @@ void EvalAccessTable::createLists(bool ignore_last_run) {
     runAlgorithmNonParallel("lru", LruStackDist());
 }
 
-const std::unordered_map<RamSize, std::pair<uInt, uInt>>& EvalAccessTable::getValues(std::string name) {
+const std::unordered_map<RamSize, std::pair<uint, uint>>& EvalAccessTable::getValues(std::string name) {
     assert(hasValues(name));
     return read_write_list[name];
 }
@@ -211,7 +213,7 @@ void EvalAccessTable::handleCsv(ifstream &filestream){
         assert(getline(ss, elements, ','));
         assert(getline(ss, reads, ','));
         assert(getline(ss, writes, ','));
-        assert((uInt) stoi(elements) == data.size());
+        assert((uint) stoi(elements) == data.size());
         read_write_list[algo][stoi(ram_size)] = std::make_pair(stoi(reads), stoi(writes));
         if(!ramSizes.contains(stoi(ram_size))){
             ramSizes.emplace(stoi(ram_size));

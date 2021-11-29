@@ -16,7 +16,7 @@ void LruStackDist::evaluateRamList(const std::vector<Access> &data, ramListType 
         // read
         // find pos;
         auto elem = std::find(lruStack.begin(), lruStack.end(), access.pid);
-        uInt pos = 0;
+        uint pos = 0;
         if (elem != lruStack.end()) {
             pos = elem - lruStack.begin() + 1;
             lruStack.erase(elem);
@@ -39,7 +39,7 @@ void LruStackDist::evaluateRamList(const std::vector<Access> &data, ramListType 
         if (dirty_depth.size() <= access.pid) {
             dirty_depth.resize(access.pid + 1, 0); // clean
         }
-        uInt prev_dirty_depth = dirty_depth[access.pid];
+        uint prev_dirty_depth = dirty_depth[access.pid];
         // is fresh write? => init
         // has no prev dirty_depth: keep 0;
         // else: move down in stack;
@@ -82,12 +82,12 @@ void LruStackDist::evaluateRamList(const std::vector<Access> &data, ramListType 
     }// sum it up, buttercup!
     for (auto &ram_size: ramList) {
         int misses = 0, evicts = 0;
-        for (uInt i = 0; i < lruStackDist.size(); i++) {
+        for (uint i = 0; i < lruStackDist.size(); i++) {
             if (i > ram_size || i== 0) {
                 misses += lruStackDist[i];
             }
         }
-        for (uInt i = 0; i < lru_stack_dirty.size(); i++) {
+        for (uint i = 0; i < lru_stack_dirty.size(); i++) {
             if (i > ram_size || i == 0) {
                 evicts += lru_stack_dirty[i];
             }

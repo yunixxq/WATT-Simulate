@@ -9,7 +9,7 @@ struct CF_LRU: public EvictStrategy {
     int clean_percentage;
     CF_LRU(int clean_percentage): upper(), clean_percentage(clean_percentage) {}
 
-    uInt window_length;
+    uint window_length;
     std::unordered_map<PID, std::list<Access*>::iterator> hash_for_list;
     std::list<Access*> ram_list;
     void reInit(RamSize ram_size) override{
@@ -30,7 +30,7 @@ struct CF_LRU: public EvictStrategy {
     PID evictOne(RefTime) override{
         std::list<Access*>::iterator candidate = ram_list.begin();
         bool found = false;
-        for(uInt i= 0; i< window_length; i++){
+        for(uint i= 0; i < window_length; i++){
             if(!dirty_in_ram[(*candidate)->pid]){
                 found=true;
                 break;

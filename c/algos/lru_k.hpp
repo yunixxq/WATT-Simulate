@@ -4,15 +4,15 @@
 
 #include "EvictStrategy.hpp"
 
-struct LRU_K_Z: public EvictStrategyContainerKeepHistory{
-    using upper = EvictStrategyContainerKeepHistory;
+struct LRU_K_Z: public EvictStrategyKeepHistory{
+    using upper = EvictStrategyKeepHistory;
     LRU_K_Z(int K, int Z): upper(K, Z) {}
 };
 
 struct LRUalt_K: public EvictStrategyContainer<std::unordered_map<PID, std::list<RefTime>>> {
     using upper = EvictStrategyContainer<std::unordered_map<PID, std::list<RefTime>>>;
     LRUalt_K(int K): upper(), K(K){}
-    uInt K;
+    uint K;
 
     void access(Access& access) override{
 std::   list<RefTime>& hist = ram[access.pid];

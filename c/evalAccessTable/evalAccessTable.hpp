@@ -17,7 +17,7 @@
 class EvalAccessTable {
 public:
     EvalAccessTable(std::string  filename, std::string  out_dir, bool do_run = true);
-    const std::unordered_map<RamSize, std::pair<uInt, uInt>>& getValues(std::string algo);
+    const std::unordered_map<RamSize, std::pair<uint, uint>>& getValues(std::string algo);
     bool hasValues(std::string algo);
     bool hasAllValues(std::string algo);
     bool hasValue(std::string algo, RamSize ramSize);
@@ -77,7 +77,7 @@ private:
     void
     runParallelEvictStrategy(rwListSubType &rwList, std::function<T()> generator, ramListType missing) {
 
-        std::unordered_map<RamSize, std::future<std::pair<uInt, uInt>>> pairs;
+        std::unordered_map<RamSize, std::future<std::pair<uint, uint>>> pairs;
         std::vector<Access>& datacopy = data;
         auto evalFunc = [generator, &datacopy](RamSize ram_size) {
             return generator().evaluateOne(datacopy, ram_size);
@@ -85,14 +85,14 @@ private:
         std::for_each(
                 missing.begin(),
                 missing.end(),
-                [&](uInt ram_size) {
+                [&](uint ram_size) {
                     pairs[ram_size] = std::async(evalFunc, ram_size);
                 }
         );
         std::for_each(
                 pairs.begin(),
                 pairs.end(),
-                [&](std::pair<const RamSize, std::future<std::pair<uInt, uInt>>> &futPair) {
+                [&](std::pair<const RamSize, std::future<std::pair<uint, uint>>> &futPair) {
                     futPair.second.wait();
                     auto pair = futPair.second.get();
                     rwList[futPair.first] = pair;

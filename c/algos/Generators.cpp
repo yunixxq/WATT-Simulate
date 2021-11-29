@@ -30,13 +30,17 @@ std::function<LFUalt_K()> LFUalt_K_Generator(int K){
 std::function<LRU_K_Z()> LRU_K_Z_Generator(int K, int Z){
     return [K, Z](){return LRU_K_Z(K, Z);};}
 
-std::function<LFU_2K_Z()> LRU_2K_Z_Generator(uInt KR, uInt KW, int Z, bool write_as_read){
+std::function<LFU_2K_Z()> LRU_2K_Z_Generator(uint KR, uint KW, int Z, bool write_as_read){
     return [KR, KW, Z, write_as_read](){return LFU_2K_Z(KR, KW, Z, write_as_read);};}
 
-std::function<LFU_2K_Z_rand()> LRU_2K_Z_rand_Generator(uInt KR, uInt KW, int Z, uInt rand, bool writes_as_reads){
+std::function<LFU_2K_Z_rand()> LRU_2K_Z_rand_Generator(uint KR, uint KW, int Z, uint rand, bool writes_as_reads){
     return [KR, KW, Z, rand, writes_as_reads](){return LFU_2K_Z_rand(KR, KW, Z, rand, writes_as_reads);};}
 
-std::function<leanEvict()> Lean_Generator(uInt cooling_percentage){
+std::function<LFU_2K_Z_real()> LRU_2K_Z_real_Generator(uint KR, uint KW, int Z, uint randSize, uint randSelector, bool write_as_read, uint epoch_size, int pos_start){
+    return [KR, KW, Z, randSize, randSelector, write_as_read, epoch_size, pos_start](){
+        return LFU_2K_Z_real(KR, KW, Z, randSize, randSelector, write_as_read, epoch_size, pos_start);};}
+
+std::function<leanEvict()> Lean_Generator(uint cooling_percentage){
     return [cooling_percentage](){return leanEvict(cooling_percentage);};}
 
 

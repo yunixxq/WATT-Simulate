@@ -44,9 +44,9 @@ void StaticOpt::evaluateRamList(const std::vector<Access> &data, const ramListTy
     });
 
     for(RamSize ram_size: ramList){
-        uInt pageMisses = 0, dirtyEvicts = 0;
+        uint pageMisses = 0, dirtyEvicts = 0;
         if(pageIds.size() > ram_size){
-            for(uInt pos = 0; pos < pageIds.size(); pos++){
+            for(uint pos = 0; pos < pageIds.size(); pos++){
                 if(pos < ram_size -1){
                     pageMisses++;
                     if(writes[pageIds[pos]] > 0){
@@ -59,7 +59,7 @@ void StaticOpt::evaluateRamList(const std::vector<Access> &data, const ramListTy
             }
 
         }else {
-            for (uInt pos = 0; pos < pageIds.size(); pos++) {
+            for (uint pos = 0; pos < pageIds.size(); pos++) {
                 pageMisses++;
                 if (writes[pageIds[pos]] > 0) {
                     dirtyEvicts++;
