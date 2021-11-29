@@ -21,7 +21,8 @@ def genEvalList(costfactor, elements):
 
 
 def plotGraph(name, write_cost = 8):
-    df_all = pandas.read_csv(name, sep=r'\s*,\s', engine="python")
+    df_all = pandas.read_csv(name, sep=r',', engine="python")
+    print(df_all)
     elements = df_all["elements"][0]
     evalList = genEvalList(write_cost, elements)
 
