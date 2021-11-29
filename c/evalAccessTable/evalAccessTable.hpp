@@ -32,7 +32,7 @@ private:
     const std::string output_dir;
     const std::string output_file = output_dir + "output.csv";
     std::vector<Access> data;
-    const std::string first_csv_line = "algo, ramSize, elements, reads, writes";
+    const std::string first_csv_line = "algo,ramSize,elements,reads,writes";
     ramListType ramSizes;
     rwListType read_write_list;
     void handleCsv(std::ifstream &filestream);
