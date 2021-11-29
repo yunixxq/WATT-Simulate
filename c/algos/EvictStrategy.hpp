@@ -377,6 +377,9 @@ protected:
         if(epoch_size_iter >= ram_size / 2){
             epoch_size_iter = ram_size / 2;
         }
+        if(epoch_size_iter < 1){
+            epoch_size_iter = 1;
+        }
     }
     void access(Access& access) override{
         // Load out_of_mem_values (if exists)
