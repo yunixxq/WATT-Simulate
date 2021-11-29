@@ -20,15 +20,9 @@ def convertFile(name):
     labels.remove("X")
     labels.remove("elements")
     for algo in labels:
-
-        
         for ramsize in range(len(df_read["X"])):
-            #print(ramsize)
-            #print(df_read[algo][ramsize])
-            fresh_df.loc[ramsize] = ([algo, ramsize, elements, df_read[algo][ramsize], df_write[algo][ramsize]])
+            fresh_df.loc[ramsize] = ([algo, df_read["X"][ramsize], elements, df_read[algo][ramsize], df_write[algo][ramsize]])
         output = output.append(fresh_df, ignore_index=True)
-
-    print(output)
 
     output.to_csv(name+"output.csv", index=False)
 
