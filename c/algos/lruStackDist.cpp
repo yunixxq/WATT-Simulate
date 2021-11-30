@@ -69,7 +69,7 @@ void LruStackDist::evaluateRamList(const std::vector<Access> &data, ramListType 
                 ram_size += 10;
             } else if (ram_size < 1000) {
                 ram_size += 100;
-            } else if (ram_size < 10000) {
+            } else if (ram_size < 50000) {
                 ram_size += 1000;
             } else if (ram_size < 100000) {
                 ram_size += 10000;
