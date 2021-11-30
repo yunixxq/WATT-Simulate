@@ -36,6 +36,10 @@ static void push_frontAndResize(const Access& access, std::list<RefTime>& hist, 
     }
 };
 
+static uint calc_hist_size(RamSize ram_size, int Z){
+    return (uint) (Z >= 0 ? ram_size * Z : ( Z == -1 ? UINT32_MAX : ram_size / (-Z)));
+}
+
 template<class T>
 static void handle_out_of_ram(
         auto candidate,
@@ -309,11 +313,7 @@ protected:
         upper::reInit(ram_size);
         out_of_mem_history.clear();
         out_of_mem_order.clear();
-        if(Z>=0){
-            hist_size = (uint) Z * ram_size;
-        }else{
-            hist_size = (uint) ram_size / (-Z);
-        }
+        hist_size = calc_hist_size(ram_size, Z);
     }
     void access(Access& access) override{
         if(!in_ram[access.pid]){
@@ -372,14 +372,8 @@ protected:
         upper::reInit(ram_size);
         out_of_mem_history.clear();
         out_of_mem_order.clear();
-        hist_size = (uint) (Z >= 0 ? ram_size * Z : ram_size / (-Z));
-        epoch_size_iter = epoch_size;
-        if(epoch_size_iter >= ram_size / 2){
-            epoch_size_iter = ram_size / 2;
-        }
-        if(epoch_size_iter < 1){
-            epoch_size_iter = 1;
-        }
+        hist_size = calc_hist_size(ram_size, Z);
+        if((epoch_size_iter = ram_size / epoch_size) < 1) epoch_size_iter = 1;
     }
     void access(Access& access) override{
         // Load out_of_mem_values (if exists)

@@ -184,13 +184,14 @@ struct LFU_2K_Z_rand: public EvictStrategyKeepHistoryReadWrite{
 
 };
 
-struct LFU_2K_Z_real: public EvictStrategyKeepHistoryReadWrite{
+struct LFU_2K_E_real: public EvictStrategyKeepHistoryReadWrite{
     using upper = EvictStrategyKeepHistoryReadWrite;
     using history_type = std::pair<std::list<RefTime>, std::list<RefTime>>;
     using ram_type = std::unordered_map<PID, history_type>;
 
-    LFU_2K_Z_real(uint KR, uint KW, int Z, uint randSize, uint randSelector = 1, bool write_as_read = true, uint epoch_size = 1, int pos_start = 0):
-            upper(KR, KW, Z, write_as_read, epoch_size),
+    LFU_2K_E_real(uint KR, uint KW, uint randSize, uint randSelector = 1, bool write_as_read = true,
+                  uint epoch_size = 1, int pos_start = 0) :
+            upper(KR, KW, -1, write_as_read, epoch_size),
             pos_start(pos_start), // do we count different for frequencies?
             randSelector(randSelector), // how many do we want to evict?
             randSize(randSize), // how many are evaluated

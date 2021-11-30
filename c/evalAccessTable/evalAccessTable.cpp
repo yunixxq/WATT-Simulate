@@ -37,11 +37,14 @@ void EvalAccessTable::runFromFilename(bool only_new, bool ignore_old, bool full_
     init(ignore_old);
     runAlgorithmNonParallel("StaticOpt", StaticOpt());
     runAlgorithm("opt", Opt_Generator());
+    runAlgorithm("lean10", Lean_Generator(10));
     runAlgorithm("lean20", Lean_Generator(20));
+    runAlgorithm("lean30", Lean_Generator(30));
+    runAlgorithm("lean40", Lean_Generator(40));
 
     for(int k: {1000, 100, 20, 2, 1}){
         for(int z: {1000, 100, 10, 1}){
-            runAlgorithm("lfu_k_real_z" + std::to_string(z) + "_e" + std::to_string(k), LRU_2K_Z_real_Generator(8, 4, z, 5, 5, true, k));
+            runAlgorithm("lfu_k_real_e" + std::to_string(k), LRU_2K_E_real_Generator(8, 4, k, 5, 5, true, 0));
             runAlgorithm("lfu_k" + std::to_string(k) + "_z" + std::to_string(z), LFU_K_Z_Generator(k, z));
             // runAlgorithm("lfu2_k" + std::to_string(k) + "_z" + std::to_string(z), LFU2_K_Z_Generator(k, z));
             runAlgorithm("lru_k" + std::to_string(k) + "_z" + std::to_string(z), LRU_K_Z_Generator(k, z));
