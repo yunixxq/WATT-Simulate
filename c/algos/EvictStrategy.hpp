@@ -40,9 +40,9 @@ static uint calc_hist_size(RamSize ram_size, int Z){
     return (uint) (Z >= 0 ? ram_size * Z : ( Z == -1 ? UINT32_MAX : ram_size / (-Z)));
 }
 
-template<class T>
+template<class T, class iterator_type>
 static void handle_out_of_ram(
-        auto candidate,
+        iterator_type candidate,
         std::list<PID>& out_of_mem_order,
         std::unordered_map<PID, std::pair<std::list<PID>::iterator ,T>>& out_of_mem_history,
         uint hist_size){
