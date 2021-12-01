@@ -138,7 +138,7 @@ struct LFU_2K_Z_rand: public EvictStrategyKeepHistoryReadWrite{
         std::vector<uint> positions;
         do{
             uint next_pos = ram_distro(ran_engine);
-            if(std::find(positions.begin(), positions.end(), next_pos) != positions.end()){
+            if(std::find(positions.begin(), positions.end(), next_pos) == positions.end()){
                 positions.push_back(next_pos);
             }
         }while (positions.size() < rand_list_length);
