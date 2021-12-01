@@ -104,10 +104,10 @@ void EvalAccessTable::printToFile() {
     for (auto &algo: read_write_list) {
         for(auto& entry: algo.second){
             out_stream <<
-                algo.first << ", " <<
-                entry.first << ", " <<
-                elements << ", " <<
-                entry.second.first << ", " <<
+                algo.first << "," <<
+                entry.first << "," <<
+                elements << "," <<
+                entry.second.first << "," <<
                 entry.second.second << endl;
         }
     }
