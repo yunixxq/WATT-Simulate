@@ -42,7 +42,7 @@ void EvalAccessTable::runFromFilename(bool only_new, bool ignore_old, bool full_
     runAlgorithm("lean30", Lean_Generator(30));
     runAlgorithm("lean40", Lean_Generator(40));
 
-    for(int k: {20, 2, 1}){
+    for(int k: {32, 16, 8, 4, 2, 1}){
         for(int z: {-1}){
             runAlgorithm("lfu_k_realF_e" + std::to_string(k), LRU_2K_E_real_Generator(8, 4, k, 5, 5, false, 0));
             runAlgorithm("lfu_k" + std::to_string(k) + "_z" + std::to_string(z), LFU_K_Z_Generator(k, z));
