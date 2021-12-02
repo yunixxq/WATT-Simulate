@@ -43,15 +43,26 @@ struct OPT2: public EvictStrategyContainer<std::vector<std::pair<PID, RefTime>>>
 struct OPT3: public EvictStrategyContainer<std::map<RefTime, PID>> {
     using upper = EvictStrategyContainer<std::map<RefTime, PID>>;
     OPT3(): upper() {}
+    std::list<PID> evictionList;
 
     void access(Access& access) override{
         ram.erase(access.pos);
+        // this is only relevant, when multiple elements are not used anymore
+        if(ram.contains(access.nextRef)){
+            evictionList.push_back(access.pid);
+            return;
+        }
         ram[access.nextRef]=access.pid;
     };
     PID evictOne(int) override{
-        auto candidate = --(ram.rbegin().base());
+        if(!evictionList.empty()){
+            PID pid = evictionList.front();
+            evictionList.pop_front();
+            return pid;
+        }
+        auto candidate = ram.rbegin();
         PID pid = candidate->second;
-        ram.erase(candidate);
+        ram.erase(candidate->first);
         return pid;
 
     }

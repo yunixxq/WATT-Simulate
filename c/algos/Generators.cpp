@@ -62,6 +62,7 @@ std::function<LRU2a()> LRU2a_Generator() {return defGenerator<LRU2a>();}
 std::function<LRU2b()> LRU2b_Generator() {return defGenerator<LRU2b>();}
 std::function<LRU3()> LRU3_Generator() {return defGenerator<LRU3>();}
 
+//slooow
 std::function<OPT2()> Opt2_Generator() {return defGenerator<OPT2>();}
 
 // Old and unused

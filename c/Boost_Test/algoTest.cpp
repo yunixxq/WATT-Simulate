@@ -9,7 +9,7 @@
 EvalAccessTable init(){
     std::string file = "./../tpcc_64_-5.csv";
     EvalAccessTable test = EvalAccessTable(file, "/var/tmp", false);
-    test.init(false);
+    test.init(true);
     return std::move(test);
 }
 
@@ -116,5 +116,10 @@ BOOST_AUTO_TEST_SUITE(compare_algo)
         BOOST_TEST(compareToOther(instance, LFU2_K_Z_Generator(K, Z), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z), "lfu_K" + std::to_string(K) + "_Z" + std::to_string(Z)));
         // BOOST_TEST(compareToOther(instance, LFU1_K_Z_D_Generator(K, Z, 10), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z) + "_D10", "lfu_K" + std::to_string(K) + "_Z" + std::to_string(Z)));
  }
-
+    BOOST_AUTO_TEST_CASE(opt) {
+        EvalAccessTable instance = init();
+        runAlgo(instance, Opt_Generator(), "opt");
+        BOOST_TEST(compareToOther(instance,  Opt2_Generator(), "opt2", "opt"));
+        BOOST_TEST(compareToOther(instance,  Opt3_Generator(), "opt3", "opt"));
+    }
 BOOST_AUTO_TEST_SUITE_END()
