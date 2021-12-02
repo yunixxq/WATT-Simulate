@@ -5,22 +5,27 @@
 #include <filesystem>
 #include <cassert>
 #include <iostream>
+#include <list>
 #include "lruStackDist.hpp"
 
 void LruStackDist::evaluateRamList(const std::vector<Access> &data, ramListType &ramList,
                      rwListSubType &readWriteList){
     assert(ramList.size() == 0 && readWriteList.size() == 0);
     std::vector<int> lruStack, lruStackDist, lru_stack_dirty, dirty_depth;
-
+    std::vector<bool> inStack;
     for (auto &access: data) {
         // read
         // find pos;
-        auto elem = std::find(lruStack.begin(), lruStack.end(), access.pid);
+        if(inStack.size() <= access.pid){
+            inStack.resize(access.pid +1 , false);
+        }
         uint pos = 0;
-        if (elem != lruStack.end()) {
-            pos = elem - lruStack.begin() + 1;
+        if(inStack[access.pid]){
+            auto elem = std::find(lruStack.begin(), lruStack.end(), access.pid);
+            pos = elem - lruStack.begin() +1;
             lruStack.erase(elem);
         }
+        inStack[access.pid] = true;
         // put to pos 0;
         lruStack.emplace(lruStack.begin(), access.pid);
         if (lruStackDist.size() <= pos) {
