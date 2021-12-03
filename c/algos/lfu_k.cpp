@@ -5,7 +5,7 @@
 #include "lfu_k.hpp"
 
 double get_frequency(std::list<RefTime>& candidate, RefTime curr_time, int){
-    long pos =1000;
+    long pos =1;
     long best_age = 0, best_pos = -1;
 
     for(auto time: candidate){
@@ -16,10 +16,10 @@ double get_frequency(std::list<RefTime>& candidate, RefTime curr_time, int){
             best_pos = pos;
             best_age = age;
         }
-        if(pos==1000){
+        if(pos==1){
             pos = 0;
         }
-        pos+=10000;
+        pos+=10;
     }
     return best_pos * 1.0 /best_age;
 }
