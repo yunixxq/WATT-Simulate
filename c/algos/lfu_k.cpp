@@ -4,19 +4,22 @@
 
 #include "lfu_k.hpp"
 
-double get_frequency(std::list<RefTime>& candidate, RefTime curr_time, int pos_start=0){
-    int pos =pos_start;
-    double best_freq = 0;
+double get_frequency(std::list<RefTime>& candidate, RefTime curr_time, int){
+    long pos =1000;
+    long best_age = 0, best_pos = -1;
+
     for(auto time: candidate){
-        int age = curr_time - time;
-        double new_freq = pos/(double)age;
-        if(pos == 0){
-            new_freq = 0.1/age;
+        long age = curr_time - time;
+        long left = pos*best_age;
+        long right = best_pos * age;
+        if(left> right){
+            best_pos = pos;
+            best_age = age;
         }
-        if(new_freq > best_freq){
-            best_freq = new_freq;
+        if(pos==1000){
+            pos = 0;
         }
-        pos++;
+        pos+=10000;
     }
-    return best_freq;
+    return best_pos * 1.0 /best_age;
 }
