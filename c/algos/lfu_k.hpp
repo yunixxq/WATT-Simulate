@@ -3,7 +3,7 @@
 //
 #include "EvictStrategy.hpp"
 #include <functional>
-double get_frequency(std::list<RefTime>& candidate, RefTime curr_time, int pos_start);
+double get_frequency(std::list<RefTime>& candidate, RefTime curr_time, int pos_start=0);
 
 struct LFU_K: public EvictStrategyHistory{
     using upper = EvictStrategyHistory;
@@ -33,9 +33,10 @@ struct LFU_K_Z: public EvictStrategyKeepHistory{
     void chooseEviction(RefTime curr_time, container_type::iterator& candidate, container_type::iterator end) override{
         container_type::iterator runner = candidate;
         double candidate_freq = get_frequency(candidate->second, curr_time, pos_start);
+        ++runner;
         while(runner!= end){
             double runner_freq = get_frequency(runner->second, curr_time, pos_start);
-            if(runner_freq < candidate_freq){
+            if(runner_freq <= candidate_freq){
                 candidate = runner;
                 candidate_freq = runner_freq;
             }
@@ -352,7 +353,7 @@ struct LFUalt_K: public EvictStrategyContainer<std::unordered_set<PID>> {
     uint K;
 
     std::unordered_map<PID, std::list<RefTime>> history;
-    void access(Access& access) override{
+    void access(const Access& access) override{
         std::list<RefTime>& hist = history[access.pid];
         hist.push_front(access.pos);
         if(hist.size() > K){

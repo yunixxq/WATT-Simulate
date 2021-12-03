@@ -14,7 +14,7 @@ struct LRU_WSR: public EvictStrategy {
         hash_for_list.clear();
         EvictStrategy::reInit(ram_size);
     }
-    void access(Access& access) override{
+    void access(const Access& access) override{
         if(in_ram[access.pid]){
             ram_list.erase(hash_for_list[access.pid]);
         }

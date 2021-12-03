@@ -37,7 +37,7 @@ private:
         cooling_list_pointer.clear();
     }
 
-    void access(Access& access) override{
+    void access(const Access& access) override{
         if(is_hot.size() <= access.pid){
             is_hot.resize(access.pid + 1, false);
         }

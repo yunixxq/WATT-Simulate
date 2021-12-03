@@ -62,15 +62,13 @@ class EvictStrategy
 public:
     explicit EvictStrategy(){};
 
-    virtual void evaluateRamList(std::vector<Access> &data, std::vector<RamSize> &x_list, std::vector<uint> &read_list,
-                         std::vector<uint> &write_list) {
-        for(auto& ram_size: x_list){
-            auto pair = evaluateOne(data, ram_size);
-            read_list.push_back(pair.first);
-            write_list.push_back(pair.second);
+    virtual void evaluateRamList(const std::vector<Access> &data, ramListType &ramList,
+                                 rwListSubType &readWriteList) {
+        for(auto& ram_size: ramList){
+            readWriteList[ram_size] = evaluateOne(data, ram_size);
         }
     }
-    std::pair<uint, uint> evaluateOne(std::vector<Access> &data, RamSize ram_size){
+    std::pair<uint, uint> evaluateOne(const std::vector<Access> &data, RamSize ram_size){
         reInit(ram_size);
         checkConditions(ram_size);
         return executeStrategy(data);
@@ -101,9 +99,9 @@ protected:
      * @param access_data list of accesses
      * @return
      */
-    std::pair<uint, uint> executeStrategy(std::vector<Access>& access_data){
+    std::pair<uint, uint> executeStrategy(const std::vector<Access>& access_data){
         uint page_misses = 0, dirty_evicts = 0;
-        for(Access& single_access: access_data){
+        for(const Access& single_access: access_data){
             checkSizes(single_access.pid);
             if(!in_ram[single_access.pid]){
                 page_misses++;
@@ -127,7 +125,7 @@ protected:
      * Handle the access in the internal structure
      * @param access
      */
-    virtual void access(Access& access) = 0;
+    virtual void access(const Access& access) = 0;
     /**
      * Handle one evict iteration.
      * Per default handels oneEviction
@@ -218,7 +216,7 @@ protected:
         upper::reInit(ram_size);
         fast_finder.clear();
     }
-    void access(Access& access) override{
+    void access(const Access& access) override{
         if(upper::in_ram[access.pid]){
             fast_finder[access.pid] = updateElement(fast_finder[access.pid], access);
 
@@ -239,7 +237,7 @@ protected:
      * @param access
      * @return Iterator for pos in RAM
      */
-    virtual typename std::list<T>::iterator insertElement(Access& access){
+    virtual typename std::list<T>::iterator insertElement(const Access& access){
         upper::ram.push_back(access.pid);
         return std::prev(upper::ram.end());
     }
@@ -249,7 +247,7 @@ protected:
      * @param access
      * @return Iterator for pos in RAM
      */
-    virtual typename std::list<T>::iterator updateElement(typename std::list<T>::iterator old, Access& access){
+    virtual typename std::list<T>::iterator updateElement(typename std::list<T>::iterator old, const Access& access){
         upper::ram.erase(old);
 
         upper::ram.push_back(access.pid);
@@ -268,7 +266,7 @@ protected:
     void reInit(RamSize ram_size) override{
         upper::reInit(ram_size);
     }
-    void access(Access& access) override{
+    void access(const Access& access) override{
         std::   list<RefTime>& hist = ram[access.pid];
         hist.push_front(access.pos);
         if(hist.size() > K){
@@ -315,7 +313,7 @@ protected:
         out_of_mem_order.clear();
         hist_size = calc_hist_size(ram_size, Z);
     }
-    void access(Access& access) override{
+    void access(const Access& access) override{
         if(!in_ram[access.pid]){
             auto old_value = out_of_mem_history.find(access.pid);
             if(old_value!= out_of_mem_history.end()){
@@ -375,7 +373,7 @@ protected:
         hist_size = calc_hist_size(ram_size, Z);
         if((epoch_size_iter = ram_size / epoch_size) < 1) epoch_size_iter = 1;
     }
-    void access(Access& access) override{
+    void access(const Access& access) override{
         // Load out_of_mem_values (if exists)
         if(!in_ram[access.pid]){
             auto old_value = out_of_mem_history.find(access.pid);

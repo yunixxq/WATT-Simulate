@@ -22,7 +22,7 @@ private:
         ram_distro = std::uniform_int_distribution<int>(0, ram_size-1);
     }
 
-    void access(Access& access) override{
+    void access(const Access& access) override{
         ram.insert(access.pid);
         assert(ram.size() == curr_count);
     };
