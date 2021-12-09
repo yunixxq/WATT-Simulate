@@ -17,7 +17,7 @@
 class EvalAccessTable {
 public:
     EvalAccessTable(std::string  filename, std::string  out_dir, bool do_run = true);
-    const std::unordered_map<RamSize, std::pair<uint, uint>>& getValues(std::string algo);
+    const rwListSubType& getValues(std::string algo);
     bool hasValues(std::string algo);
     bool hasAllValues(std::string algo);
     bool hasValue(std::string algo, RamSize ramSize);

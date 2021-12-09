@@ -167,7 +167,7 @@ void EvalAccessTable::createLists(bool ignore_last_run) {
     runAlgorithmNonParallel("lru", LruStackDist());
 }
 
-const std::unordered_map<RamSize, std::pair<uint, uint>>& EvalAccessTable::getValues(std::string name) {
+const rwListSubType& EvalAccessTable::getValues(std::string name) {
     assert(hasValues(name));
     return read_write_list[name];
 }

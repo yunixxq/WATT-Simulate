@@ -6,6 +6,8 @@
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
+#include <set>
+#include <map>
 #include <string>
 
 #ifndef C_GENERAL_HPP
@@ -15,9 +17,9 @@
 using PID = uint;
 using RefTime = int;
 using RamSize = uint;
-using ramListType = std::unordered_set<RamSize>;
-using rwListSubType = std::unordered_map<RamSize, std::pair<uint, uint>>;
-using rwListType = std::unordered_map<std::string, rwListSubType>;
+using ramListType = std::set<RamSize>;
+using rwListSubType = std::map<RamSize, std::pair<uint, uint>>;
+using rwListType = std::map<std::string, rwListSubType>;
 
 struct Access {
     PID pid=0;
