@@ -1,3 +1,0 @@
-[submodule "traces"]
-	path = traces
-	url = git@cs6-gitlab.cs6.fau.de:devpromo/traces.git

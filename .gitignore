@@ -1,7 +1,4 @@
-*.sol
-*.csv
-*.pdf
-*.mps
-*.pyc
-*.txt
-!**/CMakeLists.txt
+cmake-build-debug
+.idea
+.vscode
+build
