@@ -371,7 +371,9 @@ protected:
         out_of_mem_history.clear();
         out_of_mem_order.clear();
         hist_size = calc_hist_size(ram_size, Z);
-        if((epoch_size_iter = ram_size / epoch_size) < 1) epoch_size_iter = 1;
+        if(epoch_size == 0)epoch_size_iter = 1;
+        else if((epoch_size_iter = ram_size / epoch_size) < 1) epoch_size_iter = 1;
+
     }
     void access(const Access& access) override{
         // Load out_of_mem_values (if exists)
