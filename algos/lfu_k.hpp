@@ -243,7 +243,7 @@ struct LFU_2K_E_real: public EvictStrategyKeepHistoryReadWrite{
         std::sort(elements.begin(), elements.end(), gt_compare_freq(curr_time, this->write_as_read, this->pos_start, this->writeCost));
         // Evict x elements
         // check, if list is correctly sorted
-        assert(elements.size()<2 || eval_freq(*elements[0], curr_time, this->write_as_read, this->pos_start, this->writeCost)<= eval_freq(*elements[1], curr_time, this->write_as_read, this->pos_start, this-writeCost));
+        assert(elements.size()<2 || eval_freq(*elements[0], curr_time, this->write_as_read, this->pos_start, this->writeCost)<= eval_freq(*elements[1], curr_time, this->write_as_read, this->pos_start, this->writeCost));
 
         uint dirtyEvicts = 0;
         for(uint i = 0; i< rand_list_pick && i < elements.size(); i++){
