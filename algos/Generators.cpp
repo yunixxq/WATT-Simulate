@@ -30,17 +30,23 @@ std::function<LFUalt_K()> LFUalt_K_Generator(int K){
 std::function<LRU_K_Z()> LRU_K_Z_Generator(int K, int Z){
     return [K, Z](){return LRU_K_Z(K, Z);};}
 
-std::function<LFU_2K_Z()> LRU_2K_Z_Generator(uint KR, uint KW, int Z, bool write_as_read){
-    return [KR, KW, Z, write_as_read](){return LFU_2K_Z(KR, KW, Z, write_as_read);};}
+std::function<LFU_2K_Z()> LFU_2K_Z_Generator(uint K_read, uint K_write, int out_of_ram_history_length, bool writes_as_reads){
+    return [K_read, K_write, out_of_ram_history_length, writes_as_reads](){return LFU_2K_Z(K_read, K_write, out_of_ram_history_length, writes_as_reads);};}
 
-std::function<LFU_2K_Z_rand()> LRU_2K_Z_rand_Generator(uint KR, uint KW, int Z, uint rand, bool writes_as_reads){
-    return [KR, KW, Z, rand, writes_as_reads](){return LFU_2K_Z_rand(KR, KW, Z, rand, writes_as_reads);};}
+std::function<LFU_2K_Z_rand()> LFU_2K_Z_rand_Generator(uint K_read, uint K_write, int out_of_ram_history_length, uint randSelector, bool writes_as_reads){
+    return [K_read, K_write, out_of_ram_history_length, randSelector, writes_as_reads](){return LFU_2K_Z_rand(K_read, K_write, out_of_ram_history_length, randSelector, writes_as_reads);};}
 
 std::function<LFU_2K_E_real()>
-LRU_2K_E_real_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read,
+LFU_2K_E_real_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read,
                         int pos_start) {
     return [KR, KW, randSize, randSelector, write_as_read, epoch_size, pos_start](){
         return LFU_2K_E_real(KR, KW, randSize, randSelector, write_as_read, epoch_size, pos_start);};}
+
+std::function<LFU_2K_E_real()>
+LFU_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read,
+int pos_start, uint writeCost) {
+return [KR, KW, randSize, randSelector, write_as_read, epoch_size, pos_start, writeCost](){
+return LFU_2K_E_real(KR, KW, randSize, randSelector, write_as_read, epoch_size, pos_start, writeCost);};}
 
 std::function<leanEvict()> Lean_Generator(uint cooling_percentage){
     return [cooling_percentage](){return leanEvict(cooling_percentage);};}
