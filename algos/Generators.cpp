@@ -33,8 +33,8 @@ std::function<LRU_K_Z()> LRU_K_Z_Generator(int K, int Z){
 std::function<LFU_2K_Z()> LFU_2K_Z_Generator(uint K_read, uint K_write, int out_of_ram_history_length, bool writes_as_reads){
     return [K_read, K_write, out_of_ram_history_length, writes_as_reads](){return LFU_2K_Z(K_read, K_write, out_of_ram_history_length, writes_as_reads);};}
 
-std::function<LFU_2K_Z_rand()> LFU_2K_Z_rand_Generator(uint K_read, uint K_write, int out_of_ram_history_length, uint randSelector, bool writes_as_reads){
-    return [K_read, K_write, out_of_ram_history_length, randSelector, writes_as_reads](){return LFU_2K_Z_rand(K_read, K_write, out_of_ram_history_length, randSelector, writes_as_reads);};}
+std::function<LFU_2K_Z_rand()> LFU_2K_Z_rand_Generator(uint K_read, uint K_write, int out_of_ram_history_length, uint randSize, bool writes_as_reads){
+    return [K_read, K_write, out_of_ram_history_length, randSize, writes_as_reads](){return LFU_2K_Z_rand(K_read, K_write, out_of_ram_history_length, randSize, writes_as_reads);};}
 
 std::function<LFU_2K_E_real()>
 LFU_2K_E_real_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read,

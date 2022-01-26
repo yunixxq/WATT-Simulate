@@ -98,6 +98,21 @@ void EvalAccessTable::runFromFilename(bool only_new, bool ignore_old, bool full_
         runAlgorithm("lfu_k_real_F_e" + std::to_string(k) + "_wc" + std::to_string(8), LFU_Generator(8, 4, k, 5, 5, false, 0, 8));
         runAlgorithm("lfu_k_" + std::to_string(k), LFU_K_Generator(k));
     }
+    for(int kr: {16, 8, 4, 2})
+        for(int kw: {16,8,4,2})
+            for (int e: {0, 20, 10, 5, 1})
+                for (int rsi: {1, 5, 10})
+                    for (int rsa: {1,5, 10})
+                        for (int p: {0,1}) {
+                            string name = "lfu_vers2_kr" + to_string(kr)
+                                          + "_kw" + to_string(kw)
+                                          + "_e" + to_string(e)
+                                          + "_rsi" + to_string(rsi)
+                                          + "_rsa" + to_string(rsa)
+                                          + "_p" + to_string(p);
+                            runAlgorithm(name,LFU_2K_E_real_Generator(kr, kw, e, rsi, rsa, false, p));
+                            runAlgorithm(name + "_war",LFU_2K_E_real_Generator(kr, kw, e, rsi, rsa, true, p));
+                        }
     printToFile();
 }
 

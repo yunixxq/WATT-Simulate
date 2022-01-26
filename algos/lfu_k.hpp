@@ -105,15 +105,15 @@ struct LFU_2K_Z_rand: public EvictStrategyKeepHistoryReadWrite{
     using history_type = std::pair<std::list<RefTime>, std::list<RefTime>>;
     using ram_type = std::unordered_map<PID, history_type>;
 
-    LFU_2K_Z_rand(uint KR, uint KW, int Z, uint randSelector, bool write_as_read, int pos_start = 0):
+    LFU_2K_Z_rand(uint KR, uint KW, int Z, uint randSize, bool write_as_read, int pos_start = 0):
         upper(KR, KW, Z, write_as_read),
         pos_start(pos_start),
-        randSelector(randSelector),
+        randSize(randSize),
         lower_bound(20),
         upper_bound(100){}
 
     const int pos_start;
-    const uint randSelector;
+    const uint randSize;
     const uint lower_bound, upper_bound;
 
     uint rand_list_length;
@@ -122,7 +122,7 @@ struct LFU_2K_Z_rand: public EvictStrategyKeepHistoryReadWrite{
     void reInit(RamSize ram_size) override{
         upper::reInit(ram_size);
         ram_distro = std::uniform_int_distribution<int>(0, ram_size-1);
-        rand_list_length = (uint) ram_size * randSelector / 100;
+        rand_list_length = (uint) ram_size * randSize / 100;
         if(rand_list_length > upper_bound){
             rand_list_length = upper_bound;
         }
