@@ -97,12 +97,13 @@ void EvalAccessTable::runFromFilename(bool only_new, bool ignore_old, bool full_
             }
         }
     }
-    for(int kr: {16, 8, 4, 2})
-        for(int kw: {16,8,4,2})
+    for(int kr: {16, 8, 4, 2, 0})
+        for(int kw: {16,8,4,2,0})
             for (int e: {0, 20, 10, 5, 1})
                 for (int rsi: {1, 5, 10})
                     for (int rsa: {1,5, 10})
-                        for (int p: {0,1}) {
+                        for (int p: {0,1})
+                        {
                             string name = "lfu_vers2_kr" + to_string(kr)
                                           + "_kw" + to_string(kw)
                                           + "_e" + to_string(e)
