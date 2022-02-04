@@ -217,8 +217,8 @@ struct LFU_2K_E_real: public EvictStrategyKeepHistoryReadWrite{
         if (rand_list_length < lower_bound){
             rand_list_length= lower_bound;
         }
-        if (rand_list_length > ram_size){
-            rand_list_length = ram_size;
+        if (rand_list_length > ram_size/2){
+            rand_list_length = ram_size/2;
         }
         rand_list_pick = randSelector;
     }
