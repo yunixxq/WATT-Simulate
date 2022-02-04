@@ -43,7 +43,7 @@ LFU_2K_E_real_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint r
                         int pos_start);
 std::function<LFU_2K_E_real()>
 LFU_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read,
-              int pos_start, uint writeCost);
+              int pos_start, uint writeCost=1);
 
 std::function<leanEvict()> Lean_Generator(uint cooling_percentage);
 
