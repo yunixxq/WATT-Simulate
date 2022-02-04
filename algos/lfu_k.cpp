@@ -22,5 +22,8 @@ double get_frequency(std::list<RefTime>& candidate, RefTime curr_time, int pos )
         }
         pos+=10;
     }
+    if(best_pos == -1 || best_age == 0){
+        return 0;
+    }
     return best_pos * 1.0 /best_age;
 }
