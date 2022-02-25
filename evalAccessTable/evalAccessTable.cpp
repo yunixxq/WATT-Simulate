@@ -95,24 +95,63 @@ void EvalAccessTable::runFromFilename(bool only_new, bool ignore_old, bool full_
                 runAlgorithm("lfu_k_real_F_e" + std::to_string(k) + "_wc" + std::to_string(8), LFU_Generator(8, 4, k, 5, 5, false, 0, 8));
                 runAlgorithm("lfu_k_" + std::to_string(k), LFU_K_Generator(k));
             }
+            for(int kr: {8,4,0} ) //{16, 8, 4, 2, 0})
+                for(int kw: {8,4,0}) //{16,8,4,2,0})
+                    for (int e: {1}) //{0, 20, 10, 5, 1})
+                        for (int rsi: {1, 5, 10})
+                            for (int rsa: {1,5, 10})
+                                for (int p: {0}) //{0,1})
+                                {
+                                    string name = "lfu_vers2_kr" + to_string(kr)
+                                                  + "_kw" + to_string(kw)
+                                                  + "_e" + to_string(e)
+                                                  + "_rsi" + to_string(rsi)
+                                                  + "_rsa" + to_string(rsa)
+                                                  + "_p" + to_string(p);
+                                    runAlgorithm(name,LFU_Generator(kr, kw, e, rsi, rsa, false, p));
+                                    runAlgorithm(name + "_war",LFU_Generator(kr, kw, e, rsi, rsa, true, p));
+                                }
         }
+        for(int kr: {8,4,0} ) //{16, 8, 4, 2, 0})
+            for(int kw: {0}) //{16,8,4,2,0})
+                for (int e: {0}) //{0, 20, 10, 5, 1})
+                    for (int rsi: {1, 5, 10})
+                        for (int rsa: {1,5, 10})
+                            for (int p: {0}) //{0,1})
+                            {
+                                string name = "lfu_vers2_kr" + to_string(kr)
+                                              + "_kw" + to_string(kw)
+                                              + "_e" + to_string(e)
+                                              + "_rsi" + to_string(rsi)
+                                              + "_rsa" + to_string(rsa)
+                                              + "_p" + to_string(p);
+                                runAlgorithm(name,LFU_Generator(kr, kw, e, rsi, rsa, false, p));
+                                runAlgorithm(name + "_war",LFU_Generator(kr, kw, e, rsi, rsa, true, p));
+                            }
     }
-    for(int kr: {16, 8, 4, 2, 0})
-        for(int kw: {16,8,4,2,0})
-            for (int e: {0, 20, 10, 5, 1})
-                for (int rsi: {1, 5, 10})
-                    for (int rsa: {1,5, 10})
-                        for (int p: {0,1})
-                        {
-                            string name = "lfu_vers2_kr" + to_string(kr)
-                                          + "_kw" + to_string(kw)
-                                          + "_e" + to_string(e)
-                                          + "_rsi" + to_string(rsi)
-                                          + "_rsa" + to_string(rsa)
-                                          + "_p" + to_string(p);
-                            runAlgorithm(name,LFU_2K_E_real_Generator(kr, kw, e, rsi, rsa, false, p));
-                            runAlgorithm(name + "_war",LFU_2K_E_real_Generator(kr, kw, e, rsi, rsa, true, p));
-                        }
+
+    runAlgorithm("opt", Opt_Generator());
+    runAlgorithm("lean10", Lean_Generator(10));
+    runAlgorithm("lean20", Lean_Generator(20));
+    runAlgorithm("lean30", Lean_Generator(30));
+    runAlgorithm("lean40", Lean_Generator(40));
+    runAlgorithm("random", Random_Generator());
+    runAlgorithm("cf_lru30", CfLRUGenerator(30));
+    runAlgorithm("cf_lru40", CfLRUGenerator(40));
+    runAlgorithm("cf_lru50", CfLRUGenerator(50));
+    runAlgorithm("cf_lru60", CfLRUGenerator(60));
+    runAlgorithm("lru_wsr", LRU_WSR_Generator());
+    runAlgorithm("lfu_vers2_kr8_kw0_e20_rsi10_rsa1_p0_war", LFU_Generator(8, 0, 20, 10, 1, true, 0));
+    runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_p0", LFU_Generator(8, 0, 20, 10, 1, true, 0));
+    runAlgorithm("lfu_vers2_kr8_kw0_e20_rsi10_rsa1_p0_wc2_war", LFU_Generator(8, 0, 20, 10, 1, true, 0, 2));
+    runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_p0_wc2", LFU_Generator(8, 0, 20, 10, 1, true, 0, 2));
+    runAlgorithm("lfu_vers2_kr8_kw0_e20_rsi10_rsa1_p0_wc4_war", LFU_Generator(8, 0, 20, 10, 1, true, 0, 4));
+    runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_p0_wc4", LFU_Generator(8, 0, 20, 10, 1, true, 0, 4));
+    runAlgorithm("lfu_vers2_kr8_kw0_e20_rsi10_rsa1_p0_wc8_war", LFU_Generator(8, 0, 20, 10, 1, true, 0, 8));
+    runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_p0_wc8", LFU_Generator(8, 0, 20, 10, 1, true, 0, 8));
+
+
+
     printToFile();
 }
 

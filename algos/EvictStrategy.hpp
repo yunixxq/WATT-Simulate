@@ -314,7 +314,7 @@ protected:
         hist_size = calc_hist_size(ram_size, Z);
     }
     void access(const Access& access) override{
-        if(!in_ram[access.pid]){
+        if(!in_ram[access.pid]){ // Check History
             auto old_value = out_of_mem_history.find(access.pid);
             if(old_value!= out_of_mem_history.end()){
                 out_of_mem_order.erase(old_value->second.first);
@@ -322,7 +322,7 @@ protected:
                 out_of_mem_history.erase(old_value);
             }
         }
-        std::   list<RefTime>& hist = ram[access.pid];
+        std::list<RefTime>& hist = ram[access.pid];
         push_frontAndResize(access, hist, K);
         assert(*hist.begin() == access.pos);
     }
