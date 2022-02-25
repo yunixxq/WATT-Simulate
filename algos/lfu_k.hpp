@@ -258,8 +258,8 @@ struct LFU_2K_E_real: public EvictStrategyKeepHistoryReadWrite{
     static double
     eval_freq(std::pair<PID, history_type> candidate, RefTime curr_time, bool write_as_read, uint pos_start = 0, uint write_cost = 1) {
         double candidate_freq_R = get_frequency(candidate.second.first, curr_time, pos_start);
-        double candidate_freq_W = get_frequency(candidate.second.second, curr_time, pos_start)* write_cost;
-        double candidate_freq = candidate_freq_R + candidate_freq_W;
+        double candidate_freq_W = get_frequency(candidate.second.second, curr_time, pos_start);
+        double candidate_freq = candidate_freq_R + candidate_freq_W * write_cost;
         if(!write_as_read){
             candidate_freq += candidate_freq_W;
         }

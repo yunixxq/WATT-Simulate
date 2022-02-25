@@ -142,13 +142,14 @@ void EvalAccessTable::runFromFilename(bool only_new, bool ignore_old, bool full_
     runAlgorithm("cf_lru60", CfLRUGenerator(60));
     runAlgorithm("lru_wsr", LRU_WSR_Generator());
     runAlgorithm("lfu_vers2_kr8_kw0_e20_rsi10_rsa1_p0_war", LFU_Generator(8, 0, 20, 10, 1, true, 0));
-    runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_p0", LFU_Generator(8, 0, 20, 10, 1, true, 0));
-    runAlgorithm("lfu_vers2_kr8_kw0_e20_rsi10_rsa1_p0_wc2_war", LFU_Generator(8, 0, 20, 10, 1, true, 0, 2));
-    runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_p0_wc2", LFU_Generator(8, 0, 20, 10, 1, true, 0, 2));
-    runAlgorithm("lfu_vers2_kr8_kw0_e20_rsi10_rsa1_p0_wc4_war", LFU_Generator(8, 0, 20, 10, 1, true, 0, 4));
-    runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_p0_wc4", LFU_Generator(8, 0, 20, 10, 1, true, 0, 4));
-    runAlgorithm("lfu_vers2_kr8_kw0_e20_rsi10_rsa1_p0_wc8_war", LFU_Generator(8, 0, 20, 10, 1, true, 0, 8));
-    runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_p0_wc8", LFU_Generator(8, 0, 20, 10, 1, true, 0, 8));
+    runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_p0", LFU_Generator(8, 0, 20, 10, 1, false, 0));
+    runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_p0_wc2", LFU_Generator(8, 0, 20, 10, 1, false, 0, 2));
+    runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_p0_wc4", LFU_Generator(8, 0, 20, 10, 1, false, 0, 4));
+    runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_p0_wc8", LFU_Generator(8, 0, 20, 10, 1, false, 0, 8));
+    runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_p0_war", LFU_Generator(8, 0, 20, 10, 1, true, 0));
+    runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_p0_wc2_war", LFU_Generator(8, 0, 20, 10, 1, true, 0, 2));
+    runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_p0_wc4_war", LFU_Generator(8, 0, 20, 10, 1, true, 0, 4));
+    runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_p0_wc8_war", LFU_Generator(8, 0, 20, 10, 1, true, 0, 8));
 
 
 
