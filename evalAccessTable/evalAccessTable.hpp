@@ -69,8 +69,6 @@ public:
             std::chrono::duration<double> seconds_double = t2 - t1;
             std::cout << seconds_double.count() << " seconds" << std::endl;
 
-        }else{
-            std::cout << "skipping: " << name <<std::endl;
         }
     }
 
