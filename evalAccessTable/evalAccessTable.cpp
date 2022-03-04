@@ -40,8 +40,8 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
     if(benchmark){
         advanced_with_variations_algos();
 
-        for (int kr: {8, 4, 0}) //{16, 8, 4, 2, 0})
-            for (int kw: {8, 4, 0}) //{16,8,4,2,0})
+        for (int kr: {8, 4, 2, 0}) //{16, 8, 4, 2, 0})
+            for (int kw: {8, 4, 2, 1, 0}) //{16,8,4,2,0})
             {
                 if (kr == 0 && kw == 0)
                     continue;
