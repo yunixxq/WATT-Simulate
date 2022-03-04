@@ -17,38 +17,65 @@ EvalAccessTable::EvalAccessTable(std::string  filename, std::string  out_dir, bo
             return;
         }
         bool test = false;
-        bool full_run = false;
-        if(test) {
-            runFromFilename(true, true);
-        }else if (full_run){
-            runFromFilename(false, true);
-        }else{
-            runFromFilename(false, false, false, false);
-        }
-
+        bool benchmark = true;
+        runFromFilename(test, benchmark);
     };
 
-void EvalAccessTable::init(bool ignore_last_run){
+void EvalAccessTable::init(bool ignore_last_run, int max_ram){
     getDataFile();
-    createLists(ignore_last_run); // this runs "lru" (lru_stack_trace)
+    if(ignore_last_run){
+        max_ram = -1;
+    }
+    createLists(ignore_last_run, max_ram); // this runs "lru" (lru_stack_trace)
 }
-void EvalAccessTable::runFromFilename(bool only_new, bool ignore_old, bool full_run, bool run_slow) {
-    // full_run runs not usefull + duplicates
-    init(ignore_old);
-    if(!only_new) {
-        runAlgorithmNonParallel("StaticOpt", StaticOpt());
-        runAlgorithm("opt", Opt_Generator());
-        runAlgorithm("lean10", Lean_Generator(10));
-        runAlgorithm("lean20", Lean_Generator(20));
-        runAlgorithm("lean30", Lean_Generator(30));
-        runAlgorithm("lean40", Lean_Generator(40));
+void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
+    // in case of full run (not test or benchmark)
+    bool run_slow = false;
+    bool full_run = false;
+    // Ignore last if test run, else not!
+    init(test, 10000);
 
-        runAlgorithm("random", Random_Generator());
-        runAlgorithm("cf_lru30", CfLRUGenerator(30));
-        runAlgorithm("cf_lru40", CfLRUGenerator(40));
-        runAlgorithm("cf_lru50", CfLRUGenerator(50));
-        runAlgorithm("cf_lru60", CfLRUGenerator(60));
-        runAlgorithm("lru_wsr", LRU_WSR_Generator());
+    default_compare_algos();
+    advanced_compare_algos();
+    if(benchmark){
+        advanced_with_variations_algos();
+
+        for (int kr: {8, 4, 0}) //{16, 8, 4, 2, 0})
+            for (int kw: {8, 4, 0}) //{16,8,4,2,0})
+            {
+                if (kr == 0 && kw == 0)
+                    continue;
+                for (int e: {0, 20, 10, 5, 1})
+                    for (int rsi: {1, 5, 10})
+                        for (int rsa: {1, 5, 10})
+                            for (int p: {0, 1})
+                                for (int wc: {1, 2, 4, 8}) {
+                                    if (kw == 0 && wc != 1)
+                                        continue;
+                                    string name = "lfu_vers2_kr" + to_string(kr)
+                                                  + "_kw" + to_string(kw)
+                                                  + "_e" + to_string(e)
+                                                  + "_rsi" + to_string(rsi)
+                                                  + "_rsa" + to_string(rsa)
+                                                  + "_wc" + to_string(wc)
+                                                  + "_p" + to_string(p);
+                                    runAlgorithm(name, LFU_Generator(kr, kw, e, rsi, rsa, false, p, wc));
+                                    runAlgorithm(name + "_war", LFU_Generator(kr, kw, e, rsi, rsa, true, p, wc));
+                                }
+            }
+        runAlgorithm("lfu_vers2_kr8_kw0_e20_rsi10_rsa1_wc1_p0_war", LFU_Generator(8, 0, 20, 10, 1, true, 0));
+        runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_wc1_p0", LFU_Generator(8, 4, 20, 10, 1, false, 0));
+        runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_wc2_p0", LFU_Generator(8, 4, 20, 10, 1, false, 0, 2));
+        runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_wc4_p0", LFU_Generator(8, 4, 20, 10, 1, false, 0, 4));
+        runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_wc8_p0", LFU_Generator(8, 4, 20, 10, 1, false, 0, 8));
+        runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_wc1_p0_war", LFU_Generator(8, 4, 20, 10, 1, true, 0));
+        runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_wc2_p0_war", LFU_Generator(8, 4, 20, 10, 1, true, 0, 2));
+        runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_wc4_p0_war", LFU_Generator(8, 4, 20, 10, 1, true, 0, 4));
+        runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_wc8_p0_war", LFU_Generator(8, 4, 20, 10, 1, true, 0, 8));
+
+    }
+    if(!test && !benchmark) {
+        advanced_with_variations_algos();
         if (full_run) {
             runAlgorithm("lru_alt", LRU_Generator());
             runAlgorithm("lru_alt1", LRU1_Generator());
@@ -99,49 +126,36 @@ void EvalAccessTable::runFromFilename(bool only_new, bool ignore_old, bool full_
             }
         }
     }
-    for (int kr: {8, 4, 0}) //{16, 8, 4, 2, 0})
-        for (int kw: {8, 4, 0}) //{16,8,4,2,0})
-            for (int e: {0, 20, 10, 5, 1})
-                for (int rsi: {1, 5, 10})
-                    for (int rsa: {1, 5, 10})
-                        for (int p: {0,1})
-                            for (int wc: {1, 2, 4, 8})
-                            {
-                                string name = "lfu_vers2_kr" + to_string(kr)
-                                              + "_kw" + to_string(kw)
-                                              + "_e" + to_string(e)
-                                              + "_rsi" + to_string(rsi)
-                                              + "_rsa" + to_string(rsa)
-                                              + "_wc" + to_string(wc)
-                                              + "_p" + to_string(p);
-                                runAlgorithm(name, LFU_Generator(kr, kw, e, rsi, rsa, false, p, wc));
-                                runAlgorithm(name + "_war", LFU_Generator(kr, kw, e, rsi, rsa, true, p, wc));
-                            }
-    runAlgorithmNonParallel("StaticOpt", StaticOpt());
-    runAlgorithm("opt", Opt_Generator());
+
+    printToFile();
+}
+
+void EvalAccessTable::advanced_with_variations_algos() {
+    advanced_compare_algos();
     runAlgorithm("lean10", Lean_Generator(10));
     runAlgorithm("lean20", Lean_Generator(20));
     runAlgorithm("lean30", Lean_Generator(30));
     runAlgorithm("lean40", Lean_Generator(40));
-    runAlgorithm("random", Random_Generator());
     runAlgorithm("cf_lru30", CfLRUGenerator(30));
     runAlgorithm("cf_lru40", CfLRUGenerator(40));
     runAlgorithm("cf_lru50", CfLRUGenerator(50));
     runAlgorithm("cf_lru60", CfLRUGenerator(60));
+}
+
+void EvalAccessTable::advanced_compare_algos() {
+    default_compare_algos();
+    runAlgorithm("lean30", Lean_Generator(30));
     runAlgorithm("lru_wsr", LRU_WSR_Generator());
-    runAlgorithm("lfu_vers2_kr8_kw0_e20_rsi10_rsa1_wc1_p0_war", LFU_Generator(8, 0, 20, 10, 1, true, 0));
-    runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_wc1_p0", LFU_Generator(8, 4, 20, 10, 1, false, 0));
-    runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_wc2_p0", LFU_Generator(8, 4, 20, 10, 1, false, 0, 2));
-    runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_wc4_p0", LFU_Generator(8, 4, 20, 10, 1, false, 0, 4));
-    runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_wc8_p0", LFU_Generator(8, 4, 20, 10, 1, false, 0, 8));
-    runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_wc1_p0_war", LFU_Generator(8, 4, 20, 10, 1, true, 0));
-    runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_wc2_p0_war", LFU_Generator(8, 4, 20, 10, 1, true, 0, 2));
-    runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_wc4_p0_war", LFU_Generator(8, 4, 20, 10, 1, true, 0, 4));
-    runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_wc8_p0_war", LFU_Generator(8, 4, 20, 10, 1, true, 0, 8));
+    runAlgorithm("cf_lru50", CfLRUGenerator(50));
+}
 
+void EvalAccessTable::default_compare_algos() {
+    runAlgorithmNonParallel("StaticOpt", StaticOpt());
+    runAlgorithm("opt", Opt_Generator());
+    runAlgorithm("clock", CLOCK_Generator());
+    runAlgorithm("random", Random_Generator());
+    runAlgorithmNonParallel("StaticOpt", StaticOpt());
 
-
-    printToFile();
 }
 
 void EvalAccessTable::printToFile() {
@@ -204,7 +218,7 @@ void EvalAccessTable::getDataFile() {
     }
 }
 
-void EvalAccessTable::createLists(bool ignore_last_run) {
+void EvalAccessTable::createLists(bool ignore_last_run, int max_ram) {
     ifstream reader;
     reader.open(output_file);
     if (reader.good() && !ignore_last_run) {
@@ -213,7 +227,7 @@ void EvalAccessTable::createLists(bool ignore_last_run) {
         cout << "No old files found" << endl;
         filesystem::create_directory(output_dir);
     }
-    runAlgorithmNonParallel("lru", LruStackDist());
+    runAlgorithmNonParallel("lru", LruStackDist(max_ram));
 }
 
 const rwListSubType& EvalAccessTable::getValues(std::string name) {

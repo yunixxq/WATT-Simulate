@@ -9,6 +9,7 @@ template<class T> std::function<T()> defGenerator(){return [](){return T();};}
 std::function<OPT()> Opt_Generator() {return defGenerator<OPT>();}
 std::function<StaticOpt()> StaticOpt_Generator(){return defGenerator<StaticOpt>();}
 std::function<Random()> Random_Generator(){return defGenerator<Random>();}
+std::function<CLOCK()> CLOCK_Generator(){return defGenerator<CLOCK>();}
 
 std::function<CF_LRU()> CfLRUGenerator(int percentage) {
     return [percentage](){return CF_LRU(percentage);};}

@@ -23,10 +23,10 @@ public:
     bool hasValue(std::string algo, RamSize ramSize);
     ramListType missingValues(std::string algo);
 private:
-    void runFromFilename(bool only_new = false, bool ignore_old = false, bool full_run = true, bool run_slow = false);
+    void runFromFilename(bool test, bool benchmark);
     void printToFile();
     void getDataFile();
-    void createLists(bool ignore_last_run);
+    void createLists(bool ignore_last_run, int max_ram = -1);
 
     const std::string filename;
     const std::string output_dir;
@@ -37,7 +37,7 @@ private:
     rwListType read_write_list;
     void handleCsv(std::ifstream &filestream);
 public:
-    void init(bool ignore_last_run);
+    void init(bool ignore_last_run, int max_ram = -1);
     template<class T>
     void runAlgorithmNonParallel(const std::string &name, T executor) {
         if (!hasAllValues(name)) {
@@ -100,4 +100,10 @@ private:
         );
 
     }
+
+    void default_compare_algos();
+
+    void advanced_compare_algos();
+
+    void advanced_with_variations_algos();
 };

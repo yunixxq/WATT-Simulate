@@ -85,8 +85,8 @@ struct LRU2a: public EvictStrategyContainer<std::list<PID>>{
 };
 
 // list and push back / get first with hashmap for easy finding
-struct LRU2b: public EvictStrategyHash<PID> {
-    using upper = EvictStrategyHash<PID>;
+struct LRU2b: public EvictStrategyHashList<PID> {
+    using upper = EvictStrategyHashList<PID>;
     LRU2b(): upper() {}
 };
 

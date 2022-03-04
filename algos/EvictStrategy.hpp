@@ -143,7 +143,6 @@ protected:
      * @return PID of page to evict
      */
     virtual PID evictOne(RefTime curr_time) = 0;
-    // removes pid from strucutres, returns true if page was dirty
 
     /**
      * Checks ALL pages, if they are dirty and in ram (slow)
@@ -206,10 +205,10 @@ protected:
  * @tparam Container
  */
 template<class T>
-class EvictStrategyHash: public EvictStrategyContainer<std::list<T>>{
+class EvictStrategyHashList: public EvictStrategyContainer<std::list<T>>{
 using upper = EvictStrategyContainer<std::list<T>>;
 public:
-    EvictStrategyHash(): upper() {}
+    EvictStrategyHashList(): upper() {}
 protected:
     std::unordered_map<PID, typename std::list<T>::iterator> fast_finder;
     void reInit(RamSize ram_size) override{
@@ -253,6 +252,44 @@ protected:
         upper::ram.push_back(access.pid);
         return std::prev(upper::ram.end());
     }
+
+};
+
+template<class T>
+class EvictStrategyHashVector: public EvictStrategyContainer<std::vector<T>>{
+    using upper = EvictStrategyContainer<std::vector<T>>;
+public:
+    EvictStrategyHashVector(): upper() {}
+protected:
+    std::unordered_map<PID, uint> fast_finder;
+    void reInit(RamSize ram_size) override{
+        upper::reInit(ram_size);
+        upper::ram.resize(ram_size);
+        fast_finder.clear();
+    }
+    void access(const Access& access) override{
+        if(upper::in_ram[access.pid]){
+            updateElement(fast_finder[access.pid], access);
+
+        }else{
+            fast_finder[access.pid] = insertElement(access);
+        }
+    };
+
+    /**
+     * Algorithm specific Insert Function
+     * @param access
+     * @return pos in RAM
+     */
+    virtual uint insertElement(const Access& access) = 0;
+
+    /**
+     * Algorithm specific update Function
+     * @param old current position in RAM
+     * @param access
+     * @return pos in RAM
+     */
+    virtual void updateElement(uint old, const Access& access) = 0;
 
 };
 

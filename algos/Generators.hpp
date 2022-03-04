@@ -14,6 +14,7 @@
 #include "lfu_k.hpp"
 #include "staticOpt.hpp"
 #include "lean_evict.hpp"
+#include "CLOCK.hpp"
 // Here unused, but for good includes
 #include "lruStackDist.hpp"
 
@@ -27,6 +28,7 @@
 std::function<OPT()> Opt_Generator();
 std::function<StaticOpt()> StaticOpt_Generator();
 std::function<Random()> Random_Generator();
+std::function<CLOCK()> CLOCK_Generator();
 
 // Others
 std::function<CF_LRU()> CfLRUGenerator(int percentage);

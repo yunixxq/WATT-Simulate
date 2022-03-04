@@ -71,7 +71,7 @@ void LruStackDist::evaluateRamList(const std::vector<Access> &data, ramListType 
             }
             ramList.emplace(ram_size);
 
-        } while (ram_size < pages && ram_size < 10001);
+        } while (ram_size < pages && (ram_size < max_ram +1 || max_ram == -1));
     }// sum it up, buttercup!
     for (auto &ram_size: ramList) {
         int misses = 0, evicts = 0;

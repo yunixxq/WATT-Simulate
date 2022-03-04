@@ -11,7 +11,8 @@
 
 struct LruStackDist
 {
-    LruStackDist() {}
+    int max_ram;
+    LruStackDist(int max_ram = -1): max_ram(max_ram) {}
     void evaluateRamList(const std::vector<Access> &data, ramListType &ramList,
                          rwListSubType &readWriteList);
 };
