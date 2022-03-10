@@ -155,7 +155,7 @@ void EvalAccessTable::default_compare_algos() {
     runAlgorithm("clock", CLOCK_Generator());
     runAlgorithm("random", Random_Generator());
     runAlgorithmNonParallel("StaticOpt", StaticOpt());
-
+    runAlgorithm("lru_k2_z-1", LRU_K_Z_Generator(2, -1));
 }
 
 void EvalAccessTable::printToFile() {
