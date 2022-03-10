@@ -5,7 +5,7 @@
 #include "staticOpt.hpp"
 void StaticOpt::evaluateRamList(const std::vector<Access> &data, const ramListType &ramList,
                                 rwListSubType &readWriteList) {
-    std::vector<int> reads, writes;
+    std::vector<int> costs, reads, writes;
     std::vector<PID> pageIds;
     PID maxPageId = 0;
     for(auto &access: data){
@@ -13,34 +13,28 @@ void StaticOpt::evaluateRamList(const std::vector<Access> &data, const ramListTy
             maxPageId = access.pid;
         }
     }
+    costs.resize(maxPageId + 1, 0);
     reads.resize(maxPageId + 1, 0);
     writes.resize(maxPageId + 1, 0);
 
     for (auto &access: data) {
+        costs[access.pid]++;
         reads[access.pid]++;
         if(access.write){
+            costs[access.pid]+= write_cost;
             writes[access.pid]++;
         }
     }
-    int write_cos = write_cost;
-    int read_cost = 1;
 
-    for(PID i = 0; i < reads.size(); i++){
-        if(reads[i] == 0 && writes[i] == 0){
+    for(PID i = 0; i < costs.size(); i++){
+        if(costs[i] == 0){
             continue;
         }
         pageIds.emplace_back(i);
     }
     std::sort(pageIds.begin(), pageIds.end(),
-              [reads, writes, read_cost, write_cos](PID first, PID second) {
-        double cost_first, cost_second;
-        cost_first = reads[first]*read_cost + writes[first]*write_cos;
-        cost_second = reads[second]*read_cost + writes[second] * write_cos;
-        if(cost_first != cost_second){
-            return cost_first >cost_second;
-        }else{
-            return first > second;
-        }
+              [costs](PID first, PID second) {
+        return costs[first] > costs[second];
     });
 
     for(RamSize ram_size: ramList){
