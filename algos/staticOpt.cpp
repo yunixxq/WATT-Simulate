@@ -47,7 +47,7 @@ void StaticOpt::evaluateRamList(const std::vector<Access> &data, const ramListTy
                         dirtyEvicts++;
                     }
                 }else{
-                    pageMisses += reads[pageIds[pos]];
+                    pageMisses += reads[pageIds[pos]] + writes[pageIds[pos]];
                     dirtyEvicts += writes[pageIds[pos]];
                 }
             }
