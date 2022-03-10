@@ -18,22 +18,28 @@ void StaticOpt::evaluateRamList(const std::vector<Access> &data, const ramListTy
     writes.resize(maxPageId + 1, 0);
 
     for (auto &access: data) {
-        costs[access.pid]++;
+        if(reads[access.pid]!=0){
+            costs[access.pid]++;
+        }
         reads[access.pid]++;
         if(access.write){
-            costs[access.pid]+= write_cost;
+            if(writes[access.pid]!=0){
+                costs[access.pid]+= write_cost;
+            }
             writes[access.pid]++;
         }
     }
 
     for(PID i = 0; i < costs.size(); i++){
-        if(costs[i] == 0){
+        if(reads[i] == 0 && writes[i] == 0){
             continue;
         }
         pageIds.emplace_back(i);
     }
     std::sort(pageIds.begin(), pageIds.end(),
-              [costs](PID first, PID second) {
+              [costs, writes](PID first, PID second) {
+        if (costs[first] == costs[second])
+            return writes[first]> writes[second];
         return costs[first] > costs[second];
     });
 
@@ -47,7 +53,7 @@ void StaticOpt::evaluateRamList(const std::vector<Access> &data, const ramListTy
                         dirtyEvicts++;
                     }
                 }else{
-                    pageMisses += reads[pageIds[pos]] + writes[pageIds[pos]];
+                    pageMisses += reads[pageIds[pos]];
                     dirtyEvicts += writes[pageIds[pos]];
                 }
             }
