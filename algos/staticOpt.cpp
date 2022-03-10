@@ -22,8 +22,8 @@ void StaticOpt::evaluateRamList(const std::vector<Access> &data, const ramListTy
             writes[access.pid]++;
         }
     }
-    double write_cost = 1;
-    double read_cost = 1;
+    int write_cos = write_cost;
+    int read_cost = 1;
 
     for(PID i = 0; i < reads.size(); i++){
         if(reads[i] == 0 && writes[i] == 0){
@@ -32,10 +32,10 @@ void StaticOpt::evaluateRamList(const std::vector<Access> &data, const ramListTy
         pageIds.emplace_back(i);
     }
     std::sort(pageIds.begin(), pageIds.end(),
-              [reads, writes, read_cost, write_cost](PID first, PID second) {
+              [reads, writes, read_cost, write_cos](PID first, PID second) {
         double cost_first, cost_second;
-        cost_first = reads[first]*read_cost + writes[first]*write_cost;
-        cost_second = reads[second]*read_cost + writes[second] * write_cost;
+        cost_first = reads[first]*read_cost + writes[first]*write_cos;
+        cost_second = reads[second]*read_cost + writes[second] * write_cos;
         if(cost_first != cost_second){
             return cost_first >cost_second;
         }else{

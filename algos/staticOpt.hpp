@@ -11,7 +11,8 @@
 
 struct StaticOpt
 {
-    StaticOpt() = default;
+    StaticOpt(int write_cost = 1): write_cost(write_cost){};
+    int write_cost;
     void evaluateRamList(const std::vector<Access> &data, const ramListType &ramList,
                                            rwListSubType &readWriteList);
 };

@@ -140,6 +140,9 @@ void EvalAccessTable::advanced_with_variations_algos() {
     runAlgorithm("cf_lru40", CfLRUGenerator(40));
     runAlgorithm("cf_lru50", CfLRUGenerator(50));
     runAlgorithm("cf_lru60", CfLRUGenerator(60));
+    runAlgorithmNonParallel("StaticOpt2", StaticOpt(2));
+    runAlgorithmNonParallel("StaticOpt4", StaticOpt(4));
+    runAlgorithmNonParallel("StaticOpt8", StaticOpt(8));
 }
 
 void EvalAccessTable::advanced_compare_algos() {
