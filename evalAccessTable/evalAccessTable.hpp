@@ -16,7 +16,7 @@
 
 class EvalAccessTable {
 public:
-    EvalAccessTable(std::string  filename, std::string  out_dir, bool do_run = true);
+    EvalAccessTable(std::string  filename, std::string  out_dir, bool do_run, bool test, bool benchmark);
     const rwListSubType& getValues(std::string algo);
     bool hasValues(std::string algo);
     bool hasAllValues(std::string algo);

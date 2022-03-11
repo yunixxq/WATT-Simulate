@@ -8,7 +8,7 @@
 
 EvalAccessTable init(){
     std::string file = "./../tpcc_64_-5.csv";
-    EvalAccessTable test = EvalAccessTable(file, "/var/tmp", false);
+    EvalAccessTable test = EvalAccessTable(file, "/var/tmp", false, true, true);
     test.init(true);
     return std::move(test);
 }

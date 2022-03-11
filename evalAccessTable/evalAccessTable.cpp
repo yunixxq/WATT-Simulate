@@ -12,12 +12,10 @@ using namespace std;
 static void getOrDefaultAndSet(map<int, int> &history, int new_value, int pageRef,
                                int default_value, int* value);
 
-EvalAccessTable::EvalAccessTable(std::string  filename, std::string  out_dir, bool do_run): filename(std::move(filename)), output_dir(std::move(out_dir)){
+EvalAccessTable::EvalAccessTable(std::string  filename, std::string  out_dir, bool do_run, bool test, bool benchmark): filename(std::move(filename)), output_dir(std::move(out_dir)){
         if(!do_run){
             return;
         }
-        bool test = false;
-        bool benchmark = true;
         runFromFilename(test, benchmark);
     };
 
