@@ -4,8 +4,8 @@
 
 #include "EvictStrategy.hpp"
 
-struct LRU_K_Z: public EvictStrategyKeepHistory{
-    using upper = EvictStrategyKeepHistory;
+struct LRU_K_Z: public EvictStrategyKeepHistoryOneList{
+    using upper = EvictStrategyKeepHistoryOneList;
     LRU_K_Z(int K, int Z): upper(K, Z) {}
 };
 

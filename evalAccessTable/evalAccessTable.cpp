@@ -63,6 +63,18 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                                     runAlgorithm(name + "_war", LFU_Generator(kr, kw, e, rsi, rsa, true, p, wc));
                                 }
             }
+        for (int k: {8, 4, 2, 0}) //{16, 8, 4, 2, 0})
+                for (int e: {0, 20, 10, 5, 1})
+                    for (int rsi: {1, 5, 10})
+                        for (int rsa: {1, 5, 10})
+                            for (int wc: {0, 1, 2, 4, 8}) {
+                                string name = "lfu_k" + to_string(k)
+                                              + "_e" + to_string(e)
+                                              + "_rsi" + to_string(rsi)
+                                              + "_rsa" + to_string(rsa)
+                                              + "_wc" + to_string(wc);
+                                runAlgorithm(name, LFU_1K_E_real_Generator(k, e, rsi, rsa, wc));
+                            }
         runAlgorithm("lfu_vers2_kr8_kw0_e20_rsi10_rsa1_wc1_p0_war", LFU_Generator(8, 0, 20, 10, 1, true, 0));
         runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_wc1_p0", LFU_Generator(8, 4, 20, 10, 1, false, 0));
         runAlgorithm("lfu_vers2_kr8_kw4_e20_rsi10_rsa1_wc2_p0", LFU_Generator(8, 4, 20, 10, 1, false, 0, 2));

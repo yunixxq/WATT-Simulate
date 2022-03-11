@@ -26,3 +26,22 @@ double get_frequency(std::list<RefTime>& candidate, RefTime curr_time, int pos )
     }
     return best_pos * 1.0 /best_age;
 }
+
+double get_frequency(std::list<std::pair<RefTime, bool>>& candidate, RefTime curr_time, uint write_cost){
+    long pos =0;
+    long best_age = 0, best_pos = -1;
+    if(candidate.empty()){
+        return 0;
+    }
+    for(auto TimeWrite: candidate){
+        pos += TimeWrite.second? (write_cost +1) * 10 : 10;
+        long age = curr_time - TimeWrite.first;
+        long left = pos*best_age;
+        long right = best_pos * age;
+        if(left> right){
+            best_pos = pos;
+            best_age = age;
+        }
+    }
+    return best_pos * 1.0 /best_age;
+}
