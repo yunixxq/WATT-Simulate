@@ -11,17 +11,19 @@ struct LFU_K: public EvictStrategyHistory{
     int pos_start;
     LFU_K(int K, int pos_start = 0): upper(K), pos_start(pos_start) {}
 
-    void chooseEviction(RefTime curr_time, container_type::iterator& candidate, container_type::iterator end) override{
-        container_type::iterator runner = candidate;
-        double candidate_freq = get_frequency(candidate->second, curr_time, pos_start);
-        while(runner!= end){
+    PID chooseEviction(RefTime curr_time) override{
+        container_type::iterator runner = ram.begin();
+        PID candidate = runner->first;
+        double candidate_freq = get_frequency(runner->second, curr_time, pos_start);
+        while(runner!= ram.end()){
             double runner_freq = get_frequency(runner->second, curr_time, pos_start);
             if(runner_freq < candidate_freq){
-                candidate = runner;
+                candidate = runner->first;
                 candidate_freq = runner_freq;
             }
             ++runner;
         }
+        return candidate;
     }
 };
 
@@ -31,18 +33,20 @@ struct LFU_K_Z: public EvictStrategyKeepHistoryOneList{
     int pos_start;
     LFU_K_Z(int K, int Z, int pos_start = 0): upper(K,Z), pos_start(pos_start) {}
 
-    void chooseEviction(RefTime curr_time, container_type::iterator& candidate) override{
-        container_type::iterator runner = candidate;
-        double candidate_freq = get_frequency(candidate->second, curr_time, pos_start);
+    PID chooseEviction(RefTime curr_time) override{
+        container_type::iterator runner = ram.begin();
+        PID candidate = runner->first;
+        double candidate_freq = get_frequency(runner->second, curr_time, pos_start);
         ++runner;
         while(runner!= ram.end()){
             double runner_freq = get_frequency(runner->second, curr_time, pos_start);
             if(runner_freq <= candidate_freq){
-                candidate = runner;
+                candidate = runner->first;
                 candidate_freq = runner_freq;
             }
             ++runner;
         }
+        return candidate;
     }
 };
 
@@ -54,17 +58,19 @@ struct LFU2_K_Z: public EvictStrategyKeepHistoryReadWrite{
     int pos_start;
     LFU2_K_Z(int K, int Z, int pos_start = 0): upper(K, 0, Z), pos_start(pos_start) {}
 
-    void chooseEviction(RefTime curr_time, ram_type::iterator& candidate)  override{
-        ram_type::iterator runner = candidate;
-        double candidate_freq = get_frequency(candidate->second.first, curr_time, pos_start);
+    PID chooseEviction(RefTime curr_time)  override{
+        ram_type::iterator runner = ram.begin();
+        PID candidate = runner->first;
+        double candidate_freq = get_frequency(runner->second.first, curr_time, pos_start);
         while(runner!= ram.end()){
             double runner_freq = get_frequency(runner->second.first, curr_time, pos_start);
             if(runner_freq < candidate_freq){
-                candidate = runner;
+                candidate = runner->first;
                 candidate_freq = runner_freq;
             }
             ++runner;
         }
+        return candidate;
     }
 
 };
@@ -77,17 +83,19 @@ struct LFU_2K_Z: public EvictStrategyKeepHistoryReadWrite{
     int pos_start;
     LFU_2K_Z(uint KR, uint KW, int Z, bool write_as_read, int pos_start = 0): upper(KR, KW, Z, write_as_read), pos_start(pos_start) {}
 
-    void chooseEviction(RefTime curr_time, ram_type::iterator& candidate) override{
-        ram_type::iterator runner = candidate;
-        double candidate_freq = eval_freq(candidate, curr_time);
+    PID chooseEviction(RefTime curr_time) override{
+        ram_type::iterator runner = ram.begin();
+        PID candidate = runner->first;
+        double candidate_freq = eval_freq(runner, curr_time);
         while(runner!= ram.end()){
             double runner_freq = eval_freq(runner, curr_time);
             if(runner_freq < candidate_freq){
-                candidate = runner;
+                candidate = runner->first;
                 candidate_freq = runner_freq;
             }
             ++runner;
         }
+        return candidate;
     }
     double eval_freq(ram_type::iterator candidate, RefTime curr_time){
         double candidate_freq_R = get_frequency(candidate->second.first, curr_time, pos_start);
@@ -152,27 +160,27 @@ struct LFU_2K_Z_rand: public EvictStrategyKeepHistoryReadWrite{
             elements.push_back(candidate);
             candidate_pos = pos;
         }
-        std::vector<ram_type::iterator>::iterator evict = elements.begin();
-        chooseEvictionLOCAL(curr_time, evict, elements.end());
+        PID evict = chooseEvictionLOCAL(curr_time, elements);
 
-        handle_out_of_ram(*evict);
+        handle_out_of_ram(evict);
 
-        PID pid = (*evict)->first;
-        ram.erase(*evict);
-        return pid;
+        ram.erase(evict);
+        return evict;
     }
 
-    void chooseEvictionLOCAL(RefTime curr_time, std::vector<ram_type::iterator>::iterator& candidate, std::vector<ram_type::iterator>::iterator end){
-        std::vector<ram_type::iterator>::iterator runner = candidate;
-        double candidate_freq = eval_freq(*candidate, curr_time);
-        while(runner!= end){
+    PID chooseEvictionLOCAL(RefTime curr_time, std::vector<ram_type::iterator> elements){
+        std::vector<ram_type::iterator>::iterator runner = elements.begin();
+        double candidate_freq = eval_freq(*runner, curr_time);
+        PID evict = 0;
+        while(runner!= elements.end()){
             double runner_freq = eval_freq(*runner, curr_time);
             if(runner_freq < candidate_freq){
-                candidate = runner;
+                evict = (*runner)->first;
                 candidate_freq = runner_freq;
             }
             ++runner;
         }
+        return evict;
     }
     double eval_freq(ram_type::iterator candidate, RefTime curr_time){
         double candidate_freq_R = get_frequency(candidate->second.first, curr_time, pos_start);
@@ -246,9 +254,9 @@ struct LFU_2K_E_real: public EvictStrategyKeepHistoryReadWrite{
 
         uint dirtyEvicts = 0;
         for(uint i = 0; i< rand_list_pick && i < elements.size(); i++){
-            handle_out_of_ram(elements[i]);
             PID pid = elements[i]->first;
-            ram.erase(elements[i]);
+            handle_out_of_ram(pid);
+            ram.erase(pid);
             dirtyEvicts += postRemove(pid);
         }
         return dirtyEvicts;
@@ -266,7 +274,7 @@ struct LFU_2K_E_real: public EvictStrategyKeepHistoryReadWrite{
     }
 
 
-    static std::function<int(const ram_type::iterator &, const ram_type::iterator &)>
+    static std::function<double(const ram_type::iterator &, const ram_type::iterator &)>
     gt_compare_freq(RefTime curr_time, bool write_as_read, uint pos_start, uint write_cost) {
         return [curr_time, pos_start, write_as_read, write_cost](const ram_type::iterator& l, const ram_type::iterator& r) {
             return eval_freq(*l, curr_time, write_as_read, pos_start, write_cost) < eval_freq(*r, curr_time, write_as_read,
@@ -310,7 +318,7 @@ struct LFU_1K_E_real: public EvictStrategyKeepHistoryCombined{
     }
 
     uint evict(RefTime curr_time) override{
-        std::vector<ram_type::iterator> elements;
+        std::vector<PID> elements;
         std::vector<uint> positions;
         do{
             uint next_pos = ram_distro(ran_engine);
@@ -324,12 +332,12 @@ struct LFU_1K_E_real: public EvictStrategyKeepHistoryCombined{
         uint candidate_pos = 0;
         for(auto pos: positions){
             candidate = std::next(candidate, pos- candidate_pos);
-            elements.push_back(candidate);
+            elements.push_back(candidate->first);
             candidate_pos = pos;
         }
 
         // Sort elements by frequency; //std::min_element
-        std::sort(elements.begin(), elements.end(), gt_compare_freq(curr_time, this->writeCost));
+        std::sort(elements.begin(), elements.end(), gt_compare_freq(curr_time, this->writeCost, ram));
 
         // Evict x elements
         // check, if list is correctly sorted
@@ -337,99 +345,30 @@ struct LFU_1K_E_real: public EvictStrategyKeepHistoryCombined{
 
         uint dirtyEvicts = 0;
         for(uint i = 0; i< randSelector && i < elements.size(); i++){
-            handle_out_of_ram(elements[i]);
-            PID pid = elements[i]->first;
-            ram.erase(elements[i]);
+            PID pid = elements[i];
+            handle_out_of_ram(pid);
+            ram.erase(pid);
             dirtyEvicts += postRemove(pid);
         }
         return dirtyEvicts;
     }
 
     static double
-    eval_freq(std::pair<PID, history_type> candidate, RefTime curr_time, uint write_cost = 1) {
-        return get_frequency(candidate.second, curr_time, write_cost);
+    eval_freq(PID candidate, RefTime curr_time, ram_type ram, uint write_cost = 1) {
+        return get_frequency(ram[candidate], curr_time, write_cost);
     }
 
 
-    static std::function<int(const ram_type::iterator &, const ram_type::iterator &)>
-    gt_compare_freq(RefTime curr_time, uint write_cost) {
-        return [curr_time, write_cost](const ram_type::iterator& l, const ram_type::iterator& r) {
-            return eval_freq(*l, curr_time, write_cost) < eval_freq(*r, curr_time, write_cost);
+    static std::function<double(const PID, const PID)>
+    gt_compare_freq(RefTime curr_time, uint write_cost, ram_type ram) {
+        return [curr_time, write_cost, ram](PID l, PID r) {
+            return eval_freq(l, curr_time, ram, write_cost) < eval_freq(r, curr_time, ram, write_cost);
         };
     };
 
 
 };
 
-/*
-struct LFU_K_Z_D: public EvictStrategyContainerKeepHistory{
-    using upper = EvictStrategyContainerKeepHistory;
-    int pos_start;
-    LFU_K_Z_D(int K, int Z, int D, int pos_start = 0): upper(K,Z), pos_start(pos_start) {
-        dirty_freq_factor = D / 10.0;
-    }
-
-    double dirty_freq_factor = 1.0;
-
-    void chooseEviction(RefTime curr_time, std::unordered_map<PID, std::list<RefTime>>::iterator& candidate, std::unordered_map<PID, std::list<RefTime>>::iterator end) override{
-        std::unordered_map<PID, std::list<RefTime>>::iterator runner = candidate;
-        double candidate_freq = get_frequency(candidate->second, curr_time, pos_start);
-        if(dirty_in_ram[candidate->first]){
-            candidate_freq = candidate_freq * dirty_freq_factor;
-        }
-        while(runner!= end){
-            double runner_freq = get_frequency(runner->second, curr_time, pos_start);
-            if(dirty_in_ram[runner->first]){
-                runner_freq = runner_freq * dirty_freq_factor;
-            }
-            if(runner_freq < candidate_freq){
-                candidate = runner;
-                candidate_freq = runner_freq;
-            }
-            ++runner;
-        }
-    }
-};
-
-struct LFU2_K_Z_D: public EvictStrategyContainerKeepHistory{
-    using upper = EvictStrategyContainerKeepHistory;
-    int pos_start;
-    LFU2_K_Z_D(int K, int Z, [[maybe_unused]] int D, int pos_start = 0): upper(K, Z), pos_start(pos_start)    {}
-
-    uInt age_improver = 4;
-
-    void chooseEviction(RefTime curr_time, std::unordered_map<PID, std::list<RefTime>>::iterator& candidate, std::unordered_map<PID, std::list<RefTime>>::iterator end) override{
-        std::unordered_map<PID, std::list<RefTime>>::iterator runner = candidate;
-        double candidate_freq = get_frequency(candidate->second, curr_time, pos_start);
-        while(runner!= end){
-            double runner_freq = get_frequency(runner->second, curr_time, pos_start);
-            if(runner_freq < candidate_freq){
-                candidate = runner;
-                candidate_freq = runner_freq;
-            }
-            ++runner;
-        }
-    }
-
-    double get_frequency(std::list<RefTime>& candidate, RefTime curr_time, int pos_start2){
-        int pos =pos_start2;
-        double best_freq = 0;
-        for(auto time: candidate){
-            int age = curr_time - time;
-            double new_freq = pos/(double)age;
-            if(pos == 0){
-                new_freq = 0.1/age;
-            }
-            if(new_freq > best_freq){
-                best_freq = new_freq;
-            }
-            pos++;
-        }
-        return best_freq;
-    }
-
-};
-*/
 struct LFUalt_K: public EvictStrategyContainer<std::unordered_set<PID>> {
     using upper = EvictStrategyContainer<std::unordered_set<PID>>;
     int pos_start;

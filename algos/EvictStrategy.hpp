@@ -291,22 +291,21 @@ protected:
         assert(*hist.begin() == access.pos);
     };
     PID evictOne(RefTime curr_time) override{
-        container_type::iterator candidate = ram.begin();
-        chooseEviction(curr_time, candidate, ram.end());
-        PID pid = candidate->first;
-        ram.erase(candidate);
+        PID pid = chooseEviction(curr_time);
+        ram.erase(pid);
         return pid;
     }
 
-    virtual void chooseEviction(RefTime, std::unordered_map<PID, std::list<RefTime>>::iterator& candidate, std::unordered_map<PID, std::list<RefTime>>::iterator end){
-        container_type::iterator runner = candidate;
-
-        while(runner!= end){
-            if(keepFirst(runner->second, candidate->second)){
-                candidate = runner;
+    virtual PID chooseEviction(RefTime){
+        container_type::iterator runner = ram.begin();
+        PID candidate = runner->first;
+        while(runner!= ram.end()){
+            if(keepFirst(runner->second, ram[candidate])){
+                candidate = runner->first;
             }
             ++runner;
-        }// */
+        }
+        return candidate;
     }
 };
 
@@ -343,24 +342,21 @@ protected:
     virtual void changeElement(const Access access) =0;
 
     virtual PID evictOne(RefTime curr_time) override{
-        typename ram_type::iterator candidate = upper::ram.begin();
-        chooseEviction(curr_time, candidate);
+        PID candidate = chooseEviction(curr_time);
 
         handle_out_of_ram(candidate);
 
-        PID pid = candidate->first;
         upper::ram.erase(candidate);
-        return pid;
+        return candidate;
     }
 
-    virtual void chooseEviction(RefTime, typename ram_type::iterator& candidate)= 0;
+    virtual PID chooseEviction(RefTime)= 0;
 
-    void handle_out_of_ram(
-            typename ram_type::iterator candidate){
-        out_of_mem_order.push_front(candidate->first);
-        auto& element = out_of_mem_history[candidate->first];
+    void handle_out_of_ram(PID candidate){
+        out_of_mem_order.push_front(candidate);
+        auto& element = out_of_mem_history[candidate];
         element.first = out_of_mem_order.begin();
-        element.second = std::move(candidate->second);
+        element.second = std::move(upper::ram[candidate]);
         while(out_of_mem_order.size() > hist_size){
             PID last = out_of_mem_order.back();
             out_of_mem_history.erase(last);
@@ -406,15 +402,16 @@ protected:
         push_frontAndResize(access, ram[access.pid], K);
     }
 
-    virtual void chooseEviction(RefTime, ram_type::iterator& candidate) override{
-        ram_type::iterator runner = candidate;
-
+    virtual PID chooseEviction(RefTime) override{
+        ram_type::iterator runner = ram.begin();
+        PID candidate = runner->first;
         while(runner!= upper::ram.end()){
-            if(keepFirst(runner->second, candidate->second)){
-                candidate = runner;
+            if(keepFirst(runner->second, ram[candidate])){
+                candidate = runner->first;
             }
             ++runner;
         }// */
+        return candidate;
     }
 };
 
@@ -429,8 +426,14 @@ protected:
     uint epoch_size_iter;
     void reInit(RamSize ram_size) override{
         upper::reInit(ram_size);
-        if(epoch_size == 0)epoch_size_iter = 1;
-        else if((epoch_size_iter = ram_size / epoch_size) < 1) epoch_size_iter = 1;
+        if(epoch_size == 0){
+            epoch_size_iter = 1;
+        }
+        else{
+            epoch_size_iter = ram_size/epoch_size;
+            if(epoch_size_iter < 1)
+                epoch_size_iter = 1;
+        }
 
     }
     void changeElement(const Access access) override {
@@ -443,15 +446,17 @@ protected:
         // if is write and write is logged as read: push to readList
     };
 
-    virtual void chooseEviction(RefTime, ram_type::iterator& candidate) override{
-        ram_type::iterator runner = candidate;
+    virtual PID chooseEviction(RefTime) override{
+        ram_type::iterator runner = ram.begin();
+        PID candidate = runner->first;
 
         while(runner!= upper::ram.end()){
-            if(keepFirst(runner->second, candidate->second)){
-                candidate = runner;
+            if(keepFirst(runner->second, ram[candidate])){
+                candidate = runner->first;
             }
             ++runner;
-        }// */
+        }
+        return candidate;
     }
 
 };
@@ -488,15 +493,17 @@ protected:
         }
     };
 
-        virtual void chooseEviction(RefTime, ram_type::iterator& candidate) override{
-        ram_type::iterator runner = candidate;
+        virtual PID chooseEviction(RefTime) override{
+        ram_type::iterator runner = ram.begin();
+        PID candidate = runner->first;
 
         while(runner!= upper::ram.end()){
-            if(keepFirst(runner->second.first, candidate->second.first)){
-                candidate = runner;
+            if(keepFirst(runner->second.first, ram[candidate].first)){
+                candidate = runner->first;
             }
             ++runner;
-        }// */
+        }
+        return candidate;
     }
 
 };
