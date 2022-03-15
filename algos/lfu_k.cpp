@@ -4,44 +4,41 @@
 
 #include "lfu_k.hpp"
 
-double get_frequency(std::list<RefTime>& candidate, RefTime curr_time, int pos ){
-    pos *=10;
-    pos = std::max(1, pos);
-    long best_age = 0, best_pos = -1;
-    if(candidate.empty()){
-        return 0;
-    }
-    for(auto time: candidate){
-        long age = curr_time - time;
-        long left = pos*best_age;
-        long right = best_pos * age;
+double get_frequency(std::vector<RefTime>& candidate, RefTime curr_time, int value ){
+    value *=10;
+    value = std::max(1, value);
+    long best_age = 100000, best_value = 0;
+    for(uint pos = 0; pos < candidate.size(); pos++){
+        long age = curr_time - candidate[pos];
+        long left = value*best_age;
+        long right = best_value * age;
         if(left> right){
-            best_pos = pos;
+            best_value = value;
             best_age = age;
         }
-        if(pos==1){
-            pos = 0;
+        if(value==1){
+            value = 0;
         }
-        pos+=10;
+        value+=10;
     }
-    return best_pos * 1.0 /best_age;
+    best_age = std::max(1L, best_age);
+    return best_value * 1.0 /best_age;
 }
 
-double get_frequency(std::list<std::pair<RefTime, bool>>& candidate, RefTime curr_time, uint write_cost){
-    long pos =0;
-    long best_age = 0, best_pos = -1;
-    if(candidate.empty()){
-        return 0;
-    }
-    for(auto TimeWrite: candidate){
-        pos += TimeWrite.second? (write_cost +1) * 10 : 10;
-        long age = curr_time - TimeWrite.first;
-        long left = pos*best_age;
-        long right = best_pos * age;
+double get_frequency(std::vector<std::pair<RefTime, bool>>& candidate, RefTime curr_time, [[maybe_unused]] uint write_cost){
+    long value =0;
+    write_cost -= 1;
+    long best_age = 100000, best_value = 0;
+    for(uint pos = 0; pos < candidate.size(); pos++){
+        value += candidate[pos].second? 10 *(write_cost +1)  : 10;
+        long age = (curr_time - candidate[pos].first);
+        long left = value*best_age;
+        long right = best_value * age;
         if(left> right){
-            best_pos = pos;
+            best_value = value;
             best_age = age;
         }
     }
-    return best_pos * 1.0 /best_age;
+    best_age = std::max(1L, best_age);
+    return best_value * 1.0 /best_age;
 }

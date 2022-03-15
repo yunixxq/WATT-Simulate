@@ -9,22 +9,21 @@ struct LRU_K_Z: public EvictStrategyKeepHistoryOneList{
     LRU_K_Z(int K, int Z): upper(K, Z) {}
 };
 
-struct LRUalt_K: public EvictStrategyContainer<std::unordered_map<PID, std::list<RefTime>>> {
-    using upper = EvictStrategyContainer<std::unordered_map<PID, std::list<RefTime>>>;
+struct LRUalt_K: public EvictStrategyContainer<std::unordered_map<PID, std::vector<RefTime>>> {
+    using upper = EvictStrategyContainer<std::unordered_map<PID, std::vector<RefTime>>>;
     LRUalt_K(int K): upper(), K(K){}
     uint K;
 
     void access(const Access& access) override{
-std::   list<RefTime>& hist = ram[access.pid];
-        hist.push_front(access.pos);
-        if(hist.size() > K){
-            hist.resize(K);
+        if(!in_ram[access.pid]){
+            std::vector<RefTime>& list = ram[access.pid];
+            list.reserve(K);
         }
-        assert(*hist.begin() == access.pos);
+        push_frontAndResize(access, ram[access.pid], K);
     };
     PID evictOne(RefTime) override{
         //auto candidate = std::min_element(ram.begin(), ram.end(), compare);
-        std::unordered_map<PID, std::list<RefTime>>::iterator candidate = ram.begin(), runner = ram.begin();
+        std::unordered_map<PID, std::vector<RefTime>>::iterator candidate = ram.begin(), runner = ram.begin();
 
         while(runner!= ram.end()){
             if(keepFirst(runner->second, candidate->second)){
