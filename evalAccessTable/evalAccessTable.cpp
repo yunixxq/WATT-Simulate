@@ -153,6 +153,10 @@ void EvalAccessTable::advanced_with_variations_algos() {
     runAlgorithmNonParallel("StaticOpt2", StaticOpt(2));
     runAlgorithmNonParallel("StaticOpt4", StaticOpt(4));
     runAlgorithmNonParallel("StaticOpt8", StaticOpt(8));
+    runAlgorithm("hyperbolic01", Hyperbolic_generator(1));
+    runAlgorithm("hyperbolic05", Hyperbolic_generator(5));
+    runAlgorithm("hyperbolic20", Hyperbolic_generator(20));
+
 }
 
 void EvalAccessTable::advanced_compare_algos() {
@@ -160,6 +164,8 @@ void EvalAccessTable::advanced_compare_algos() {
     runAlgorithm("lean30", Lean_Generator(30));
     runAlgorithm("lru_wsr", LRU_WSR_Generator());
     runAlgorithm("cf_lru50", CfLRUGenerator(50));
+    runAlgorithm("hyperbolic10", Hyperbolic_generator(10));
+
 }
 
 void EvalAccessTable::default_compare_algos() {
@@ -167,7 +173,6 @@ void EvalAccessTable::default_compare_algos() {
     runAlgorithm("opt", Opt_Generator());
     runAlgorithm("clock", CLOCK_Generator());
     runAlgorithm("random", Random_Generator());
-    runAlgorithmNonParallel("StaticOpt", StaticOpt());
     runAlgorithm("lru_k2_z-1", LRU_K_Z_Generator(2, -1));
 }
 

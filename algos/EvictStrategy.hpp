@@ -97,6 +97,7 @@ protected:
         dirty_in_ram.clear();
         in_ram.clear();
         curr_count=0;
+        maxPID=0;
     }
     /**
      * Check if everything was initiated correctly
@@ -171,12 +172,12 @@ protected:
      * @param pid
      */
     void checkSizes(PID pid){
-        if(dirty_in_ram.size() <= pid){
-            dirty_in_ram.resize(pid+1, false);
+        if(pid < maxPID){
+            return;
         }
-        if(in_ram.size() <= pid){
-            in_ram.resize(pid+1, false);
-        }
+        maxPID = pid;
+        dirty_in_ram.resize(pid+1, false);
+        in_ram.resize(pid+1, false);
     }
     /**
      * handles eviction of one page.
@@ -193,6 +194,8 @@ protected:
         }
         return 0;
     }
+private:
+    PID maxPID = 0;
 };
 
 /**
@@ -205,12 +208,53 @@ public:
     EvictStrategyContainer(): EvictStrategy(){}
 protected:
     Container ram;
+    static const uint lower_bound = 20;
+    static const uint upper_bound = 100;
+
+    std::uniform_int_distribution<int> ram_distro;
+    std::default_random_engine ran_engine;
+
     void reInit(RamSize ram_size) override{
         EvictStrategy::reInit(ram_size);
+        ram_distro = std::uniform_int_distribution<int>(0, ram_size-1);
         ram.clear();
     }
 
     static bool compare_second(const std::pair<int, int>& l, const std::pair<int, int>& r) { return l.second < r.second; };
+
+    template <class type>
+    std::vector<type> getElementsFromRam(uint rand_list_length) {
+        std::vector<type> elements;
+        elements.reserve(rand_list_length);
+        std::set<uint> positions;
+        do{
+            uint next_pos = ram_distro(ran_engine);
+            positions.insert(next_pos);
+        }while (positions.size() < rand_list_length);
+
+        auto candidate = ram.begin();
+        uint candidate_pos = 0;
+        for(auto pos: positions){
+            candidate = std::next(candidate, pos- candidate_pos);
+            elements.push_back(candidate);
+            candidate_pos = pos;
+        }
+        return elements;
+    }
+
+    static uint calculate_rand_list_length(RamSize ram_size, uint rand_size) {
+        uint rand_list_length = (uint) ram_size * rand_size / 100;
+        if(rand_list_length > upper_bound){
+            rand_list_length = upper_bound;
+        }
+        if (rand_list_length < lower_bound){
+            rand_list_length = lower_bound;
+        }
+        if (rand_list_length > ram_size/2){
+            rand_list_length = ram_size/2;
+        }
+        return rand_list_length;
+    }
 };
 
 /**
@@ -506,11 +550,9 @@ protected:
     void changeElement(const Access access, bool inRam) override {
         // Push to according list;
         if(!inRam){
-            std::vector<RefTime> read = {};
-            std::vector<RefTime> write = {};
-            read.reserve(K_R);
-            write.reserve(K_W);
-            ram[access.pid] = {read, write};
+            std::pair<std::vector<RefTime>, std::vector<RefTime>>& entry = ram[access.pid];
+            entry.first.reserve(K_R);
+            entry.second.reserve(K_W);
         }
         push_frontAndResize(
                 access,

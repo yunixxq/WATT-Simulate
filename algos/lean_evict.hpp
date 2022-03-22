@@ -19,8 +19,6 @@ public:
     leanEvict(uint coolingPercentage = 20): upper(), coolingPercentage(coolingPercentage){}
 private:
     uint coolingPercentage = 0;
-    std::uniform_int_distribution<int> ram_distro;
-    std::default_random_engine ran_engine;
     uint hotSpace, coolingSpace, hotSize;
     std::vector<bool> is_hot;
     std::list<PID> cooling_list;

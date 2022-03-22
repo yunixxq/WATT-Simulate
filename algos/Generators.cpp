@@ -16,6 +16,8 @@ std::function<CF_LRU()> CfLRUGenerator(int percentage) {
 
 std::function<LRU_WSR()> LRU_WSR_Generator() {return defGenerator<LRU_WSR>();}
 
+std::function<hyperbolic()> Hyperbolic_generator(uint randSize){return [randSize]() {return  hyperbolic(randSize);};}
+
 std::function<LFU_K()> LFU_K_Generator(int K){
     return [K](){return LFU_K(K);};}
 

@@ -26,12 +26,11 @@ double get_frequency(std::vector<RefTime>& candidate, RefTime curr_time, int val
 }
 
 double get_frequency(std::vector<std::pair<RefTime, bool>>& candidate, RefTime curr_time, [[maybe_unused]] uint write_cost){
-    long value =0;
-    write_cost -= 1;
-    long best_age = 100000, best_value = 0;
-    for(uint pos = 0; pos < candidate.size(); pos++){
-        value += candidate[pos].second? 10 *(write_cost +1)  : 10;
-        long age = (curr_time - candidate[pos].first);
+    long value =candidate[0].second? write_cost*write_cost +1 : 1;
+    long best_age = (curr_time - candidate[0].first) +1, best_value = value;
+    for(uint pos = 1; pos < candidate.size(); pos++){
+        value += candidate[pos].second? write_cost +1 : 1;
+        long age = (curr_time - candidate[pos].first) +1;
         long left = value*best_age;
         long right = best_value * age;
         if(left> right){
@@ -39,6 +38,5 @@ double get_frequency(std::vector<std::pair<RefTime, bool>>& candidate, RefTime c
             best_age = age;
         }
     }
-    best_age = std::max(1L, best_age);
     return best_value * 1.0 /best_age;
 }

@@ -110,49 +110,20 @@ struct LFU_2K_Z_rand: public EvictStrategyKeepHistoryReadWrite{
     LFU_2K_Z_rand(uint KR, uint KW, int Z, uint randSize, bool write_as_read, int pos_start = 0):
         upper(KR, KW, Z, write_as_read),
         pos_start(pos_start),
-        randSize(randSize),
-        lower_bound(20),
-        upper_bound(100){}
+        randSize(randSize){}
 
     const int pos_start;
     const uint randSize;
-    const uint lower_bound, upper_bound;
 
     uint rand_list_length;
-    std::uniform_int_distribution<int> ram_distro;
-    std::default_random_engine ran_engine;
     void reInit(RamSize ram_size) override{
         upper::reInit(ram_size);
-        ram_distro = std::uniform_int_distribution<int>(0, ram_size-1);
-        rand_list_length = (uint) ram_size * randSize / 100;
-        if(rand_list_length > upper_bound){
-            rand_list_length = upper_bound;
-        }
-        if (rand_list_length < lower_bound){
-            rand_list_length= lower_bound;
-        }
-        if (rand_list_length > ram_size){
-            rand_list_length = ram_size;
-        }
+        rand_list_length = calculate_rand_list_length(ram_size, randSize);
     }
 
     PID evictOne(RefTime curr_time) override{
-        std::vector<ram_type::iterator> elements;
-        std::vector<uint> positions;
-        do{
-            uint next_pos = ram_distro(ran_engine);
-            if(std::find(positions.begin(), positions.end(), next_pos) == positions.end()){
-                positions.push_back(next_pos);
-            }
-        }while (positions.size() < rand_list_length);
-        std::sort(positions.begin(), positions.end());
-        auto candidate =ram.begin();
-        uint candidate_pos = 0;
-        for(auto pos: positions){
-            candidate = std::next(candidate, pos- candidate_pos);
-            elements.push_back(candidate);
-            candidate_pos = pos;
-        }
+        std::vector<ram_type::iterator> elements = getElementsFromRam<ram_type::iterator>(rand_list_length);
+
         PID evict = chooseEvictionLOCAL(curr_time, elements);
 
         handle_out_of_ram(evict);
@@ -196,48 +167,19 @@ struct LFU_2K_E_real: public EvictStrategyKeepHistoryReadWrite{
             pos_start(pos_start), // do we count different for frequencies?
             randSelector(randSelector), // how many do we want to evict?
             randSize(randSize), // how many are evaluated
-            writeCost(write_cost),
-            lower_bound(20), //
-            upper_bound(100){}
+            writeCost(write_cost){}
 
     const int pos_start;
     const uint randSelector, randSize, writeCost;
-    const uint lower_bound, upper_bound;
 
     uint rand_list_length;
-    std::uniform_int_distribution<int> ram_distro;
-    std::default_random_engine ran_engine;
     void reInit(RamSize ram_size) override{
         upper::reInit(ram_size);
-        ram_distro = std::uniform_int_distribution<int>(0, ram_size-1);
-        rand_list_length = (uint) ram_size * randSize / 100;
-        if(rand_list_length > upper_bound){
-            rand_list_length = upper_bound;
-        }
-        if (rand_list_length < lower_bound){
-            rand_list_length= lower_bound;
-        }
-        if (rand_list_length > ram_size/2){
-            rand_list_length = ram_size/2;
-        }
+        rand_list_length = calculate_rand_list_length(ram_size, randSize);
     }
     uint evict(RefTime curr_time) override{
         curr_time = curr_time / epoch_size_iter;
-        std::vector<ram_type::iterator> elements;
-        elements.reserve(rand_list_length);
-        std::set<uint> positions;
-        do{
-            uint next_pos = ram_distro(ran_engine);
-            positions.insert(next_pos);
-        }while (positions.size() < rand_list_length);
-
-        auto candidate =ram.begin();
-        uint candidate_pos = 0;
-        for(auto pos: positions){
-            candidate = std::next(candidate, pos- candidate_pos);
-            elements.push_back(candidate);
-            candidate_pos = pos;
-        }
+        std::vector<ram_type::iterator> elements = getElementsFromRam<ram_type::iterator>(rand_list_length);
 
         // Sort elements by frequency; //std::min_element
         auto comperator = gt_compare_freq(curr_time, this->write_as_read, this->pos_start, this->writeCost);
@@ -286,48 +228,19 @@ struct LFU_1K_E_real: public EvictStrategyKeepHistoryCombined{
             upper(K, -1, epoch_size),
             randSelector(randSelector), // how many do we want to evict?
             randSize(randSize), // how many are evaluated
-            writeCost(write_cost),
-            lower_bound(20), //
-            upper_bound(100){}
+            writeCost(write_cost){}
 
     const uint randSelector, randSize, writeCost;
-    const uint lower_bound, upper_bound;
 
     uint rand_list_length;
-    std::uniform_int_distribution<int> ram_distro;
-    std::default_random_engine ran_engine;
     void reInit(RamSize ram_size) override{
         upper::reInit(ram_size);
-        ram_distro = std::uniform_int_distribution<int>(0, ram_size-1);
-        rand_list_length = (uint) ram_size * randSize / 100;
-        if(rand_list_length > upper_bound){
-            rand_list_length = upper_bound;
-        }
-        if (rand_list_length < lower_bound){
-            rand_list_length= lower_bound;
-        }
-        if (rand_list_length > ram_size/2){
-            rand_list_length = ram_size/2;
-        }
+        rand_list_length = calculate_rand_list_length(ram_size, randSize);
     }
 
     uint evict(RefTime curr_time) override{
         curr_time = curr_time / epoch_size_iter;
-        std::vector<ram_type::iterator> elements;
-        elements.reserve(rand_list_length);
-        std::set<uint> positions;
-        do{
-            uint next_pos = ram_distro(ran_engine);
-            positions.insert(next_pos);
-        }while (positions.size() < rand_list_length);
-
-        auto candidate =ram.begin();
-        uint candidate_pos = 0;
-        for(auto pos: positions){
-            candidate = std::next(candidate, pos- candidate_pos);
-            elements.push_back(candidate);
-            candidate_pos = pos;
-        }
+        std::vector<ram_type::iterator> elements = getElementsFromRam<ram_type::iterator>(rand_list_length);
 
         // Sort elements by frequency; //std::min_element
         auto comperator = gt_compare_freq(curr_time, this->writeCost);
