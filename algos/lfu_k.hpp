@@ -275,6 +275,79 @@ struct LFU_1K_E_real: public EvictStrategyKeepHistoryCombined{
 
 };
 
+struct LFU_1K_E_real_vers2: public EvictStrategyKeepHistoryCombined{
+    using upper = EvictStrategyKeepHistoryCombined;
+
+    LFU_1K_E_real_vers2(uint K, uint randSize, uint randSelector = 1, uint epoch_size = 1, uint write_cost = 1) :
+            upper(K, -1, epoch_size),
+            randSelector(randSelector), // how many do we want to evict?
+            randSize(randSize), // how many are evaluated
+            writeCost(write_cost){}
+
+    const uint randSelector, randSize, writeCost;
+
+    uint rand_list_length;
+    void reInit(RamSize ram_size) override{
+        upper::reInit(ram_size);
+        rand_list_length = calculate_rand_list_length(ram_size, randSize);
+    }
+
+    uint evict(RefTime curr_time) override{
+        curr_time = curr_time / epoch_size_iter;
+        std::vector<ram_type::iterator> elements = getElementsFromRam<ram_type::iterator>(rand_list_length);
+
+        // Sort elements by frequency; //std::min_element
+        auto comperator = gt_compare_freq(curr_time, this->writeCost, dirty_in_ram);
+        std::make_heap(elements.begin(), elements.end(), comperator);
+
+        uint dirtyEvicts = 0;
+        for(uint i = 0; i< randSelector && !elements.empty(); i++){
+            std::pop_heap(elements.begin(), elements.end(), comperator);
+            ram_type::iterator element = elements.back();
+            PID pid = element->first;
+            elements.pop_back();
+            handle_out_of_ram(pid);
+            ram.erase(element);
+            dirtyEvicts += postRemove(pid);
+        }
+        return dirtyEvicts;
+    }
+
+    static double
+    eval_freq(const ram_type::iterator candidate, RefTime curr_time, uint write_cost, bool is_write) {
+        return get_frequency(candidate->second, curr_time, write_cost, is_write);
+    }
+
+
+    static std::function<double(const ram_type::iterator, const ram_type::iterator)>
+    gt_compare_freq(RefTime curr_time, uint write_cost,
+                    std::vector<bool> map) {
+        return [curr_time, write_cost, map](const ram_type::iterator l, const ram_type::iterator r) {
+            return eval_freq(l, curr_time, write_cost, map[l->first]) > eval_freq(r, curr_time, write_cost, map[r->first]);
+        };
+    };
+
+    static double get_frequency(std::vector<std::pair<RefTime, bool>>& candidate, RefTime curr_time, [[maybe_unused]] uint write_cost, bool is_dirty){
+        long value = 1;
+        long best_age = (curr_time - candidate[0].first) +1, best_value = value;
+        for(uint pos = 1; pos < candidate.size(); pos++){
+            value += 1;
+            long age = (curr_time - candidate[pos].first) +1;
+            long left = value*best_age;
+            long right = best_value * age;
+            if(left> right){
+                best_value = value;
+                best_age = age;
+            }
+        }
+        if(is_dirty){
+            best_value*=write_cost;
+        }
+        return best_value * 1.0 /best_age;
+    }
+};
+
+
 struct LFUalt_K: public EvictStrategyContainer<std::unordered_set<PID>> {
     using upper = EvictStrategyContainer<std::unordered_set<PID>>;
     int pos_start;

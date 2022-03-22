@@ -43,6 +43,7 @@ std::function<LRU_K_Z()> LRU_K_Z_Generator(int K, int out_of_ram_history_length)
 std::function<LFU_2K_Z()> LFU_2K_Z_Generator(uint K_read, uint K_write, int out_of_ram_history_length, bool writes_as_reads);
 std::function<LFU_2K_Z_rand()> LFU_2K_Z_rand_Generator(uint K_read, uint K_write, int out_of_ram_history_length, uint randSize, bool writes_as_reads);
 std::function<LFU_1K_E_real()> LFU_1K_E_real_Generator(uint K, uint epoch_size, uint randSize, uint randSelector, uint write_cost);
+std::function<LFU_1K_E_real_vers2()> LFU_1K_E_Generator(uint K, uint epoch_size, uint randSize, uint randSelector, uint write_cost);
 std::function<LFU_2K_E_real()>
 LFU_2K_E_real_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read,
                         int pos_start);

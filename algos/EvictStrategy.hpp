@@ -186,6 +186,7 @@ protected:
      * @return
      */
     uint postRemove(PID pid){
+        assert(in_ram[pid]);
         in_ram[pid]=false;
         curr_count--;
         if (dirty_in_ram[pid]){

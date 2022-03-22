@@ -44,6 +44,11 @@ LFU_1K_E_real_Generator(uint K, uint epoch_size, uint randSize, uint randSelecto
     return [K, randSize, randSelector, epoch_size, write_cost](){
         return LFU_1K_E_real(K, randSize, randSelector, epoch_size, write_cost);};}
 
+std::function<LFU_1K_E_real_vers2()>
+LFU_1K_E_Generator(uint K, uint epoch_size, uint randSize, uint randSelector, uint write_cost){
+    return [K, randSize, randSelector, epoch_size, write_cost](){
+        return LFU_1K_E_real_vers2(K, randSize, randSelector, epoch_size, write_cost);};}
+
 std::function<LFU_2K_E_real()>
 LFU_2K_E_real_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read,
                         int pos_start) {
