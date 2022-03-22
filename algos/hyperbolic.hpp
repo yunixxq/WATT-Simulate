@@ -35,15 +35,9 @@ public:
     PID evictOne(RefTime curr_time) override{
         std::vector<ram_type::iterator> elements = getElementsFromRam<ram_type::iterator>(rand_list_length);
         std::vector<ram_type::iterator>::iterator min = std::min_element(elements.begin(), elements.end(), gt_compare_freq(curr_time));
-        [[maybe_unused]] PID pid = (*min)->first;
-        [[maybe_unused]] RefTime ref = curr_time - (*min)->second.first;
-        [[maybe_unused]] uint accesses = (*min)->second.second;
-        for(auto& element: elements){
-            pid = element->first;
-            ref = curr_time - element->second.first;
-            accesses = element->second.second;
-        }
-        return (*min)->first;
+        PID pid = (*min)->first;
+        ram.erase(*min);
+        return pid;
     }
 
     static std::function<double(ram_type::iterator &, ram_type::iterator &)>
