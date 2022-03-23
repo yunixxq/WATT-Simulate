@@ -38,32 +38,33 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
     if(benchmark){
         advanced_with_variations_algos();
 
-        for (int kr: {8, 4, 2, 0}) //{16, 8, 4, 2, 0})
-            for (int kw: {8, 4, 2, 1, 0}) //{16,8,4,2,0})
-            {
-                if (kr == 0 && kw == 0)
-                    continue;
+        for (int kr: {16, 8, 4, 2, 0})
+            for (int kw: {16, 8, 4, 2, 0})
                 for (int e: {0, 20, 10, 5, 1})
-                    for (int rsi: {1, 5, 10})
+                    for (int rsi: {10})
                         for (int rsa: {1, 5, 10})
-                            for (int p: {0, 1})
-                                for (int wc: {1, 2, 4, 8, 2048}) {
-                                    if (kw == 0 && wc != 1)
+                            for (int p: {0})
+                                for (int wc: {0, 1, 2, 4, 8, 2048}) {
+                                    if ((kw == 0 && wc != 1) || (kr == 0 && kw == 0))
                                         continue;
-                                    string name = "lfu_vers2_kr" + to_string(kr)
+                                    string name = "kr" + to_string(kr)
                                                   + "_kw" + to_string(kw)
                                                   + "_e" + to_string(e)
                                                   + "_rsi" + to_string(rsi)
                                                   + "_rsa" + to_string(rsa)
                                                   + "_wc" + to_string(wc)
                                                   + "_p" + to_string(p);
-                                    runAlgorithm(name, LFU_Generator(kr, kw, e, rsi, rsa, false, p, wc));
-                                    runAlgorithm(name + "_war", LFU_Generator(kr, kw, e, rsi, rsa, true, p, wc));
+                                    if(kw != 0){
+                                        runAlgorithm("lfu_vers2_" + name, LFU_Generator(kr, kw, e, rsi, rsa, false, p, wc));
+                                        runAlgorithm("lfu_vers3_" + name, LFU_2K_E_real2_Generator(kr, kw, e, rsi, rsa, false, p, wc));
+                                    }else{
+                                        runAlgorithm("lfu_vers2_" + name + "_war", LFU_Generator(kr, kw, e, rsi, rsa, true, p, wc));
+                                        runAlgorithm("lfu_vers3_" + name + "_war", LFU_2K_E_real2_Generator(kr, kw, e, rsi, rsa, true, p, wc));
+                                    }
                                 }
-            }
-        for (int k: {8, 4, 2, 0}) //{16, 8, 4, 2, 0})
+        for (int k: {32, 16, 8, 4, 2, 0})
                 for (int e: {0, 20, 10, 5, 1})
-                    for (int rsi: {1, 5, 10})
+                    for (int rsi: {10})
                         for (int rsa: {1, 5, 10})
                             for (int wc: {0, 1, 2, 4, 8, 2048}) {
                                 string name = to_string(k)
@@ -72,7 +73,8 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                                               + "_rsa" + to_string(rsa)
                                               + "_wc" + to_string(wc);
                                 runAlgorithm("lfu_k" + name, LFU_1K_E_real_Generator(k, e, rsi, rsa, wc));
-                                runAlgorithm("lfu_bla_k" + name, LFU_1K_E_Generator(kr, e, rsi, rsa, wc));
+                                runAlgorithm("lfu_bla_k" + name, LFU_1K_E_Generator(k, e, rsi, rsa, wc));
+                            }
 
 
     }
