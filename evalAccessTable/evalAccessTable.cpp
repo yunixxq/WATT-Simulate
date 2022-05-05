@@ -288,11 +288,11 @@ void EvalAccessTable::handleCsv(ifstream &filestream){
         }
         stringstream ss(line);
         string algo, ram_size, elements, reads, writes;
-        assert(getline(ss, algo, ','));
-        assert(getline(ss, ram_size, ','));
-        assert(getline(ss, elements, ','));
-        assert(getline(ss, reads, ','));
-        assert(getline(ss, writes, ','));
+        getline(ss, algo, ',');
+        getline(ss, ram_size, ',');
+        getline(ss, elements, ',');
+        getline(ss, reads, ',');
+        getline(ss, writes, ',');
         assert((uint) stoi(elements) == data.size());
         read_write_list[algo][stoi(ram_size)] = std::make_pair(stoi(reads), stoi(writes));
         if(!ramSizes.contains(stoi(ram_size))){

@@ -37,7 +37,7 @@ void StaticOpt::evaluateRamList(const std::vector<Access> &data, const ramListTy
         pageIds.emplace_back(i);
     }
     std::sort(pageIds.begin(), pageIds.end(),
-              [costs, writes](PID first, PID second) {
+              [&costs, &writes](PID first, PID second) {
         if (costs[first] == costs[second])
             return writes[first]> writes[second];
         return costs[first] > costs[second];

@@ -103,7 +103,7 @@ protected:
      * Check if everything was initiated correctly
      * @param ram_size
      */
-    void checkConditions(RamSize ram_size){
+    void checkConditions([[maybe_unused]] RamSize ram_size){
         assert(RAM_SIZE == ram_size);
         assert(dirty_in_ram.empty());
         assert(in_ram.empty());
