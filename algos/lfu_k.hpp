@@ -387,8 +387,8 @@ struct LFU_1K_E_real_vers2: public EvictStrategyKeepHistoryCombined{
 
     static std::function<double(const ram_type::iterator, const ram_type::iterator)>
     gt_compare_freq(RefTime curr_time, uint write_cost,
-                    std::vector<bool> map) {
-        return [curr_time, write_cost, map](const ram_type::iterator l, const ram_type::iterator r) {
+                    std::vector<bool>& map) {
+        return [curr_time, write_cost, &map](const ram_type::iterator l, const ram_type::iterator r) {
             return eval_freq(l, curr_time, write_cost, map[l->first]) > eval_freq(r, curr_time, write_cost, map[r->first]);
         };
     };
