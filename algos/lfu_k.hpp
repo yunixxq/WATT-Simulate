@@ -394,6 +394,9 @@ struct LFU_1K_E_real_vers2: public EvictStrategyKeepHistoryCombined{
     };
 
     static double get_frequency(std::vector<std::pair<RefTime, bool>>& candidate, RefTime curr_time, [[maybe_unused]] uint write_cost, bool is_dirty){
+        if(candidate.empty()){
+            return 0;
+        }
         long value = 1;
         long best_age = (curr_time - candidate[0].first) +1, best_value = value;
         for(uint pos = 1; pos < candidate.size(); pos++){
