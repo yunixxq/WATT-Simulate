@@ -37,6 +37,8 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
     advanced_compare_algos();
     if(benchmark){
         advanced_with_variations_algos();
+        runAlgorithm("watt0_F", LFU_Generator(8, 4, 10, 50, 1, false, 0, 1));
+        runAlgorithm("watt0_T", LFU_Generator(8, 4, 10, 50, 1, true, 0, 1));
 
         for (int kr: {16, 8, 4, 2, 0})
             for (int kw: {16, 8, 4, 2, 0})
