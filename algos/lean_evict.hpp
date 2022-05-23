@@ -19,8 +19,7 @@ public:
     leanEvict(uint coolingPercentage = 20): upper(), coolingPercentage(coolingPercentage){}
 private:
     uint coolingPercentage = 0;
-    uint hotSpace, coolingSpace, hotSize;
-    std::vector<bool> is_hot;
+    uint hotSpace, coolingSpace;
     std::list<PID> cooling_list;
     std::unordered_map<PID, std::list<PID>::iterator> cooling_list_pointer;
 
@@ -28,40 +27,28 @@ private:
         EvictStrategyContainer::reInit(ram_size);
         coolingSpace = ram_size * coolingPercentage/100;
         hotSpace = ram_size - coolingSpace;
-        ram_distro = std::uniform_int_distribution<int>(0, hotSpace-1);
-        hotSize = 0;
-        is_hot.clear();
+        ram_distro = std::uniform_int_distribution<int>(0, hotSpace);
         cooling_list.clear();
         cooling_list_pointer.clear();
     }
 
     void access(const Access& access) override{
-        if(is_hot.size() <= access.pid){
-            is_hot.resize(access.pid + 1, false);
-        }
-        if(!is_hot[access.pid]){
-            // new hot page
-            hotSize ++;
-        }
         if((cooling_list_pointer.find(access.pid))!=cooling_list_pointer.end()){
             // Remove from cooling list
             cooling_list.erase(cooling_list_pointer[access.pid]);
             cooling_list_pointer.erase(access.pid);
         }
         ram.insert(access.pid);
-        is_hot[access.pid]=true;
-        if(hotSize > hotSpace){
+        if(ram.size() > hotSpace){
             // send one random page to cooling
             unsigned int increment_by = ram_distro(ran_engine);
             auto candidate =ram.begin();
             if(increment_by > 0){
                 candidate = std::next(candidate, increment_by);
             }
-            is_hot[*candidate] = false;
             cooling_list.push_back(*candidate);
             cooling_list_pointer[*candidate] = std::prev(cooling_list.end());
             ram.erase(candidate);
-            hotSize--;
         }
         assert(ram.size() == curr_count || ram.size() == hotSpace);
     };
@@ -69,6 +56,66 @@ private:
         PID pid = *cooling_list.begin();
         cooling_list_pointer.erase(pid);
         cooling_list.erase(cooling_list.begin());
+        return pid;
+
+    }
+};
+
+struct leanEvict2: public EvictStrategyContainer<std::unordered_set<PID>> {
+public:
+    using upper = EvictStrategyContainer<std::unordered_set<PID>>;
+    leanEvict2(uint coolingPercentage = 20): upper(), coolingPercentage(coolingPercentage){}
+private:
+    uint coolingPercentage = 0;
+    uint coolingSpace, hotSpace;
+    std::vector<bool> touched;
+    std::list<PID> cooling_list;
+
+    void reInit(RamSize ram_size) override{
+        EvictStrategyContainer::reInit(ram_size);
+        coolingSpace = ram_size * coolingPercentage/100;
+        hotSpace = ram_size - coolingSpace;
+        ram_distro = std::uniform_int_distribution<int>(0, hotSpace);
+        touched.clear();
+        cooling_list.clear();
+    }
+
+    void access(const Access& access) override{
+        if(touched.size() <= access.pid){
+            touched.resize(access.pid + 1, false);
+        }
+        if(!in_ram[access.pid]){ // Fresh pages into hot list
+            ram.insert(access.pid);
+        }
+        touched[access.pid]=true;
+        cool();
+    }
+
+    void cool() {
+        while(ram.size() > hotSpace){
+            // send one random page to cooling
+            unsigned int increment_by = ram_distro(ran_engine);
+            auto candidate = ram.begin();
+            if(increment_by > 0){
+                candidate = std::next(candidate, increment_by);
+            }
+            touched[*candidate]=false;
+            cooling_list.push_back(*candidate);
+            ram.erase(candidate);
+        }
+        assert(ram.size() == curr_count || ram.size() == hotSpace);
+    };
+    PID evictOne(RefTime) override{
+        PID pid =0;
+        while(true) {
+            pid = *cooling_list.begin();
+            cooling_list.erase(cooling_list.begin());
+            if (touched[pid]) {
+                ram.insert(pid);
+            }else{
+                return  pid;
+            }
+        }
         return pid;
 
     }

@@ -55,6 +55,7 @@ LFU_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelecto
               int pos_start, uint writeCost=1);
 
 std::function<leanEvict()> Lean_Generator(uint cooling_percentage);
+std::function<leanEvict2()> Lean_Generator2(uint cooling_percentage);
 
 //std::function<LFU_K_Z_D()> LFU1_K_Z_D_Generator(int K, int Z, int D);
 // std::function<LFU2_K_Z_D()> LFU2_K_Z_D_Generator(int K, int Z, int D);

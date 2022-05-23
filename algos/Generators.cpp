@@ -69,6 +69,8 @@ return LFU_2K_E_real(KR, KW, randSize, randSelector, write_as_read, epoch_size, 
 
 std::function<leanEvict()> Lean_Generator(uint cooling_percentage){
     return [cooling_percentage](){return leanEvict(cooling_percentage);};}
+std::function<leanEvict2()> Lean_Generator2(uint cooling_percentage){
+    return [cooling_percentage](){return leanEvict2(cooling_percentage);};}
 
 
 /*

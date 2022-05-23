@@ -142,6 +142,10 @@ void EvalAccessTable::advanced_with_variations_algos() {
     runAlgorithm("lean20", Lean_Generator(20));
     runAlgorithm("lean30", Lean_Generator(30));
     runAlgorithm("lean40", Lean_Generator(40));
+    runAlgorithm("lean10_2", Lean_Generator2(10));
+    runAlgorithm("lean20_2", Lean_Generator2(20));
+    runAlgorithm("lean30_2", Lean_Generator2(30));
+    runAlgorithm("lean40_2", Lean_Generator2(40));
     runAlgorithm("cf_lru30", CfLRUGenerator(30));
     runAlgorithm("cf_lru40", CfLRUGenerator(40));
     runAlgorithm("cf_lru50", CfLRUGenerator(50));
@@ -158,6 +162,7 @@ void EvalAccessTable::advanced_with_variations_algos() {
 void EvalAccessTable::advanced_compare_algos() {
     default_compare_algos();
     runAlgorithm("lean30", Lean_Generator(30));
+    runAlgorithm("lean30_2", Lean_Generator2(30));
     runAlgorithm("lru_wsr", LRU_WSR_Generator());
     runAlgorithm("cf_lru50", CfLRUGenerator(50));
     runAlgorithm("hyperbolic10", Hyperbolic_generator(10));
