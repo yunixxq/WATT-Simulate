@@ -156,6 +156,16 @@ void EvalAccessTable::advanced_with_variations_algos() {
     runAlgorithm("hyperbolic01", Hyperbolic_generator(1));
     runAlgorithm("hyperbolic05", Hyperbolic_generator(5));
     runAlgorithm("hyperbolic20", Hyperbolic_generator(20));
+    runAlgorithm("lrfu0.0", LRFU_Generator(0.0, 8, 4, 5, 1, true, 1, 1));
+    runAlgorithm("lrfu0.1", LRFU_Generator(0.1, 8, 4, 5, 1, true, 1, 1));
+    runAlgorithm("lrfu0.2", LRFU_Generator(0.2, 8, 4, 5, 1, true, 1, 1));
+    runAlgorithm("lrfu0.3", LRFU_Generator(0.3, 8, 4, 5, 1, true, 1, 1));
+    runAlgorithm("lrfu0.4", LRFU_Generator(0.4, 8, 4, 5, 1, true, 1, 1));
+    runAlgorithm("lrfu0.5", LRFU_Generator(0.5, 8, 4, 5, 1, true, 1, 1));
+    runAlgorithm("lrfu0.6", LRFU_Generator(0.6, 8, 4, 5, 1, true, 1, 1));
+    runAlgorithm("lrfu0.7", LRFU_Generator(0.7, 8, 4, 5, 1, true, 1, 1));
+    runAlgorithm("lrfu0.8", LRFU_Generator(0.8, 8, 4, 5, 1, true, 1, 1));
+    runAlgorithm("lrfu0.9", LRFU_Generator(0.9, 8, 4, 5, 1, true, 1, 1));
 
 }
 
@@ -166,6 +176,7 @@ void EvalAccessTable::advanced_compare_algos() {
     runAlgorithm("lru_wsr", LRU_WSR_Generator());
     runAlgorithm("cf_lru50", CfLRUGenerator(50));
     runAlgorithm("hyperbolic10", Hyperbolic_generator(10));
+    runAlgorithm("lrfu1.0", LRFU_Generator(1.0, 8, 4, 5, 1, true, 1, 1));
 
 }
 

@@ -72,6 +72,11 @@ std::function<leanEvict()> Lean_Generator(uint cooling_percentage){
 std::function<leanEvict2()> Lean_Generator2(uint cooling_percentage){
     return [cooling_percentage](){return leanEvict2(cooling_percentage);};}
 
+std::function<LRFU()> LRFU_Generator(double lambda, uint KR, uint KW, uint randSize,
+                                     uint randSelector, bool write_as_read,
+                                     uint epoch_size, uint write_cost){
+    return [lambda, KR, KW, randSize, randSelector, write_as_read, epoch_size, write_cost]() {
+        return LRFU(lambda, KR, KW, randSize, randSelector, write_as_read, epoch_size, write_cost);};}
 
 /*
 std::function<LFU_K_Z_D()> LFU1_K_Z_D_Generator(int K, int Z, int D){
