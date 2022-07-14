@@ -52,7 +52,7 @@ private:
         }
         assert(ram.size() == curr_count || ram.size() == hotSpace);
     };
-    PID evictOne(RefTime) override{
+    PID evictOne(Access) override{
         PID pid = *cooling_list.begin();
         cooling_list_pointer.erase(pid);
         cooling_list.erase(cooling_list.begin());
@@ -105,7 +105,7 @@ private:
         }
         assert(ram.size() == curr_count || ram.size() == hotSpace);
     };
-    PID evictOne(RefTime) override{
+    PID evictOne(Access) override{
         PID pid =0;
         while(true) {
             pid = *cooling_list.begin();

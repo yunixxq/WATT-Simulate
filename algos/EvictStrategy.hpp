@@ -121,7 +121,7 @@ protected:
             if(!in_ram[single_access.pid]){
                 page_misses++;
                 if(curr_count >= RAM_SIZE){
-                    dirty_evicts += evict(single_access.pos);
+                    dirty_evicts += evict(single_access);
                 }
                 curr_count ++;
             }
@@ -146,18 +146,18 @@ protected:
      * Per default handels oneEviction
      *
      * Per Eviction postRemove has to be called and the returne values have to be added together
-     * @param time
+     * @param access
      * @return sum(map(lambda PID x: postRemove(x), evictions))
      */
-    virtual uint evict(RefTime time) {
-        return postRemove(evictOne(time));
+    virtual uint evict(Access access) {
+        return postRemove(evictOne(access));
     }
     /**
      * Handle one eviction, easiest version
-     * @param curr_time
+     * @param access
      * @return PID of page to evict
      */
-    virtual PID evictOne(RefTime curr_time) = 0;
+    virtual PID evictOne(Access access) = 0;
 
     /**
      * Checks ALL pages, if they are dirty and in ram (slow)
@@ -207,8 +207,8 @@ template<class Container>
 class EvictStrategyContainer: public EvictStrategy{
 public:
     EvictStrategyContainer(): EvictStrategy(){}
-protected:
     Container ram;
+protected:
     static const uint lower_bound = 20;
     static const uint upper_bound = 100;
 
@@ -276,13 +276,13 @@ protected:
     }
     void access(const Access& access) override{
         if(upper::in_ram[access.pid]){
-            fast_finder[access.pid] = updateElement(fast_finder[access.pid], access);
+            fast_finder[access.pid] = updateElement(fast_finder[access.pid], access, upper::ram);
 
         }else{
-            fast_finder[access.pid] = insertElement(access);
+            fast_finder[access.pid] = insertElement(access, upper::ram);
         }
     };
-    virtual PID evictOne(RefTime) override{
+    virtual PID evictOne(Access) override{
         typename std::list<T>::iterator min = upper::ram.begin();
         PID pid = *min;
         fast_finder.erase(pid);
@@ -295,9 +295,9 @@ protected:
      * @param access
      * @return Iterator for pos in RAM
      */
-    virtual typename std::list<T>::iterator insertElement(const Access& access){
-        upper::ram.push_back(access.pid);
-        return std::prev(upper::ram.end());
+    virtual typename std::list<T>::iterator insertElement(const Access& access, std::list<T>& ram){
+        ram.push_back(access.pid);
+        return std::prev(ram.end());
     }
     /**
      * Algorithm specific update Function
@@ -305,11 +305,10 @@ protected:
      * @param access
      * @return Iterator for pos in RAM
      */
-    virtual typename std::list<T>::iterator updateElement(typename std::list<T>::iterator old, const Access& access){
-        upper::ram.erase(old);
-
-        upper::ram.push_back(access.pid);
-        return std::prev(upper::ram.end());
+    virtual typename std::list<T>::iterator updateElement(typename std::list<T>::iterator old, const Access& access, std::list<T>& ram){
+        ram.erase(old);
+        ram.push_back(access.pid);
+        return std::prev(ram.end());
     }
 
 };
@@ -369,8 +368,8 @@ protected:
         }
         push_frontAndResize(access, ram[access.pid], K);
     };
-    PID evictOne(RefTime curr_time) override{
-        PID pid = chooseEviction(curr_time);
+    PID evictOne(Access access) override{
+        PID pid = chooseEviction(access.pos);
         ram.erase(pid);
         return pid;
     }
@@ -423,8 +422,8 @@ protected:
     };
     virtual void changeElement(const Access access, bool inRam) =0;
 
-    virtual PID evictOne(RefTime curr_time) override{
-        PID candidate = chooseEviction(curr_time);
+    virtual PID evictOne(Access access) override{
+        PID candidate = chooseEviction(access.pos);
 
         handle_out_of_ram(candidate);
 

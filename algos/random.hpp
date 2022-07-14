@@ -26,7 +26,7 @@ private:
         ram.insert(access.pid);
         assert(ram.size() == curr_count);
     };
-    PID evictOne(RefTime) override{
+    PID evictOne(Access) override{
         unsigned int increment_by = ram_distro(ran_engine);
         auto candidate =ram.begin();
         if(increment_by > 0){

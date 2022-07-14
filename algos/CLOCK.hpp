@@ -29,7 +29,7 @@ struct CLOCK: public clock_upper {
         return next++;
     }
 
-    PID evictOne(RefTime) override{
+    PID evictOne(Access) override{
         while(true) {
             if(next >= ram.size()){
                 next -= ram.size();

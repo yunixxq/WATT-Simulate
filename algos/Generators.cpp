@@ -5,18 +5,17 @@
 #include "Generators.hpp"
 
 template<class T> std::function<T()> defGenerator(){return [](){return T();};}
+template<class T, class T2> std::function<T()> defGeneratorOne(T2 type){return [type]() {return T(type);}; }
 
 std::function<OPT()> Opt_Generator() {return defGenerator<OPT>();}
 std::function<StaticOpt()> StaticOpt_Generator(){return defGenerator<StaticOpt>();}
 std::function<Random()> Random_Generator(){return defGenerator<Random>();}
 std::function<CLOCK()> CLOCK_Generator(){return defGenerator<CLOCK>();}
-
-std::function<CF_LRU()> CfLRUGenerator(int percentage) {
-    return [percentage](){return CF_LRU(percentage);};}
-
 std::function<LRU_WSR()> LRU_WSR_Generator() {return defGenerator<LRU_WSR>();}
+std::function<ARC()> ARC_Generator(){return defGenerator<ARC>();}
 
-std::function<hyperbolic()> Hyperbolic_generator(uint randSize){return [randSize]() {return  hyperbolic(randSize);};}
+std::function<CF_LRU()> CfLRUGenerator(int percentage) {return defGeneratorOne<CF_LRU>(percentage);}
+std::function<hyperbolic()> Hyperbolic_generator(uint randSize){return defGeneratorOne<hyperbolic>(randSize);}
 
 std::function<LFU_K()> LFU_K_Generator(int K){
     return [K](){return LFU_K(K);};}

@@ -121,10 +121,10 @@ struct LFU_2K_Z_rand: public EvictStrategyKeepHistoryReadWrite{
         rand_list_length = calculate_rand_list_length(ram_size, randSize);
     }
 
-    PID evictOne(RefTime curr_time) override{
+    PID evictOne(Access access) override{
         std::vector<ram_type::iterator> elements = getElementsFromRam<ram_type::iterator>(rand_list_length);
 
-        PID evict = chooseEvictionLOCAL(curr_time, elements);
+        PID evict = chooseEvictionLOCAL(access.pos, elements);
 
         handle_out_of_ram(evict);
 
@@ -177,8 +177,8 @@ struct LFU_2K_E_real: public EvictStrategyKeepHistoryReadWrite{
         upper::reInit(ram_size);
         rand_list_length = calculate_rand_list_length(ram_size, randSize);
     }
-    uint evict(RefTime curr_time) override{
-        curr_time = curr_time / epoch_size_iter;
+    uint evict(Access access) override{
+        RefTime curr_time = access.pos / epoch_size_iter;
         std::vector<ram_type::iterator> elements = getElementsFromRam<ram_type::iterator>(rand_list_length);
 
         // Sort elements by frequency; //std::min_element
@@ -240,8 +240,8 @@ struct LFU_2K_E_real_ver2: public EvictStrategyKeepHistoryReadWrite{
         upper::reInit(ram_size);
         rand_list_length = calculate_rand_list_length(ram_size, randSize);
     }
-    uint evict(RefTime curr_time) override{
-        curr_time = curr_time / epoch_size_iter;
+    uint evict(Access access) override{
+        RefTime curr_time = access.pos / epoch_size_iter;
         std::vector<ram_type::iterator> elements = getElementsFromRam<ram_type::iterator>(rand_list_length);
 
         // Sort elements by frequency; //std::min_element
@@ -304,8 +304,8 @@ struct LFU_1K_E_real: public EvictStrategyKeepHistoryCombined{
         rand_list_length = calculate_rand_list_length(ram_size, randSize);
     }
 
-    uint evict(RefTime curr_time) override{
-        curr_time = curr_time / epoch_size_iter;
+    uint evict(Access access) override{
+        RefTime curr_time = access.pos / epoch_size_iter;
         std::vector<ram_type::iterator> elements = getElementsFromRam<ram_type::iterator>(rand_list_length);
 
         // Sort elements by frequency; //std::min_element
@@ -358,8 +358,8 @@ struct LFU_1K_E_real_vers2: public EvictStrategyKeepHistoryCombined{
         rand_list_length = calculate_rand_list_length(ram_size, randSize);
     }
 
-    uint evict(RefTime curr_time) override{
-        curr_time = curr_time / epoch_size_iter;
+    uint evict(Access access) override{
+        RefTime curr_time = access.pos / epoch_size_iter;
         std::vector<ram_type::iterator> elements = getElementsFromRam<ram_type::iterator>(rand_list_length);
 
         // Sort elements by frequency; //std::min_element
@@ -432,11 +432,11 @@ struct LFUalt_K: public EvictStrategyContainer<std::unordered_set<PID>> {
         push_frontAndResize(access, history[access.pid], K);
         ram.insert(access.pid);
     };
-    PID evictOne(RefTime curr_time) override{
+    PID evictOne(Access access) override{
         PID candidate = *ram.begin();
-        double candidate_freq = get_frequency(history[candidate], curr_time, pos_start);
+        double candidate_freq = get_frequency(history[candidate], access.pos, pos_start);
         for(PID runner: ram){
-            double runner_freq = get_frequency(history[runner], curr_time, pos_start);
+            double runner_freq = get_frequency(history[runner], access.pos, pos_start);
             if(runner_freq < candidate_freq){
                 candidate = runner;
                 candidate_freq = runner_freq;

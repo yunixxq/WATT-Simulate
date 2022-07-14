@@ -12,7 +12,7 @@ struct LRU: public EvictStrategyContainer<std::unordered_map<PID, RefTime>> {
     void access(const Access& access) override{
         ram[access.pid]=access.pos;
     };
-    PID evictOne(RefTime) override{
+    PID evictOne(Access) override{
         auto candidate = std::min_element(ram.begin(), ram.end(), compare_second);
         PID pid = candidate->first;
         ram.erase(candidate);
@@ -28,7 +28,7 @@ struct LRU1: public EvictStrategyContainer<std::unordered_map<PID, Access>> {
     void access(const Access& access) override{
         ram[access.pid]=access;
     };
-    PID evictOne(RefTime) override{
+    PID evictOne(Access) override{
         auto candidate = std::min_element(ram.begin(), ram.end(), comparePairPos<PID>);
         PID pid = candidate->first;
         ram.erase(candidate);
@@ -51,7 +51,7 @@ struct LRU2: public EvictStrategyContainer<std::vector<Access>> {
         }
         ram.push_back(access);
     };
-    PID evictOne(RefTime) override{
+    PID evictOne(Access) override{
         PID pid = ram.begin()->pid;
         ram.erase(ram.begin());
         return pid;
@@ -75,7 +75,7 @@ struct LRU2a: public EvictStrategyContainer<std::list<PID>>{
         ram.push_back(access.pid);
         hash_for_list[access.pid] = std::prev(ram.end());
     };
-    PID evictOne(RefTime) override{
+    PID evictOne(Access) override{
         PID pid = *ram.begin();
         hash_for_list.erase(pid);
         ram.erase(ram.begin());
@@ -99,7 +99,7 @@ struct LRU3: public EvictStrategyContainer<std::map<RefTime, PID >> {
         ram.erase(access.lastRef);
         ram[access.pos]=access.pid;
     };
-    PID evictOne(RefTime) override{
+    PID evictOne(Access) override{
         auto candidate = ram.begin();
         PID pid = candidate->second;
         ram.erase(candidate);

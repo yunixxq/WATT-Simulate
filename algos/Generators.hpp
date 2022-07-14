@@ -17,6 +17,8 @@
 #include "lean_evict.hpp"
 #include "CLOCK.hpp"
 #include "LRFU.hpp"
+#include "ARC.hpp"
+
 // Here unused, but for good includes
 #include "lruStackDist.hpp"
 
@@ -61,6 +63,8 @@ std::function<leanEvict2()> Lean_Generator2(uint cooling_percentage);
 std::function<LRFU()>
 LRFU_Generator(double lambda, uint KR, uint KW, uint randSize, uint randSelector = 1, bool write_as_read = true,
                uint epoch_size = 1, uint write_cost = 1);
+
+std::function<ARC()> ARC_Generator();
 
 //std::function<LFU_K_Z_D()> LFU1_K_Z_D_Generator(int K, int Z, int D);
 // std::function<LFU2_K_Z_D()> LFU2_K_Z_D_Generator(int K, int Z, int D);

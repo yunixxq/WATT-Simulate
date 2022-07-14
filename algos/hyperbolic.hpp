@@ -32,9 +32,9 @@ public:
         }
     };
 
-    PID evictOne(RefTime curr_time) override{
+    PID evictOne(Access access) override{
         std::vector<ram_type::iterator> elements = getElementsFromRam<ram_type::iterator>(rand_list_length);
-        std::vector<ram_type::iterator>::iterator min = std::min_element(elements.begin(), elements.end(), gt_compare_freq(curr_time));
+        std::vector<ram_type::iterator>::iterator min = std::min_element(elements.begin(), elements.end(), gt_compare_freq(access.pos));
         PID pid = (*min)->first;
         ram.erase(*min);
         return pid;

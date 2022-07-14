@@ -27,7 +27,7 @@ struct CF_LRU: public EvictStrategy {
         hash_for_list[access.pid] = std::prev(ram_list.end());
     };
 
-    PID evictOne(RefTime) override{
+    PID evictOne(Access) override{
         std::list<Access>::iterator candidate = ram_list.begin();
         bool found = false;
         for(uint i= 0; i < window_length; i++){

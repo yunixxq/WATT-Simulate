@@ -24,8 +24,8 @@ struct LRFU: public EvictStrategyKeepHistoryReadWrite{
         upper::reInit(ram_size);
         rand_list_length = calculate_rand_list_length(ram_size, randSize);
     }
-    uint evict(RefTime curr_time) override{
-        curr_time = curr_time / epoch_size_iter;
+    uint evict(Access access) override{
+        RefTime curr_time = access.pos / epoch_size_iter;
         std::vector<ram_type::iterator> elements = getElementsFromRam<ram_type::iterator>(rand_list_length);
 
         // Sort elements by frequency; //std::min_element

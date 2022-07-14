@@ -21,7 +21,7 @@ struct LRUalt_K: public EvictStrategyContainer<std::unordered_map<PID, std::vect
         }
         push_frontAndResize(access, ram[access.pid], K);
     };
-    PID evictOne(RefTime) override{
+    PID evictOne(Access) override{
         //auto candidate = std::min_element(ram.begin(), ram.end(), compare);
         std::unordered_map<PID, std::vector<RefTime>>::iterator candidate = ram.begin(), runner = ram.begin();
 
