@@ -120,7 +120,7 @@ protected:
             }
         }
         assert(false);
-
+        return 0;
     }
 
     /**
