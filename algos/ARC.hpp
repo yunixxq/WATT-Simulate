@@ -99,7 +99,7 @@ protected:
             // Adapt p= max{p-delta_2,0}; delta_2 = {1 (b2>= b1) | b1/b2 sonst}; replace(p)
             uint b2 = B2_p.size(), b1 = B1_p.size();
             uint inner = (b2 >= b1) ? 1 : b1/b2;
-            p=std::max(p - inner, (uint)0);
+            p= (inner < p) ? p - inner : 0;
             return replace(true);
 
 
