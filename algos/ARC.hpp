@@ -78,7 +78,7 @@ protected:
             return evict(T2, B2, T2_p, B2_p);
         };
         auto replace = [&](bool equal = false){
-            if(T1_p.size() > p || (equal && T1_p.size() == p)){
+            if(T1_p.size() > 0 && (T1_p.size() > p || (equal && T1_p.size() == p))){
                 return evictT1();
             }else{
                 return evictT2();
@@ -120,6 +120,7 @@ protected:
             }
         }
         assert(false);
+        std::cout << "ERROR!" << std::endl;
         return 0;
     }
 
