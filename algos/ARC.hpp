@@ -4,7 +4,7 @@
 
 #include "EvictStrategy.hpp"
 #include <functional>
-
+#include <iostream>
 
 struct ARC: public EvictStrategyHashList<PID>{
     using upper = EvictStrategyHashList<PID>;
