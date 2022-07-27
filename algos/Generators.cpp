@@ -49,22 +49,19 @@ LFU_1K_E_Generator(uint K, uint epoch_size, uint randSize, uint randSelector, ui
         return LFU_1K_E_real_vers2(K, randSize, randSelector, epoch_size, write_cost);};}
 
 std::function<LFU_2K_E_real()>
-LFU_2K_E_real_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read,
-                        int pos_start) {
-    return [KR, KW, randSize, randSelector, write_as_read, epoch_size, pos_start](){
-        return LFU_2K_E_real(KR, KW, randSize, randSelector, write_as_read, epoch_size, pos_start);};}
+LFU_2K_E_real_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read) {
+    return [KR, KW, randSize, randSelector, write_as_read, epoch_size](){
+        return LFU_2K_E_real(KR, KW, randSize, randSelector, write_as_read, epoch_size);};}
 
 std::function<LFU_2K_E_real_ver2()>
-LFU_2K_E_real2_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read,
-                        int pos_start, uint writeCost) {
-    return [KR, KW, randSize, randSelector, write_as_read, epoch_size, pos_start, writeCost](){
-        return LFU_2K_E_real_ver2(KR, KW, randSize, randSelector, write_as_read, epoch_size, pos_start, writeCost);};}
+LFU_2K_E_real2_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read, uint writeCost) {
+    return [KR, KW, randSize, randSelector, write_as_read, epoch_size, writeCost](){
+        return LFU_2K_E_real_ver2(KR, KW, randSize, randSelector, write_as_read, epoch_size, writeCost);};}
 
 std::function<LFU_2K_E_real()>
-LFU_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read,
-int pos_start, uint writeCost) {
-return [KR, KW, randSize, randSelector, write_as_read, epoch_size, pos_start, writeCost](){
-return LFU_2K_E_real(KR, KW, randSize, randSelector, write_as_read, epoch_size, pos_start, writeCost);};}
+LFU_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read, uint write_cost, bool ignore_first) {
+return [KR, KW, randSize, randSelector, write_as_read, epoch_size, write_cost, ignore_first](){
+return LFU_2K_E_real(KR, KW, randSize, randSelector, write_as_read, epoch_size, write_cost, ignore_first);};}
 
 std::function<leanEvict()> Lean_Generator(uint cooling_percentage){
     return [cooling_percentage](){return leanEvict(cooling_percentage);};}
