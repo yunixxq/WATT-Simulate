@@ -37,10 +37,28 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
     advanced_compare_algos();
     if(benchmark){
         advanced_with_variations_algos();
-        runAlgorithm("watt0_F", LFU_Generator(8, 4, 10, 50, 1, false, 1));
-        runAlgorithm("watt0_T", LFU_Generator(8, 4, 10, 50, 1, true, 1));
-        runAlgorithm("watt0_F_ignore_first", LFU_Generator(8, 4, 10, 50, 1, false, 1, true));
-        runAlgorithm("watt0_T_ignore_first", LFU_Generator(8, 4, 10, 50, 1,  true, 1, true));
+        runAlgorithm("watt0_F_00", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.0));
+        runAlgorithm("watt0_T_00", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.0));
+        runAlgorithm("watt0_F_01", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.1));
+        runAlgorithm("watt0_T_01", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.1));
+        runAlgorithm("watt0_F_02", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.2));
+        runAlgorithm("watt0_T_02", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.2));
+        runAlgorithm("watt0_F_03", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.3));
+        runAlgorithm("watt0_T_03", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.3));
+        runAlgorithm("watt0_F_04", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.4));
+        runAlgorithm("watt0_T_04", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.4));
+        runAlgorithm("watt0_F_05", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.5));
+        runAlgorithm("watt0_T_05", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.5));
+        runAlgorithm("watt0_F_06", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.6));
+        runAlgorithm("watt0_T_06", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.6));
+        runAlgorithm("watt0_F_07", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.7));
+        runAlgorithm("watt0_T_07", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.7));
+        runAlgorithm("watt0_F_08", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.8));
+        runAlgorithm("watt0_T_08", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.8));
+        runAlgorithm("watt0_F_09", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.9));
+        runAlgorithm("watt0_T_09", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.9));
+        runAlgorithm("watt0_F_10", LFU_Generator(8, 4, 10, 50, 1, false, 1, 1.0));
+        runAlgorithm("watt0_T_10", LFU_Generator(8, 4, 10, 50, 1, true, 1, 1.0));
 
         for (int kr: {16, 8, 4, 2, 0})
             for (int kw: {16, 8, 4, 2, 0})

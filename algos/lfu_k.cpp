@@ -9,13 +9,13 @@ float maxx(float a, float b) { return a>b ? a : b; }
 
 using namespace std;
 
-double get_frequency(std::vector<RefTime>& array, RefTime now, bool ignore_first) {
-   float best = 0;
-   uint i = 0;
-   if(ignore_first) i++;
-   for (; i<array.size(); i++)
-      best = maxx(best, minn((float)(i+1) / (now-array[i]), 1.0));
-   return best;
+double get_frequency(std::vector<RefTime>& array, RefTime now, float first_value) {
+    if(array.size()==0)
+        return 0;
+    float best = minn(first_value / (now-array[0]+1), 1.0);
+    for (uint i=1; i<array.size(); i++)
+        best = maxx(best, minn((float)(i+1) / (now-array[i]+1), 1.0));
+    return best;
 }
 
 double get_frequency(std::vector<std::pair<RefTime, bool>>& candidate, RefTime curr_time, [[maybe_unused]] uint write_cost){
