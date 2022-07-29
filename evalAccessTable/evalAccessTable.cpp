@@ -77,6 +77,24 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
         runAlgorithm("watt0_T_008", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.08));
         runAlgorithm("watt0_F_009", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.09));
         runAlgorithm("watt0_T_009", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.09));
+        runAlgorithm("watt0_F_011", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.11));
+        runAlgorithm("watt0_T_011", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.11));
+        runAlgorithm("watt0_F_012", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.12));
+        runAlgorithm("watt0_T_012", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.12));
+        runAlgorithm("watt0_F_013", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.13));
+        runAlgorithm("watt0_T_013", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.13));
+        runAlgorithm("watt0_F_014", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.14));
+        runAlgorithm("watt0_T_014", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.14));
+        runAlgorithm("watt0_F_015", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.15));
+        runAlgorithm("watt0_T_015", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.15));
+        runAlgorithm("watt0_F_016", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.16));
+        runAlgorithm("watt0_T_016", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.16));
+        runAlgorithm("watt0_F_017", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.17));
+        runAlgorithm("watt0_T_017", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.17));
+        runAlgorithm("watt0_F_018", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.18));
+        runAlgorithm("watt0_T_018", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.18));
+        runAlgorithm("watt0_F_019", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.19));
+        runAlgorithm("watt0_T_019", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.19));
 
 
         for (int kr: {16, 8, 4, 2, 0})
