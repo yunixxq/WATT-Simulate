@@ -39,8 +39,8 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
         advanced_with_variations_algos();
         runAlgorithm("watt_min0_T_10", LFU_mod_Generator(8, 4, 10, 50, 1, true, 1, 1.0));
         runAlgorithm("watt_avg0_T_10", LFU_mod_Generator(8, 4, 10, 50, 1, true, 1, 1.0));
-        runAlgorithm("watt_min0_T_01", LFU_mod_Generator(8, 4, 10, 50, 1, true, 1, 0.1));
-        runAlgorithm("watt_avg0_T_01", LFU_mod_Generator(8, 4, 10, 50, 1, true, 1, 0.1));
+        runAlgorithm("watt_min0_T_01", LFU_mod_Generator(8, 4, 10, 50, 1, true, 1, 0.1, true));
+        runAlgorithm("watt_avg0_T_01", LFU_mod_Generator(8, 4, 10, 50, 1, true, 1, 0.1, true));
 
         runAlgorithm("watt0_F_00", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.0));
         runAlgorithm("watt0_T_00", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.0));
