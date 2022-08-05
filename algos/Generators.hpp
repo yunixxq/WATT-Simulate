@@ -33,6 +33,7 @@ std::function<OPT()> Opt_Generator();
 std::function<StaticOpt()> StaticOpt_Generator();
 std::function<Random()> Random_Generator();
 std::function<CLOCK()> CLOCK_Generator();
+std::function<SECOND_CHANCE()> SECOND_CHANCE_Generator();
 
 // Others
 std::function<CF_LRU()> CfLRUGenerator(int percentage);

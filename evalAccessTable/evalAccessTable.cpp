@@ -204,6 +204,7 @@ void EvalAccessTable::default_compare_algos() {
     runAlgorithm("arc", ARC_Generator());
     runAlgorithm("opt", Opt_Generator());
     runAlgorithm("clock", CLOCK_Generator());
+    runAlgorithm("second_chance", SECOND_CHANCE_Generator());
     runAlgorithm("random", Random_Generator());
     runAlgorithm("lru_k2_z-1", LRU_K_Z_Generator(2, -1));
 }

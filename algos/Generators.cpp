@@ -11,6 +11,7 @@ std::function<OPT()> Opt_Generator() {return defGenerator<OPT>();}
 std::function<StaticOpt()> StaticOpt_Generator(){return defGenerator<StaticOpt>();}
 std::function<Random()> Random_Generator(){return defGenerator<Random>();}
 std::function<CLOCK()> CLOCK_Generator(){return defGenerator<CLOCK>();}
+std::function<SECOND_CHANCE()> SECOND_CHANCE_Generator(){return defGenerator<SECOND_CHANCE>();}
 std::function<LRU_WSR()> LRU_WSR_Generator() {return defGenerator<LRU_WSR>();}
 std::function<ARC()> ARC_Generator(){return defGenerator<ARC>();}
 
