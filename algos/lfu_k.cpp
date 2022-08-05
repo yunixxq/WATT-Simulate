@@ -36,6 +36,17 @@ double get_frequency_min(std::vector<RefTime>& array, RefTime now, float first_v
     return worst;
 }
 
+double get_frequency_median(std::vector<RefTime>& array, RefTime now, float first_value) {
+    if(array.size()==0)
+        return 0;
+    std::vector<float> frequencies;
+    frequencies.push_back(minn(first_value / (now-array[0]+1), 1.0));
+    for (uint i=1; i<array.size(); i++)
+        frequencies.push_back(minn((float)(i+1) / (now-array[i]+1), 1.0));
+    std::sort(frequencies.begin(), frequencies.end());
+    return frequencies[array.size()/2];
+}
+
 double get_frequency(std::vector<std::pair<RefTime, bool>>& candidate, RefTime curr_time, [[maybe_unused]] uint write_cost){
     if(candidate.empty()){
         return 0;

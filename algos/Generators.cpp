@@ -64,9 +64,9 @@ LFU_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelecto
         return LFU_2K_E_real(KR, KW, randSize, randSelector, write_as_read, epoch_size, write_cost, first_value);};}
 
 std::function<LFU_2K_E_mod()>
-LFU_mod_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read, uint write_cost, float first_value, bool use_min) {
-    return [KR, KW, randSize, randSelector, write_as_read, epoch_size, write_cost, first_value, use_min](){
-        return LFU_2K_E_mod(KR, KW, randSize, randSelector, write_as_read, epoch_size, write_cost, first_value, use_min);};}
+LFU_mod_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read, uint write_cost, float first_value, bool use_min, bool use_median) {
+    return [KR, KW, randSize, randSelector, write_as_read, epoch_size, write_cost, first_value, use_min, use_median](){
+        return LFU_2K_E_mod(KR, KW, randSize, randSelector, write_as_read, epoch_size, write_cost, first_value, use_min, use_median);};}
 
 std::function<leanEvict()> Lean_Generator(uint cooling_percentage){
     return [cooling_percentage](){return leanEvict(cooling_percentage);};}

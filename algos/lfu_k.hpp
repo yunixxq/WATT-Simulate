@@ -6,6 +6,7 @@
 double get_frequency(std::vector<RefTime>& candidate, RefTime curr_time, float first_value=1.0);
 double get_frequency_min(std::vector<RefTime>& candidate, RefTime curr_time, float first_value=1.0);
 double get_frequency_avg(std::vector<RefTime>& candidate, RefTime curr_time, float first_value=1.0);
+double get_frequency_median(std::vector<RefTime>& array, RefTime now, float first_value=1.0);
 double get_frequency(std::vector<std::pair<RefTime, bool>>& candidate, RefTime curr_time, uint write_cost);
 
 struct LFU_K: public EvictStrategyHistory{
@@ -222,17 +223,18 @@ struct LFU_2K_E_mod: public EvictStrategyKeepHistoryReadWrite{
     using upper = EvictStrategyKeepHistoryReadWrite;
 
     LFU_2K_E_mod(uint KR, uint KW, uint randSize, uint randSelector = 1, bool write_as_read = true,
-                  uint epoch_size = 1, uint write_cost = 1, float first_value = 1.0, bool use_min = false) :
+                  uint epoch_size = 1, uint write_cost = 1, float first_value = 1.0, bool use_min = false, bool use_median=false) :
             upper(KR, KW, -1, write_as_read, epoch_size),
             randSelector(randSelector), // how many do we want to evict?
             randSize(randSize), // how many are evaluated
             writeCost(write_cost),
             first_value(first_value),
-            use_min(use_min){}
+            use_min(use_min),
+            use_median(use_median){}
 
     const uint randSelector, randSize, writeCost;
     const float first_value;
-    const bool use_min;
+    const bool use_min, use_median;
 
     uint rand_list_length;
     void reInit(RamSize ram_size) override{
@@ -247,6 +249,9 @@ struct LFU_2K_E_mod: public EvictStrategyKeepHistoryReadWrite{
         auto comperator = gt_compare_freq_avg(curr_time, this->write_as_read, this->writeCost, first_value);
         if(use_min){
             comperator = gt_compare_freq_min(curr_time, this->write_as_read, this->writeCost, first_value);
+        }
+        if(use_median){
+            comperator = gt_compare_freq_median(curr_time, this->write_as_read, this->writeCost, first_value);
         }
         std::make_heap(elements.begin(), elements.end(), comperator);
 
@@ -300,6 +305,26 @@ struct LFU_2K_E_mod: public EvictStrategyKeepHistoryReadWrite{
         return [curr_time, write_as_read, write_cost, first_value](ram_type::iterator& l, ram_type::iterator& r) {
             return eval_freq_min(l, curr_time, write_as_read, write_cost, first_value)
                    > eval_freq_min(r, curr_time, write_as_read, write_cost, first_value);
+        };
+    };
+
+    static double
+    eval_freq_median(ram_type::iterator& candidate, RefTime curr_time, bool write_as_read, uint write_cost = 1, float first_value = 1.0) {
+        double candidate_freq_R = get_frequency_median(candidate->second.first, curr_time, first_value);
+        double candidate_freq_W = get_frequency_median(candidate->second.second, curr_time, first_value);
+        double candidate_freq = candidate_freq_R + candidate_freq_W * write_cost;
+        if(!write_as_read){
+            candidate_freq += candidate_freq_W;
+        }
+        return candidate_freq;
+    }
+
+
+    static std::function<double(ram_type::iterator &, ram_type::iterator &)>
+    gt_compare_freq_median(RefTime curr_time, bool write_as_read, uint write_cost, float first_value) {
+        return [curr_time, write_as_read, write_cost, first_value](ram_type::iterator& l, ram_type::iterator& r) {
+            return eval_freq_median(l, curr_time, write_as_read, write_cost, first_value)
+                   > eval_freq_median(r, curr_time, write_as_read, write_cost, first_value);
         };
     };
 

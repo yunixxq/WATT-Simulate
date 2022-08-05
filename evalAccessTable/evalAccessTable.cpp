@@ -37,70 +37,32 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
     advanced_compare_algos();
     if(benchmark){
         advanced_with_variations_algos();
-        runAlgorithm("watt_min0_T_10", LFU_mod_Generator(8, 4, 10, 50, 1, true, 1, 1.0, true));
-        runAlgorithm("watt_avg0_T_10", LFU_mod_Generator(8, 4, 10, 50, 1, true, 1, 1.0));
-        runAlgorithm("watt_min0_T_01", LFU_mod_Generator(8, 4, 10, 50, 1, true, 1, 0.1, true));
-        runAlgorithm("watt_avg0_T_01", LFU_mod_Generator(8, 4, 10, 50, 1, true, 1, 0.1));
+        for(int i =0; i<10; i++){
+            runAlgorithm("watt_median0_T_0"+to_string(i), LFU_mod_Generator(8, 4, 10, 50, 1, true, 1, i*1.0/10, false, true));
+            runAlgorithm("watt_min0_T_0"+to_string(i), LFU_mod_Generator(8, 4, 10, 50, 1, true, 1, i*1.0/10, true));
+            runAlgorithm("watt_avg0_T_0"+to_string(i), LFU_mod_Generator(8, 4, 10, 50, 1, true, 1, i*1.0/10));
+            runAlgorithm("watt0_F_0"+to_string(i), LFU_Generator(8, 4, 10, 50, 1, false, 1, i*1.0/10));
+            runAlgorithm("watt0_T_0"+to_string(i), LFU_Generator(8, 4, 10, 50, 1,  true, 1, i*1.0/10));
 
-        runAlgorithm("watt0_F_00", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.0));
-        runAlgorithm("watt0_T_00", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.0));
-        runAlgorithm("watt0_F_01", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.1));
-        runAlgorithm("watt0_T_01", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.1));
-        runAlgorithm("watt0_F_02", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.2));
-        runAlgorithm("watt0_T_02", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.2));
-        runAlgorithm("watt0_F_03", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.3));
-        runAlgorithm("watt0_T_03", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.3));
-        runAlgorithm("watt0_F_04", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.4));
-        runAlgorithm("watt0_T_04", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.4));
-        runAlgorithm("watt0_F_05", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.5));
-        runAlgorithm("watt0_T_05", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.5));
-        runAlgorithm("watt0_F_06", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.6));
-        runAlgorithm("watt0_T_06", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.6));
-        runAlgorithm("watt0_F_07", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.7));
-        runAlgorithm("watt0_T_07", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.7));
-        runAlgorithm("watt0_F_08", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.8));
-        runAlgorithm("watt0_T_08", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.8));
-        runAlgorithm("watt0_F_09", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.9));
-        runAlgorithm("watt0_T_09", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.9));
-        runAlgorithm("watt0_F_10", LFU_Generator(8, 4, 10, 50, 1, false, 1, 1.0));
-        runAlgorithm("watt0_T_10", LFU_Generator(8, 4, 10, 50, 1, true, 1, 1.0));
-        runAlgorithm("watt0_F_001", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.01));
-        runAlgorithm("watt0_T_001", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.01));
-        runAlgorithm("watt0_F_002", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.02));
-        runAlgorithm("watt0_T_002", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.02));
-        runAlgorithm("watt0_F_003", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.03));
-        runAlgorithm("watt0_T_003", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.03));
-        runAlgorithm("watt0_F_004", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.04));
-        runAlgorithm("watt0_T_004", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.04));
-        runAlgorithm("watt0_F_005", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.05));
-        runAlgorithm("watt0_T_005", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.05));
-        runAlgorithm("watt0_F_006", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.06));
-        runAlgorithm("watt0_T_006", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.06));
-        runAlgorithm("watt0_F_007", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.07));
-        runAlgorithm("watt0_T_007", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.07));
-        runAlgorithm("watt0_F_008", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.08));
-        runAlgorithm("watt0_T_008", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.08));
-        runAlgorithm("watt0_F_009", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.09));
-        runAlgorithm("watt0_T_009", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.09));
-        runAlgorithm("watt0_F_011", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.11));
-        runAlgorithm("watt0_T_011", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.11));
-        runAlgorithm("watt0_F_012", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.12));
-        runAlgorithm("watt0_T_012", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.12));
-        runAlgorithm("watt0_F_013", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.13));
-        runAlgorithm("watt0_T_013", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.13));
-        runAlgorithm("watt0_F_014", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.14));
-        runAlgorithm("watt0_T_014", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.14));
-        runAlgorithm("watt0_F_015", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.15));
-        runAlgorithm("watt0_T_015", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.15));
-        runAlgorithm("watt0_F_016", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.16));
-        runAlgorithm("watt0_T_016", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.16));
-        runAlgorithm("watt0_F_017", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.17));
-        runAlgorithm("watt0_T_017", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.17));
-        runAlgorithm("watt0_F_018", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.18));
-        runAlgorithm("watt0_T_018", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.18));
-        runAlgorithm("watt0_F_019", LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.19));
-        runAlgorithm("watt0_T_019", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.19));
+            runAlgorithm("watt_median0_T_00"+to_string(i), LFU_mod_Generator(8, 4, 10, 50, 1, true, 1, i*1.0/100, false, true));
+            runAlgorithm("watt_min0_T_00"+to_string(i), LFU_mod_Generator(8, 4, 10, 50, 1, true, 1, i*1.0/100, true));
+            runAlgorithm("watt_avg0_T_00"+to_string(i), LFU_mod_Generator(8, 4, 10, 50, 1, true, 1, i*1.0/100));
+            runAlgorithm("watt0_F_00"+to_string(i), LFU_Generator(8, 4, 10, 50, 1, false, 1, i*1.0/100));
+            runAlgorithm("watt0_T_00"+to_string(i), LFU_Generator(8, 4, 10, 50, 1,  true, 1, i*1.0/100));
 
+            runAlgorithm("watt_median0_T_01"+to_string(i), LFU_mod_Generator(8, 4, 10, 50, 1, true, 1, 0.1 + i*1.0/100, false, true));
+            runAlgorithm("watt_min0_T_01"+to_string(i), LFU_mod_Generator(8, 4, 10, 50, 1, true, 1, 0.1 + i*1.0/100, true));
+            runAlgorithm("watt_avg0_T_01"+to_string(i), LFU_mod_Generator(8, 4, 10, 50, 1, true, 1, 0.1 + i*1.0/100));
+            runAlgorithm("watt0_F_01"+to_string(i), LFU_Generator(8, 4, 10, 50, 1, false, 1, 0.1 + i*1.0/100));
+            runAlgorithm("watt0_T_01"+to_string(i), LFU_Generator(8, 4, 10, 50, 1,  true, 1, 0.1 + i*1.0/100));
+
+            runAlgorithm("watt_median0_T_1"+to_string(i), LFU_mod_Generator(8, 4, 10, 50, 1, true, 1, 1 + i*1.0/10, false, true));
+            runAlgorithm("watt_min0_T_1"+to_string(i), LFU_mod_Generator(8, 4, 10, 50, 1, true, 1, 1 + i*1.0/10, true));
+            runAlgorithm("watt_avg0_T_1"+to_string(i), LFU_mod_Generator(8, 4, 10, 50, 1, true, 1, 1 + i*1.0/10));
+            runAlgorithm("watt0_F_1"+to_string(i), LFU_Generator(8, 4, 10, 50, 1, false, 1, 1 + i*1.0/10));
+            runAlgorithm("watt0_T_1"+to_string(i), LFU_Generator(8, 4, 10, 50, 1,  true, 1, 1 + i*1.0/10));
+
+        }
 
         for (int kr: {16, 8, 4, 2, 0})
             for (int kw: {16, 8, 4, 2, 0})
