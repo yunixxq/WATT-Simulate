@@ -18,6 +18,24 @@ double get_frequency(std::vector<RefTime>& array, RefTime now, float first_value
     return best;
 }
 
+double get_frequency_avg(std::vector<RefTime>& array, RefTime now, float first_value) {
+    if(array.size()==0)
+        return 0;
+    float avg = minn(first_value / (now-array[0]+1), 1.0);
+    for (uint i=1; i<array.size(); i++)
+        avg+= minn((float)(i+1) / (now-array[i]+1), 1.0);
+    return avg/array.size();
+}
+
+double get_frequency_min(std::vector<RefTime>& array, RefTime now, float first_value) {
+    if(array.size()==0)
+        return 0;
+    float worst = minn(first_value / (now-array[0]+1), 1.0);
+    for (uint i=1; i<array.size(); i++)
+        worst = minn(worst, minn((float)(i+1) / (now-array[i]+1), 1.0));
+    return worst;
+}
+
 double get_frequency(std::vector<std::pair<RefTime, bool>>& candidate, RefTime curr_time, [[maybe_unused]] uint write_cost){
     if(candidate.empty()){
         return 0;
