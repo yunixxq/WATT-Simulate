@@ -1,6 +1,6 @@
 //
 // Created by dev on 06.10.21.
-//
+//https://ieeexplore.ieee.org/document/970573
 #include "EvictStrategy.hpp"
 #include <functional>
 double get_lrfu_value(std::vector<RefTime>& candidate, RefTime curr_time, double lambda);
