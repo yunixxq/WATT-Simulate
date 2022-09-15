@@ -513,8 +513,7 @@ protected:
         if(!inRam){
             std::vector<std::pair<RefTime, bool>>& list = ram[access.pid];
             list.reserve(K);
-            if(ram.size() == RAM_SIZE-1)
-                curr_epoch_size++;
+            curr_epoch_size++;
             if(curr_epoch_size >= epoch_size_iter){
                 curr_epoch++;
                 curr_epoch_size -= epoch_size_iter;
@@ -564,8 +563,7 @@ protected:
             std::pair<std::vector<RefTime>, std::vector<RefTime>>& entry = ram[access.pid];
             entry.first.reserve(K_R);
             entry.second.reserve(K_W);
-            if(ram.size() == RAM_SIZE)
-                curr_epoch_size++;
+            curr_epoch_size++;
             if(curr_epoch_size >= epoch_size_iter){
                 curr_epoch++;
                 curr_epoch_size -= epoch_size_iter;
