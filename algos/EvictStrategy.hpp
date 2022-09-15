@@ -49,22 +49,20 @@ static void push_frontAndResizeHelper(std::vector<type>& hist, uint K, type newV
         hist.push_back(newValue);
     }
 }
-static void push_frontAndResize(const Access& access, std::vector<RefTime>& hist, uint K, uint epoch_size = 1) {
-    RefTime current = access.pos / epoch_size;
-    if(!hist.empty() && hist[0] == current){
+static void push_frontAndResize(std::vector<RefTime> &hist, uint K, RefTime curr_epoch) {
+    if(!hist.empty() && hist[0] == curr_epoch){
         // already logged in this epoch;
         return;
     }
-    push_frontAndResizeHelper(hist, K, current);
+    push_frontAndResizeHelper(hist, K, curr_epoch);
 };
 
-static void push_frontAndResize(const Access& access, std::vector<std::pair<RefTime, bool>>& hist, uint K, uint epoch_size = 1) {
-    RefTime current = access.pos / epoch_size;
-    if(!hist.empty() && hist[0].first == current){
+static void push_frontAndResize2(std::vector<std::pair<RefTime, bool>> &hist, uint K, RefTime curr_epoch, bool write) {
+    if(!hist.empty() && hist[0].first == curr_epoch){
         // already logged in this epoch;
         return;
     }
-    push_frontAndResizeHelper(hist, K, {current, access.write});
+    push_frontAndResizeHelper(hist, K, {curr_epoch, write});
 };
 
 
@@ -210,8 +208,6 @@ public:
     EvictStrategyContainer(): EvictStrategy(){}
     Container ram;
 protected:
-    static const uint lower_bound = 20;
-    static const uint upper_bound = 100;
 
     std::uniform_int_distribution<int> ram_distro;
     std::default_random_engine ran_engine;
@@ -227,14 +223,26 @@ protected:
     template <class type>
     std::vector<type> getElementsFromRam(uint rand_list_length) {
         std::vector<type> elements;
+        if(rand_list_length==0){ // Pick all ram
+            elements.reserve(RAM_SIZE);
+            type candidate = ram.begin();
+            while(candidate != ram.end()){
+                elements.push_back(candidate);
+                candidate++;
+            }
+            return elements;
+        }
+
         elements.reserve(rand_list_length);
+        // Pick positions
         std::set<uint> positions;
         do{
             uint next_pos = ram_distro(ran_engine);
             positions.insert(next_pos);
         }while (positions.size() < rand_list_length);
 
-        auto candidate = ram.begin();
+        // Get elements for positions
+        type candidate = ram.begin();
         uint candidate_pos = 0;
         for(auto pos: positions){
             candidate = std::next(candidate, pos- candidate_pos);
@@ -245,17 +253,13 @@ protected:
     }
 
     static uint calculate_rand_list_length(RamSize ram_size, uint rand_size) {
-        uint rand_list_length = (uint) ram_size * rand_size / 100;
-        if(rand_list_length > upper_bound){
-            rand_list_length = upper_bound;
+        if(rand_size==0){
+            return 0;
         }
-        if (rand_list_length < lower_bound){
-            rand_list_length = lower_bound;
+        if (rand_size > ram_size/2){
+            rand_size = ram_size/2;
         }
-        if (rand_list_length > ram_size/2){
-            rand_list_length = ram_size/2;
-        }
-        return rand_list_length;
+        return rand_size;
     }
 };
 
@@ -354,6 +358,7 @@ protected:
 
 class EvictStrategyHistory: public EvictStrategyContainer<std::unordered_map<PID, std::vector<RefTime>>>{
 public:
+    using ram_type = std::unordered_map<PID,  std::vector<RefTime>>;
     using container_type = std::unordered_map<PID, std::vector<RefTime>>;
     using upper = EvictStrategyContainer<container_type>;
     EvictStrategyHistory(int K): upper(), K(K) {}
@@ -367,7 +372,7 @@ protected:
             std::vector<RefTime>& list = ram[access.pid];
             list.reserve(K);
         }
-        push_frontAndResize(access, ram[access.pid], K);
+        push_frontAndResize(ram[access.pid], K, access.pos);
     };
     PID evictOne(Access access) override{
         PID pid = chooseEviction(access.pos);
@@ -465,7 +470,7 @@ protected:
             std::vector<RefTime>& list = ram[access.pid];
             list.reserve(K);
         }
-        push_frontAndResize(access, ram[access.pid], K);
+        push_frontAndResize(ram[access.pid], K, access.pos);
     }
 
     virtual PID chooseEviction(RefTime) override{
@@ -489,7 +494,7 @@ public:
     EvictStrategyKeepHistoryCombined(uint K=1, int Z=0, uint epoch_size=1): upper(Z), K(K), epoch_size(epoch_size){}
 protected:
     const uint K, epoch_size;
-    uint epoch_size_iter;
+    uint epoch_size_iter, curr_epoch_size, curr_epoch;
     void reInit(RamSize ram_size) override{
         upper::reInit(ram_size);
         if(epoch_size == 0){
@@ -500,18 +505,22 @@ protected:
             if(epoch_size_iter < 1)
                 epoch_size_iter = 1;
         }
+        curr_epoch_size =0;
+        curr_epoch=0;
 
     }
     void changeElement(const Access access, bool inRam) override {
         if(!inRam){
             std::vector<std::pair<RefTime, bool>>& list = ram[access.pid];
             list.reserve(K);
+            if(ram.size() == RAM_SIZE-1)
+                curr_epoch_size++;
+            if(curr_epoch_size >= epoch_size_iter){
+                curr_epoch++;
+                curr_epoch_size -= epoch_size_iter;
+            }
         }
-        push_frontAndResize(
-                access,
-                ram[access.pid],
-                K,
-                epoch_size_iter);
+        push_frontAndResize2(ram[access.pid], K,curr_epoch, access.write);
     };
 
     virtual PID chooseEviction(RefTime) override{
@@ -536,17 +545,18 @@ protected:
     using ram_type = std::unordered_map<PID, history_type>;
     using upper = EvictStrategyKeepHistory<history_type>;
 public:
-    EvictStrategyKeepHistoryReadWrite(uint KR=1, uint KW=1, int Z=0, bool write_as_read=false, uint epoch_size = 1): upper(Z), K_R(KR), K_W(KW), write_as_read(write_as_read), epoch_size(epoch_size){}
+    EvictStrategyKeepHistoryReadWrite(uint KR=1, uint KW=1, int Z=0, bool write_as_read=false, uint epoch_size=1): upper(Z), K_R(KR), K_W(KW), write_as_read(write_as_read), epoch_size(epoch_size){}
 protected:
     const uint K_R, K_W;
     const bool write_as_read; // write counts as read?
     const uint epoch_size;
-    uint  epoch_size_iter;
+    uint epoch_size_iter, curr_epoch_size, curr_epoch;
     void reInit(RamSize ram_size) override{
         upper::reInit(ram_size);
         if(epoch_size == 0)epoch_size_iter = 1;
         else if((epoch_size_iter = ram_size / epoch_size) < 1) epoch_size_iter = 1;
-
+        curr_epoch=0;
+        curr_epoch_size=0;
     }
     void changeElement(const Access access, bool inRam) override {
         // Push to according list;
@@ -554,15 +564,20 @@ protected:
             std::pair<std::vector<RefTime>, std::vector<RefTime>>& entry = ram[access.pid];
             entry.first.reserve(K_R);
             entry.second.reserve(K_W);
+            if(ram.size() == RAM_SIZE)
+                curr_epoch_size++;
+            if(curr_epoch_size >= epoch_size_iter){
+                curr_epoch++;
+                curr_epoch_size -= epoch_size_iter;
+            }
         }
         push_frontAndResize(
-                access,
                 access.write ? ram[access.pid].second : ram[access.pid].first,
                 access.write ? K_W : K_R,
-                epoch_size_iter);
+                curr_epoch);
         // if is write and write is logged as read: push to readList
         if(write_as_read && access.write){
-            push_frontAndResize(access, ram[access.pid].first, K_R, epoch_size_iter);
+            push_frontAndResize(ram[access.pid].first, K_R, curr_epoch);
         }
     };
 

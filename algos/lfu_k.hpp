@@ -179,8 +179,8 @@ struct LFU_2K_E_real: public EvictStrategyKeepHistoryReadWrite{
         upper::reInit(ram_size);
         rand_list_length = calculate_rand_list_length(ram_size, randSize);
     }
-    uint evict(Access access) override{
-        RefTime curr_time = access.pos / epoch_size_iter;
+    uint evict(Access) override{
+        RefTime curr_time = curr_epoch;
         std::vector<ram_type::iterator> elements = getElementsFromRam<ram_type::iterator>(rand_list_length);
 
         // Sort elements by frequency; //std::min_element
@@ -224,117 +224,6 @@ struct LFU_2K_E_real: public EvictStrategyKeepHistoryReadWrite{
 };
 
 
-struct LFU_2K_E_mod: public EvictStrategyKeepHistoryReadWrite{
-    using upper = EvictStrategyKeepHistoryReadWrite;
-
-    LFU_2K_E_mod(uint KR, uint KW, uint randSize, uint randSelector = 1, bool write_as_read = true,
-                  uint epoch_size = 1, uint write_cost = 1, float first_value = 1.0, bool use_min = false, bool use_median=false) :
-            upper(KR, KW, -1, write_as_read, epoch_size),
-            randSelector(randSelector), // how many do we want to evict?
-            randSize(randSize), // how many are evaluated
-            writeCost(write_cost),
-            first_value(first_value),
-            use_min(use_min),
-            use_median(use_median){}
-
-    const uint randSelector, randSize, writeCost;
-    const float first_value;
-    const bool use_min, use_median;
-
-    uint rand_list_length;
-    void reInit(RamSize ram_size) override{
-        upper::reInit(ram_size);
-        rand_list_length = calculate_rand_list_length(ram_size, randSize);
-    }
-    uint evict(Access access) override{
-        RefTime curr_time = access.pos / epoch_size_iter;
-        std::vector<ram_type::iterator> elements = getElementsFromRam<ram_type::iterator>(rand_list_length);
-
-        // Sort elements by frequency; //std::min_element
-        auto comperator = gt_compare_freq_avg(curr_time, this->write_as_read, this->writeCost, first_value);
-        if(use_min){
-            comperator = gt_compare_freq_min(curr_time, this->write_as_read, this->writeCost, first_value);
-        }
-        if(use_median){
-            comperator = gt_compare_freq_median(curr_time, this->write_as_read, this->writeCost, first_value);
-        }
-        std::make_heap(elements.begin(), elements.end(), comperator);
-
-        uint dirtyEvicts = 0;
-        for(uint i = 0; i< randSelector && !elements.empty(); i++){
-            std::pop_heap(elements.begin(), elements.end(), comperator);
-            ram_type::iterator element = elements.back();
-            PID pid = element->first;
-            elements.pop_back();
-            handle_out_of_ram(pid);
-            ram.erase(element);
-            dirtyEvicts += postRemove(pid);
-        }
-        return dirtyEvicts;
-    }
-
-    static double
-    eval_freq_avg(ram_type::iterator& candidate, RefTime curr_time, bool write_as_read, uint write_cost = 1, float first_value = 1.0) {
-        double candidate_freq_R = get_frequency_avg(candidate->second.first, curr_time, first_value);
-        double candidate_freq_W = get_frequency_avg(candidate->second.second, curr_time, first_value);
-        double candidate_freq = candidate_freq_R + candidate_freq_W * write_cost;
-        if(!write_as_read){
-            candidate_freq += candidate_freq_W;
-        }
-        return candidate_freq;
-    }
-
-
-    static std::function<double(ram_type::iterator &, ram_type::iterator &)>
-    gt_compare_freq_avg(RefTime curr_time, bool write_as_read, uint write_cost, float first_value) {
-        return [curr_time, write_as_read, write_cost, first_value](ram_type::iterator& l, ram_type::iterator& r) {
-            return eval_freq_avg(l, curr_time, write_as_read, write_cost, first_value)
-                   > eval_freq_avg(r, curr_time, write_as_read, write_cost, first_value);
-        };
-    };
-
-    static double
-    eval_freq_min(ram_type::iterator& candidate, RefTime curr_time, bool write_as_read, uint write_cost = 1, float first_value = 1.0) {
-        double candidate_freq_R = get_frequency_min(candidate->second.first, curr_time, first_value);
-        double candidate_freq_W = get_frequency_min(candidate->second.second, curr_time, first_value);
-        double candidate_freq = candidate_freq_R + candidate_freq_W * write_cost;
-        if(!write_as_read){
-            candidate_freq += candidate_freq_W;
-        }
-        return candidate_freq;
-    }
-
-
-    static std::function<double(ram_type::iterator &, ram_type::iterator &)>
-    gt_compare_freq_min(RefTime curr_time, bool write_as_read, uint write_cost, float first_value) {
-        return [curr_time, write_as_read, write_cost, first_value](ram_type::iterator& l, ram_type::iterator& r) {
-            return eval_freq_min(l, curr_time, write_as_read, write_cost, first_value)
-                   > eval_freq_min(r, curr_time, write_as_read, write_cost, first_value);
-        };
-    };
-
-    static double
-    eval_freq_median(ram_type::iterator& candidate, RefTime curr_time, bool write_as_read, uint write_cost = 1, float first_value = 1.0) {
-        double candidate_freq_R = get_frequency_median(candidate->second.first, curr_time, first_value);
-        double candidate_freq_W = get_frequency_median(candidate->second.second, curr_time, first_value);
-        double candidate_freq = candidate_freq_R + candidate_freq_W * write_cost;
-        if(!write_as_read){
-            candidate_freq += candidate_freq_W;
-        }
-        return candidate_freq;
-    }
-
-
-    static std::function<double(ram_type::iterator &, ram_type::iterator &)>
-    gt_compare_freq_median(RefTime curr_time, bool write_as_read, uint write_cost, float first_value) {
-        return [curr_time, write_as_read, write_cost, first_value](ram_type::iterator& l, ram_type::iterator& r) {
-            return eval_freq_median(l, curr_time, write_as_read, write_cost, first_value)
-                   > eval_freq_median(r, curr_time, write_as_read, write_cost, first_value);
-        };
-    };
-
-
-};
 
 struct LFU_2K_E_real_ver2: public EvictStrategyKeepHistoryReadWrite{
     using upper = EvictStrategyKeepHistoryReadWrite;
@@ -353,8 +242,8 @@ struct LFU_2K_E_real_ver2: public EvictStrategyKeepHistoryReadWrite{
         upper::reInit(ram_size);
         rand_list_length = calculate_rand_list_length(ram_size, randSize);
     }
-    uint evict(Access access) override{
-        RefTime curr_time = access.pos / epoch_size_iter;
+    uint evict(Access) override{
+        RefTime curr_time = curr_epoch;
         std::vector<ram_type::iterator> elements = getElementsFromRam<ram_type::iterator>(rand_list_length);
 
         // Sort elements by frequency; //std::min_element
@@ -417,8 +306,8 @@ struct LFU_1K_E_real: public EvictStrategyKeepHistoryCombined{
         rand_list_length = calculate_rand_list_length(ram_size, randSize);
     }
 
-    uint evict(Access access) override{
-        RefTime curr_time = access.pos / epoch_size_iter;
+    uint evict(Access) override{
+        RefTime curr_time = curr_epoch;
         std::vector<ram_type::iterator> elements = getElementsFromRam<ram_type::iterator>(rand_list_length);
 
         // Sort elements by frequency; //std::min_element
@@ -471,8 +360,8 @@ struct LFU_1K_E_real_vers2: public EvictStrategyKeepHistoryCombined{
         rand_list_length = calculate_rand_list_length(ram_size, randSize);
     }
 
-    uint evict(Access access) override{
-        RefTime curr_time = access.pos / epoch_size_iter;
+    uint evict(Access) override{
+        RefTime curr_time = curr_epoch;
         std::vector<ram_type::iterator> elements = getElementsFromRam<ram_type::iterator>(rand_list_length);
 
         // Sort elements by frequency; //std::min_element
@@ -541,7 +430,7 @@ struct LFUalt_K: public EvictStrategyContainer<std::unordered_set<PID>> {
             std::vector<RefTime>& list = history[access.pid];
             list.reserve(K);
         }
-        push_frontAndResize(access, history[access.pid], K);
+        push_frontAndResize(history[access.pid], K, access.pos);
         ram.insert(access.pid);
     };
     PID evictOne(Access access) override{
