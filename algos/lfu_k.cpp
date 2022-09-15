@@ -9,7 +9,7 @@ float maxx(float a, float b) { return a>b ? a : b; }
 
 using namespace std;
 
-double get_frequency(std::vector<RefTime>& array, RefTime now, float first_value) {
+double get_frequency_max(std::vector<RefTime>& array, RefTime now, float first_value) {
     if(array.size()==0)
         return 0;
     float best = minn(first_value / (now-array[0]+1), 1.0);
@@ -45,6 +45,15 @@ double get_frequency_median(std::vector<RefTime>& array, RefTime now, float firs
         frequencies.push_back(minn((float)(i+1) / (now-array[i]+1), 1.0));
     std::sort(frequencies.begin(), frequencies.end());
     return frequencies[array.size()/2];
+}
+
+double get_frequency_lucas(std::vector<RefTime>& array, RefTime now, float) {
+    if(array.size()==0)
+        return 0;
+    float avg = minn(1 / (now-array[0]+1), 1.0);
+    for (uint i=1; i<array.size(); i++)
+        avg+= minn((float)(1)/ (now-array[i]+1), 1.0);
+    return avg;
 }
 
 double get_frequency(std::vector<std::pair<RefTime, bool>>& candidate, RefTime curr_time, [[maybe_unused]] uint write_cost){

@@ -52,18 +52,19 @@ std::function<LFU_2K_E_real_ver2()>
 LFU_2K_E_real2_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read,
                          uint writeCost);
 std::function<LFU_2K_E_real()>
-LFU_2K_E_real_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read);
-std::function<LFU_2K_E_real()>
-LFU_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read, uint writeCost=1, float first_value=1.0);
-std::function<LFU_2K_E_mod()>
-LFU_mod_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read, uint writeCost=1, float first_value=1.0, bool use_min = false, bool use_median=false);
+LFU_2K_E_real_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read,
+                        uint write_cost=1, float first_value=1.0, modus mod=mod_max, int Z=-1);
+inline std::function<LFU_2K_E_real()>
+LFU_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read, uint writeCost=1, float first_value=1.0, modus mod=mod_max, int Z=-1){
+    return LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, writeCost, first_value,
+                                   mod, Z);
+}
 
 std::function<leanEvict()> Lean_Generator(uint cooling_percentage);
 std::function<leanEvict2()> Lean_Generator2(uint cooling_percentage);
 
 std::function<LRFU()>
-LRFU_Generator(double lambda, uint KR, uint KW, uint randSize, uint randSelector = 1, bool write_as_read = true,
-               uint epoch_size = 1, uint write_cost = 1);
+LRFU_Generator(double lambda, uint K);
 
 std::function<ARC()> ARC_Generator();
 

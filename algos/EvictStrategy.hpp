@@ -39,12 +39,13 @@ static bool keepFirst(const std::vector<std::pair<RefTime, bool>>& l, const std:
 
 template <class type>
 static void push_frontAndResizeHelper(std::vector<type>& hist, uint K, type newValue){
+    // Move each element one back
     for(uint pos = 0; pos < hist.size(); pos++){
         type tmp = hist[pos];
         hist[pos] = newValue;
         newValue = tmp;
     }
-    if(hist.size() < K){
+    if(hist.size() < K || K ==0){
         hist.push_back(newValue);
     }
 }

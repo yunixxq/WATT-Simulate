@@ -50,35 +50,24 @@ LFU_1K_E_Generator(uint K, uint epoch_size, uint randSize, uint randSelector, ui
         return LFU_1K_E_real_vers2(K, randSize, randSelector, epoch_size, write_cost);};}
 
 std::function<LFU_2K_E_real()>
-LFU_2K_E_real_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read) {
-    return [KR, KW, randSize, randSelector, write_as_read, epoch_size](){
-        return LFU_2K_E_real(KR, KW, randSize, randSelector, write_as_read, epoch_size);};}
+LFU_2K_E_real_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read,
+                        uint write_cost, float first_value, modus mod, int Z) {
+    return [KR, KW, randSize, randSelector, write_as_read, epoch_size, write_cost, first_value, mod, Z](){
+        return LFU_2K_E_real(KR, KW, randSize, randSelector, write_as_read, epoch_size, write_cost, first_value, mod, Z);};}
 
 std::function<LFU_2K_E_real_ver2()>
 LFU_2K_E_real2_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read, uint writeCost) {
     return [KR, KW, randSize, randSelector, write_as_read, epoch_size, writeCost](){
         return LFU_2K_E_real_ver2(KR, KW, randSize, randSelector, write_as_read, epoch_size, writeCost);};}
 
-std::function<LFU_2K_E_real()>
-LFU_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read, uint write_cost, float first_value) {
-    return [KR, KW, randSize, randSelector, write_as_read, epoch_size, write_cost, first_value](){
-        return LFU_2K_E_real(KR, KW, randSize, randSelector, write_as_read, epoch_size, write_cost, first_value);};}
-
-std::function<LFU_2K_E_mod()>
-LFU_mod_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read, uint write_cost, float first_value, bool use_min, bool use_median) {
-    return [KR, KW, randSize, randSelector, write_as_read, epoch_size, write_cost, first_value, use_min, use_median](){
-        return LFU_2K_E_mod(KR, KW, randSize, randSelector, write_as_read, epoch_size, write_cost, first_value, use_min, use_median);};}
-
 std::function<leanEvict()> Lean_Generator(uint cooling_percentage){
     return [cooling_percentage](){return leanEvict(cooling_percentage);};}
 std::function<leanEvict2()> Lean_Generator2(uint cooling_percentage){
     return [cooling_percentage](){return leanEvict2(cooling_percentage);};}
 
-std::function<LRFU()> LRFU_Generator(double lambda, uint KR, uint KW, uint randSize,
-                                     uint randSelector, bool write_as_read,
-                                     uint epoch_size, uint write_cost){
-    return [lambda, KR, KW, randSize, randSelector, write_as_read, epoch_size, write_cost]() {
-        return LRFU(lambda, KR, KW, randSize, randSelector, write_as_read, epoch_size, write_cost);};}
+std::function<LRFU()> LRFU_Generator(double lambda, uint K) {
+    return [lambda, K]() {
+        return LRFU(lambda, K);};}
 
 /*
 std::function<LFU_K_Z_D()> LFU1_K_Z_D_Generator(int K, int Z, int D){
