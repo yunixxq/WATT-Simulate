@@ -168,12 +168,29 @@ struct LFU_2K_E_real: public EvictStrategyKeepHistoryReadWrite{
             randSelector(randSelector), // how many do we want to evict?
             randSize(randSize), // how many are evaluated
             writeCost(write_cost),
-            first_value(first_value),
-            mod(modus){}
+            first_value(first_value){
+        switch(modus){
+            case mod_min:
+                compare_funct = get_frequency_min;
+                break;
+            case mod_avg:
+                compare_funct = get_frequency_avg;
+                break;
+            case mod_median:
+                compare_funct = get_frequency_median;
+                break;
+            case mod_max:
+                compare_funct = get_frequency_max;
+                break;
+            case mod_lucas:
+                compare_funct = get_frequency_lucas;
+                break;
+        }
+    }
 
     const uint randSelector, randSize, writeCost;
     const float first_value;
-    const modus mod;
+    compare_func compare_funct;
 
     uint rand_list_length;
     void reInit(RamSize ram_size) override{
@@ -185,7 +202,15 @@ struct LFU_2K_E_real: public EvictStrategyKeepHistoryReadWrite{
         std::vector<ram_type::iterator> elements = getElementsFromRam<ram_type::iterator>(rand_list_length);
 
         // Sort elements by frequency; //std::min_element
-        auto comperator = gt_compare_freq(get_frequency_max, curr_time, this->write_as_read, this->writeCost, first_value);
+        auto comperator = gt_compare_freq(compare_funct, curr_time, this->write_as_read, this->writeCost, first_value);
+        /*if(randSelector<=1){
+            std::vector<ram_type::iterator>::iterator min_iterator = std::min_element(elements.begin(), elements.end(), comperator);
+            ram_type::iterator element = *min_iterator;
+            PID pid = element->first;
+            handle_out_of_ram(pid);
+            ram.erase(element);
+            return postRemove(pid);
+        }*/
         std::make_heap(elements.begin(), elements.end(), comperator);
 
         uint dirtyEvicts = 0;
@@ -215,10 +240,10 @@ struct LFU_2K_E_real: public EvictStrategyKeepHistoryReadWrite{
     }
 
     static std::function<double(ram_type::iterator &, ram_type::iterator &)>
-    gt_compare_freq(compare_func f, RefTime curr_time, bool write_as_read, uint write_cost, float first_value) {
-        return [f, curr_time, write_as_read, write_cost, first_value](ram_type::iterator& l, ram_type::iterator& r) {
-            return eval_freq(f, l, curr_time, write_as_read, write_cost, first_value)
-                   > eval_freq(f, r, curr_time, write_as_read, write_cost, first_value);
+    gt_compare_freq(compare_func compare_funct, RefTime curr_time, bool write_as_read, uint write_cost, float first_value) {
+        return [compare_funct, curr_time, write_as_read, write_cost, first_value](ram_type::iterator& l, ram_type::iterator& r) {
+            return eval_freq(compare_funct, l, curr_time, write_as_read, write_cost, first_value)
+                   > eval_freq(compare_funct, r, curr_time, write_as_read, write_cost, first_value);
         };
     };
 };
