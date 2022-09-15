@@ -43,7 +43,13 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
         modus mod = mod_max;
         int Z =-1;
         // Sampling
-        for(int i=0; i< 10; i++){
+        runAlgorithm("watt_TEST2", LFU_Generator(8, 4, 5, 50, 1,  true, 1, 1.0/10));
+        runAlgorithm("watt_TEST3", LFU_Generator(8, 4, 20, 50, 1,  true, 1, 1.0/10));
+        runAlgorithm("watt_TEST4", LFU_Generator(8, 4, 50, 50, 1,  true, 1, 1.0/10));
+        runAlgorithm("watt_TEST5", LFU_Generator(8, 4, 1000, 50, 1,  true, 1, 1.0/10));
+        runAlgorithm("watt_TEST", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 1.0/10));
+
+        for(int i=1; i< 10; i++){
             string name = "watt_sampling_" + to_string(i);
             runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, i, randSelector, write_as_read, write_cost,
                                                        first_value, mod, Z));
@@ -62,20 +68,6 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                                                        write_cost, first_value, mod, Z));
         }
         KR = 8;
-        // avg min max
-        for(modus i: {mod_min, mod_avg, mod_median, mod_max, mod_lucas}){
-            string name = "watt_modus_";
-            switch(i){
-                case mod_avg: name += "avg"; break;
-                case mod_min: name += "min"; break;
-                case mod_max: name += "max"; break;
-                case mod_median: name += "median"; break;
-                case mod_lucas: name += "lucas"; break;
-            }
-            runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
-                                                       write_cost, first_value, i, Z));
-        }
-        mod = mod_max;
         // Epochs
         for(int i: {1, 10, 100, 1000, 0}){
             string name = "watt_epoch_";
@@ -129,6 +121,20 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                                                        first_value, mod, i));
         }
         Z = -1;
+        // avg min max
+        for(modus i: {mod_min, mod_avg, mod_median, mod_max, mod_lucas}){
+            string name = "watt_modus_";
+            switch(i){
+                case mod_avg: name += "avg"; break;
+                case mod_min: name += "min"; break;
+                case mod_max: name += "max"; break;
+                case mod_median: name += "median"; break;
+                case mod_lucas: name += "lucas"; break;
+            }
+            runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
+                                                       write_cost, first_value, i, Z));
+        }
+        mod = mod_max;
 
     }
     else {

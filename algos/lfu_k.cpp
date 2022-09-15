@@ -47,10 +47,10 @@ double get_frequency_median(std::vector<RefTime>& array, RefTime now, float firs
     return frequencies[array.size()/2];
 }
 
-double get_frequency_lucas(std::vector<RefTime>& array, RefTime now, float) {
+double get_frequency_lucas(std::vector<RefTime>& array, RefTime now, float first_value) {
     if(array.size()==0)
         return 0;
-    float avg = minn(1 / (now-array[0]+1), 1.0);
+    float avg = minn(first_value / (now-array[0]+1), 1.0);
     for (uint i=1; i<array.size(); i++)
         avg+= minn((float)(1)/ (now-array[i]+1), 1.0);
     return avg;
