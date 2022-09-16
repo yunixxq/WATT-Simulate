@@ -37,9 +37,9 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
     // advanced_compare_algos();
     bool do_it = true;
     if(do_it){
-        uint KR=0, KW=1, epoch_size=0, randSize=0, randSelector=1, write_cost=0;
+        uint KR=0, KW=1, epoch_size=0, randSize=0, randSelector=1;
         bool write_as_read = true;
-        float first_value = 1.0;
+        float first_value = 1.0, write_cost=0;
         modus mod = mod_max;
         int Z =-1;
         // Sampling
@@ -49,8 +49,11 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
         runAlgorithm("watt_TEST5", LFU_Generator(8, 4, 1000, 50, 1,  true, 1, 1.0/10));
         runAlgorithm("watt_TEST", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 1.0/10));
 
-        for(int i=1; i< 10; i++){
-            string name = "watt_sampling_" + to_string(i);
+        for(int i=1; i< 30; i++){
+            string name = "watt_sampling_";
+            if(i < 10)
+                name += "0";
+            name += to_string(i);
             runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, i, randSelector, write_as_read, write_cost,
                                                        first_value, mod, Z));
         }
@@ -86,10 +89,11 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
             if (i<10) name+= "0";
             name+= to_string(i);
             runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
-                                                       write_cost, i / 10.0, mod, Z));
+                                                       write_cost, i / 100.0, mod, Z));
         }
         first_value = 0.1;
         // read and writes
+        write_cost = 1; // To enable writes;
         for(uint  r: {1, 2, 4, 8, 16}) for(uint  w: {1, 2, 4, 8, 16}){
             string name = "watt_r_";
             if(r<10) name+="0";
@@ -102,16 +106,17 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
         KW = 4;
         // vary write cost
         for(int i =0; i< 20; i++){
+            int wc = i*5;
             string name = "watt_wc_";
-            if (i<10) name+= "0";
-            name+= to_string(i);
-            runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, i,
+            if (wc<10) name+= "0";
+            name+= to_string(wc);
+            runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, wc/10.0,
                                                        first_value, mod, Z));
         }
         write_cost = 1;
         // keep history
         for(int i: {-1, 0, 1, 10, 100}){
-            string name = "watt_history";
+            string name = "watt_history_";
             if (i==-1) name+= "max";
             if (i==0) name+= "000";
             if (i==1) name+= "001";

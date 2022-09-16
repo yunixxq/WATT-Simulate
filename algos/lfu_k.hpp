@@ -163,7 +163,7 @@ struct LFU_2K_E_real: public EvictStrategyKeepHistoryReadWrite{
     using compare_func = std::function<double(std::vector<RefTime>& , RefTime , float)>;
 
     LFU_2K_E_real(uint KR, uint KW, uint randSize, uint randSelector = 1, bool write_as_read = true,
-                  uint epoch_size = 1, uint write_cost = 1, float first_value = 1.0, modus modus = mod_max, int Z = -1) :
+                  uint epoch_size = 1, float write_cost = 1, float first_value = 1.0, modus modus = mod_max, int Z = -1) :
             upper(KR, KW, Z, write_as_read, epoch_size),
             randSelector(randSelector), // how many do we want to evict?
             randSize(randSize), // how many are evaluated
@@ -188,8 +188,8 @@ struct LFU_2K_E_real: public EvictStrategyKeepHistoryReadWrite{
         }
     }
 
-    const uint randSelector, randSize, writeCost;
-    const float first_value;
+    const uint randSelector, randSize;
+    const float writeCost, first_value;
     compare_func compare_funct;
 
     uint rand_list_length;
@@ -227,7 +227,7 @@ struct LFU_2K_E_real: public EvictStrategyKeepHistoryReadWrite{
     }
 
     static double
-    eval_freq(compare_func f, ram_type::iterator& candidate, RefTime curr_time, bool write_as_read, uint write_cost = 1, float first_value = 1.0) {
+    eval_freq(compare_func f, ram_type::iterator& candidate, RefTime curr_time, bool write_as_read, float write_cost = 1, float first_value = 1.0) {
         double candidate_freq_R = f(candidate->second.first, curr_time, first_value);
         if(write_cost == 0)
             return candidate_freq_R;
@@ -240,7 +240,7 @@ struct LFU_2K_E_real: public EvictStrategyKeepHistoryReadWrite{
     }
 
     static std::function<double(ram_type::iterator &, ram_type::iterator &)>
-    gt_compare_freq(compare_func compare_funct, RefTime curr_time, bool write_as_read, uint write_cost, float first_value) {
+    gt_compare_freq(compare_func compare_funct, RefTime curr_time, bool write_as_read, float write_cost, float first_value) {
         return [compare_funct, curr_time, write_as_read, write_cost, first_value](ram_type::iterator& l, ram_type::iterator& r) {
             return eval_freq(compare_funct, l, curr_time, write_as_read, write_cost, first_value)
                    > eval_freq(compare_funct, r, curr_time, write_as_read, write_cost, first_value);

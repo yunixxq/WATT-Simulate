@@ -53,9 +53,9 @@ LFU_2K_E_real2_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint 
                          uint writeCost);
 std::function<LFU_2K_E_real()>
 LFU_2K_E_real_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read,
-                        uint write_cost=1, float first_value=1.0, modus mod=mod_max, int Z=-1);
+                        float write_cost=1, float first_value=1.0, modus mod=mod_max, int Z=-1);
 inline std::function<LFU_2K_E_real()>
-LFU_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read, uint writeCost=1, float first_value=1.0, modus mod=mod_max, int Z=-1){
+LFU_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read, float writeCost=1, float first_value=1.0, modus mod=mod_max, int Z=-1){
     return LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, writeCost, first_value,
                                    mod, Z);
 }
