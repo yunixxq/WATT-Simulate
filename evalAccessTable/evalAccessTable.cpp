@@ -140,6 +140,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                                                        write_cost, first_value, i, Z));
         }
         mod = mod_max;
+        advanced_with_variations_algos();
 
     }
     else {
