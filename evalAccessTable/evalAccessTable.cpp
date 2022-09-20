@@ -84,9 +84,10 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
         }
         epoch_size = 10;
         // Dampening
-        for(int i = 0; i<20; i++){
+        for(int i = 0; i<=100; i+=5){
             string name = "watt_damp_";
             if (i<10) name+= "0";
+            if (i<100) name+= "0";
             name+= to_string(i);
             runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
                                                        write_cost, i / 100.0, mod, Z));
