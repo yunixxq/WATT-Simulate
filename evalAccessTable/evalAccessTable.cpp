@@ -31,7 +31,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
     bool run_slow = false;
     bool full_run = false;
     // Ignore last if test run, else not!
-    init(test, 10000);
+    init(test, 100000);
 
     // default_compare_algos();
     // advanced_compare_algos();
@@ -259,16 +259,10 @@ void EvalAccessTable::advanced_with_variations_algos() {
     runAlgorithm("hyperbolic05", Hyperbolic_generator(5));
     runAlgorithm("hyperbolic20", Hyperbolic_generator(20));
     runAlgorithm("lrfu0.0", LRFU_Generator(0.0, 8));
-    runAlgorithm("lrfu0.1", LRFU_Generator(0.1, 8));
     runAlgorithm("lrfu0.2", LRFU_Generator(0.2, 8));
-    runAlgorithm("lrfu0.3", LRFU_Generator(0.3, 8));
     runAlgorithm("lrfu0.4", LRFU_Generator(0.4, 8));
-    runAlgorithm("lrfu0.5", LRFU_Generator(0.5, 8));
     runAlgorithm("lrfu0.6", LRFU_Generator(0.6, 8));
-    runAlgorithm("lrfu0.7", LRFU_Generator(0.7, 8));
     runAlgorithm("lrfu0.8", LRFU_Generator(0.8, 8));
-    runAlgorithm("lrfu0.9", LRFU_Generator(0.9, 8));
-
 }
 
 void EvalAccessTable::advanced_compare_algos() {
