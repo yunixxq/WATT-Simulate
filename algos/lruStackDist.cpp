@@ -60,18 +60,26 @@ void LruStackDist::evaluateRamList(const std::vector<Access> &data, ramListType 
 
     {
         int pages = lruStackDist[0];
+        std::vector<RamSize> list;
         int ram_size = 100;
         do {
-            ramList.emplace(ram_size);
-            if ((ram_size < 2000 && pages < 5000 ) || ram_size < 1000) {
+            list.push_back(ram_size);
+            if (pages < 2000 || ram_size < 1000) {
                 ram_size += 100;
-            } else if((ram_size < 20000 && pages < 50000) || ram_size < 10000) {
+            } else if(pages < 20000 || ram_size < 10000) {
                 ram_size += 1000;
-            } else{
+            } else if(pages < 200000 || ram_size < 100000) {
                 ram_size += 10000;
+            } else {
+                ram_size += 100000;
             }
         } while (ram_size < pages && (ram_size < max_ram || max_ram == -1));
-        ramList.emplace(ram_size);
+        list.push_back(ram_size);
+        std::reverse(list.begin(), list.end());
+        for(uint i =0; i< 20 && i < list.size(); i++){
+            ramList.emplace(list[i]);
+        }
+        ramList.emplace(100);
     }// sum it up, buttercup!
     for (auto &ram_size: ramList) {
         int misses = 0, evicts = 0;
