@@ -78,7 +78,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
             else {
                 if (i < 10) name += "0";
                 if (i < 100) name += "0";
-                name += i;
+                name += to_string(i);
             }
             runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, i, randSize, randSelector, write_as_read, write_cost,
                                                        first_value, mod, Z));
@@ -114,7 +114,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
             else {
                 if (i < 10) name += "0";
                 if (i < 100) name += "0";
-                name += i;
+                name += to_string(i);
             }
             runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
                                                        first_value, mod, i));
