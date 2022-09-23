@@ -41,7 +41,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
         bool write_as_read = true;
         float first_value = 1.0, write_cost=0;
         modus mod = mod_max;
-        int Z =-1;
+        int Z =-1; // History
         // Sampling
         runAlgorithm("watt_TEST2", LFU_Generator(8, 4, 5, 50, 1,  true, 1, 1.0/10));
         runAlgorithm("watt_TEST3", LFU_Generator(8, 4, 20, 50, 1,  true, 1, 1.0/10));
@@ -49,7 +49,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
         runAlgorithm("watt_TEST5", LFU_Generator(8, 4, 1000, 50, 1,  true, 1, 1.0/10));
         runAlgorithm("watt_TEST", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 1.0/10));
 
-        for(int i=1; i< 30; i++){
+        for(int i: {1,2,4,8,16,32,64}){
             string name = "watt_sampling_";
             if(i < 10)
                 name += "0";
@@ -57,7 +57,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
             runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, i, randSelector, write_as_read, write_cost,
                                                        first_value, mod, Z));
         }
-        randSize = 5;
+        randSize = 8;
         // Read Backlog Size
         for(int i: {0, 1, 2, 4, 8, 16, 32, 64}){
             string name = "watt_backlog_";
@@ -72,17 +72,18 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
         }
         KR = 8;
         // Epochs
-        for(int i: {1, 10, 100, 1000, 0}){
+        for(int i: {1, 2, 4, 8, 16, 32, 64, 128, 0}){
             string name = "watt_epoch_";
             if(i==0) name+= "max";
-            else if(i==1) name+= "0001";
-            else if(i==10) name+= "0010";
-            else if(i==100) name+= "0100";
-            else if(i==1000) name+= "1000";
+            else {
+                if (i < 10) name += "0";
+                if (i < 100) name += "0";
+                name += i;
+            }
             runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, i, randSize, randSelector, write_as_read, write_cost,
                                                        first_value, mod, Z));
         }
-        epoch_size = 10;
+        epoch_size = 16;
         // Dampening
         for(int i = 0; i<=100; i+=5){
             string name = "watt_damp_";
@@ -105,6 +106,20 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                                                        write_cost, first_value, mod, Z));
         }
         KW = 4;
+        // keep history
+        for(int i: {-1, 0, 1, 2, 4, 8, 16, 32, 64, 128}){
+            string name = "watt_history_";
+            if (i==-1) name+= "max";
+            else if(i==0) name += "none";
+            else {
+                if (i < 10) name += "0";
+                if (i < 100) name += "0";
+                name += i;
+            }
+            runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
+                                                       first_value, mod, i));
+        }
+        Z = 16;
         // vary write cost
         for(int i =0; i< 20; i++){
             int wc = i*5;
@@ -115,18 +130,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                                                        first_value, mod, Z));
         }
         write_cost = 1;
-        // keep history
-        for(int i: {-1, 0, 1, 10, 100}){
-            string name = "watt_history_";
-            if (i==-1) name+= "max";
-            if (i==0) name+= "000";
-            if (i==1) name+= "001";
-            if (i==10) name+= "010";
-            if (i==100) name+= "100";
-            runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
-                                                       first_value, mod, i));
-        }
-        Z = -1;
+
         // avg min max
         for(modus i: {mod_min, mod_avg, mod_median, mod_max, mod_lucas}){
             string name = "watt_modus_";
