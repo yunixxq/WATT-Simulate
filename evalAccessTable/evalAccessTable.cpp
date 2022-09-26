@@ -125,7 +125,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
         // read and writes
         write_cost = 1; // To enable writes;
         for(uint  w: {0,1, 2, 4, 8, 16, 32, 64}){
-            string name = "watt_wc_";
+            string name = "watt_wr_";
             if(w<10) name+="0";
             name+= to_string(w);
             runAlgorithm(name, LFU_2K_E_real_Generator(KR, w, epoch_size, randSize, randSelector, write_as_read,
@@ -135,7 +135,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
         // vary write cost
         for(int i =0; i< 20; i++){
             int wc = i*5;
-            string name = "watt_wr_";
+            string name = "watt_wc_";
             if (wc<10) name+= "0";
             name+= to_string(wc);
             runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, wc/10.0,
