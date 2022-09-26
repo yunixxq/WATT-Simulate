@@ -124,12 +124,24 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
         mod = mod_max;
         // read and writes
         write_cost = 1; // To enable writes;
-        for(uint  w: {0,1, 2, 4, 8, 16, 32, 64}){
+        for(uint  w: {0,1, 2, 4, 8, 16, 32, 64, 42}){
             string name = "watt_wr_";
-            if(w<10) name+="0";
-            name+= to_string(w);
-            runAlgorithm(name, LFU_2K_E_real_Generator(KR, w, epoch_size, randSize, randSelector, write_as_read,
-                                                       write_cost, first_value, mod, Z));
+            if(w==42){
+                name += "max";
+            }else {
+                if (w < 10) name += "0";
+                name += to_string(w);
+            }
+            if(w==0){
+                runAlgorithm(name, LFU_2K_E_real_Generator(KR, 1, epoch_size, randSize, randSelector, write_as_read,
+                                                           0, first_value, mod, Z));
+            }else if (w==42){
+                runAlgorithm(name, LFU_2K_E_real_Generator(KR, 0, epoch_size, randSize, randSelector, write_as_read,
+                                                           write_cost, first_value, mod, Z));
+            }else {
+                runAlgorithm(name, LFU_2K_E_real_Generator(KR, w, epoch_size, randSize, randSelector, write_as_read,
+                                                           write_cost, first_value, mod, Z));
+            }
         }
         KW = 4;
         // vary write cost
