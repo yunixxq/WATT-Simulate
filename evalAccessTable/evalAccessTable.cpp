@@ -57,7 +57,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
             runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, i, randSelector, write_as_read, write_cost,
                                                        first_value, mod, Z));
         }
-        randSize = 16;
+        randSize = 8;
         // Read Backlog Size
         for(int i: {0, 1, 2, 4, 8, 16, 32, 64}){
             string name = "watt_backlog_";
@@ -70,7 +70,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
             runAlgorithm(name, LFU_2K_E_real_Generator(i, KW, epoch_size, randSize, randSelector, write_as_read,
                                                        write_cost, first_value, mod, Z));
         }
-        KR = 32;
+        KR = 8;
         // Epochs
         for(int i: {1, 2, 4, 8, 16, 32, 64, 128, 0}){
             string name = "watt_epoch_";
@@ -83,7 +83,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
             runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, i, randSize, randSelector, write_as_read, write_cost,
                                                        first_value, mod, Z));
         }
-        epoch_size = 32;
+        epoch_size = 64;
         // Dampening
         for(int i = 0; i<=100; i+=5){
             string name = "watt_damp_";
@@ -93,7 +93,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
             runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
                                                        write_cost, i / 100.0, mod, Z));
         }
-        first_value = 0.1;
+        first_value = 0.2;
         // keep history
         for(int i: {-1, 0, 1, 2, 4, 8, 16, 32, 64, 128}){
             string name = "watt_history_";
@@ -107,7 +107,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
             runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
                                                        first_value, mod, i));
         }
-        Z = 1;
+        Z = 0;
         // avg min max
         for(modus i: {mod_min, mod_avg, mod_median, mod_max, mod_lucas}){
             string name = "watt_modus_";

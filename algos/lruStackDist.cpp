@@ -64,11 +64,11 @@ void LruStackDist::evaluateRamList(const std::vector<Access> &data, ramListType 
         int ram_size = 100;
         do {
             list.push_back(ram_size);
-            if (pages < 2000 || ram_size < 1000) {
+            if (pages < 3000 || ram_size < 1000) {
                 ram_size += 100;
-            } else if(pages < 20000 || ram_size < 10000) {
+            } else if(pages < 30000 || ram_size < 10000) {
                 ram_size += 1000;
-            } else if(pages < 200000 || ram_size < 100000) {
+            } else if(pages < 300000 || ram_size < 100000) {
                 ram_size += 10000;
             } else {
                 ram_size += 100000;
