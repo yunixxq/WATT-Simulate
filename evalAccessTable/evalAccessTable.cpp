@@ -145,10 +145,10 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
         }
         KW = 4;
         // vary write cost
-        for(int i =0; i< 20; i++){
-            int wc = i*5;
+        for(int wc=0; wc<= 100; wc+=5){
             string name = "watt_wc_";
             if (wc<10) name+= "0";
+            if (wc<100) name+= "0";
             name+= to_string(wc);
             runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, wc/10.0,
                                                        first_value, mod, Z));
