@@ -41,7 +41,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
         bool write_as_read = true;
         float first_value = 1.0, write_cost=0;
         modus mod = mod_max;
-        int Z =-1; // History
+        int Z =0; // History -1 = infty
         // Sampling
         runAlgorithm("watt_TEST2", LFU_Generator(8, 4, 5, 50, 1,  true, 1, 1.0/10));
         runAlgorithm("watt_TEST3", LFU_Generator(8, 4, 20, 50, 1,  true, 1, 1.0/10));
