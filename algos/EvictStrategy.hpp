@@ -16,6 +16,7 @@
 #include <unordered_map>
 #include "general.hpp"
 
+// Comparator for History vectors
 static bool keepFirst(const std::vector<RefTime>& l, const std::vector<RefTime>& r) {
     uint lsize = l.size();
     uint rsize = r.size();
@@ -37,6 +38,7 @@ static bool keepFirst(const std::vector<std::pair<RefTime, bool>>& l, const std:
 };
 
 
+// Helper to modify access history vector and keep it ot specific size
 template <class type>
 static void push_frontAndResizeHelper(std::vector<type>& hist, uint K, type newValue){
     // Move each element one back
@@ -65,11 +67,12 @@ static void push_frontAndResize2(std::vector<std::pair<RefTime, bool>> &hist, ui
     push_frontAndResizeHelper(hist, K, {curr_epoch, write});
 };
 
-
+// Calculator to calculate History Size from given Z value
 static uint calc_hist_size(RamSize ram_size, int Z){
     return (uint) (Z >= 0 ? ram_size * Z : ( Z == -1 ? UINT32_MAX : ram_size / (-Z)));
 }
 
+//  Basic Eviction Strategy
 class EvictStrategy
 {
 public:
@@ -199,7 +202,7 @@ private:
 };
 
 /**
- * Here we can use one container for storage of information for the pages
+ * Here we can use one container for storage of information for the pages (e.g. hashmap with values or similar)
  * @tparam Container
  */
 template<class Container>
@@ -356,6 +359,9 @@ protected:
 
 };
 
+/**
+ * Trac access history for pages
+ */
 class EvictStrategyHistory: public EvictStrategyContainer<std::unordered_map<PID, std::vector<RefTime>>>{
 public:
     using ram_type = std::unordered_map<PID,  std::vector<RefTime>>;
@@ -393,6 +399,9 @@ protected:
     }
 };
 
+/**
+ * Trac access history for pages; keep it for evicted pages
+ */
 template<class history_type>
 class EvictStrategyKeepHistory: public EvictStrategyContainer<std::unordered_map<PID, history_type>>{
 protected:
@@ -456,6 +465,9 @@ protected:
 
 };
 
+/**
+ * Use just one list of RefTimes (accesses)
+ */
 class EvictStrategyKeepHistoryOneList: public EvictStrategyKeepHistory<std::vector<RefTime>>{
     using history_type = std::vector<RefTime>;
     using upper = EvictStrategyKeepHistory<history_type>;
@@ -486,6 +498,9 @@ protected:
     }
 };
 
+/**
+ * Use just one list of RefTimes (accesses) with written flag
+ */
 class EvictStrategyKeepHistoryCombined: public EvictStrategyKeepHistory<std::vector<std::pair<RefTime, bool>>>{
 protected:
     using history_type = std::vector<std::pair<RefTime, bool>>;
@@ -537,7 +552,10 @@ protected:
 
 };
 
-// First list is for reads, second for writes
+/**
+ * Use just two list of RefTimes (accesses). one for read, one for write accesses
+ * Option to note "writes_as_reads". This way writes are added to both lists
+ */
 class EvictStrategyKeepHistoryReadWrite: public EvictStrategyKeepHistory< std::pair<std::vector<RefTime>, std::vector<RefTime>>>{
 protected:
     using history_type = std::pair<std::vector<RefTime>, std::vector<RefTime>>;

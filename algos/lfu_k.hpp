@@ -158,6 +158,7 @@ struct LFU_2K_Z_rand: public EvictStrategyKeepHistoryReadWrite{
 
 };
 
+// Current WATT Implementation
 struct LFU_2K_E_real: public EvictStrategyKeepHistoryReadWrite{
     using upper = EvictStrategyKeepHistoryReadWrite;
     using compare_func = std::function<double(std::vector<RefTime>& , RefTime , float)>;
@@ -248,6 +249,7 @@ struct LFU_2K_E_real: public EvictStrategyKeepHistoryReadWrite{
     };
 };
 
+// WATT but count Write_Freq only if page is dirty
 struct LFU_2K_E_real_ver2: public EvictStrategyKeepHistoryReadWrite{
     using upper = EvictStrategyKeepHistoryReadWrite;
 
@@ -312,6 +314,7 @@ struct LFU_2K_E_real_ver2: public EvictStrategyKeepHistoryReadWrite{
 
 };
 
+// Current WATT, but use only one list & annotate writes with a bool
 struct LFU_1K_E_real: public EvictStrategyKeepHistoryCombined{
     using upper = EvictStrategyKeepHistoryCombined;
 
@@ -337,7 +340,7 @@ struct LFU_1K_E_real: public EvictStrategyKeepHistoryCombined{
         auto comperator = gt_compare_freq(curr_time, this->writeCost);
         std::make_heap(elements.begin(), elements.end(), comperator);
 
-         uint dirtyEvicts = 0;
+        uint dirtyEvicts = 0;
         for(uint i = 0; i< randSelector && !elements.empty(); i++){
             std::pop_heap(elements.begin(), elements.end(), comperator);
             ram_type::iterator element = elements.back();
@@ -365,7 +368,7 @@ struct LFU_1K_E_real: public EvictStrategyKeepHistoryCombined{
 
 
 };
-
+// Like onelisted WATT, but ignore writes and just focus on "is dirty"
 struct LFU_1K_E_real_vers2: public EvictStrategyKeepHistoryCombined{
     using upper = EvictStrategyKeepHistoryCombined;
 
