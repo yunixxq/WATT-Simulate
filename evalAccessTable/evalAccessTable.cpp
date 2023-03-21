@@ -155,6 +155,10 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
         }
         write_cost = 1;
 
+        runAlgorithm("watt_write_not_as_read", LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
+                                                   first_value, mod, Z));
+        runAlgorithm("watt_one_listed", LFU_1K_E_real_Generator(16, epoch_size, randSize, randSelector, write_cost));
+
         advanced_with_variations_algos();
 
     }
