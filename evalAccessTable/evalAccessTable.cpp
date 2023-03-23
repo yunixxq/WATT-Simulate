@@ -44,7 +44,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
         uint randSize=8;            // How big is the random sample
         uint randSelector=1;        // How many Elements should be evicted per sample
 
-        uint KW=1;                  // length of second list (write list), 0 = infty
+        uint KW=1;                  // length of second list (write list), 0 = infty (not counted, becaus write_cost=0)
         bool write_as_read = true;  // use first lists for accesses (reads and writes) or only reads
         float write_cost=0;         // how expensive are writes compared to reads
 
