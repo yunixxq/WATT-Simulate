@@ -3,4 +3,5 @@ cmake-build-debug
 .vscode
 build
 release
+release2
 cmake-build-release

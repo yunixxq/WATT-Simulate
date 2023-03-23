@@ -37,81 +37,108 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
     // advanced_compare_algos();
     bool do_it = true;
     if(do_it){
-        uint KR=0, KW=1, epoch_size=0, randSize=0, randSelector=1;
-        bool write_as_read = true;
-        float first_value = 1.0, write_cost=0;
-        modus mod = mod_max;
-        int Z =0; // History -1 = infty
-        // Sampling
-        runAlgorithm("watt_TEST2", LFU_Generator(8, 4, 5, 50, 1,  true, 1, 1.0/10));
-        runAlgorithm("watt_TEST3", LFU_Generator(8, 4, 20, 50, 1,  true, 1, 1.0/10));
-        runAlgorithm("watt_TEST4", LFU_Generator(8, 4, 50, 50, 1,  true, 1, 1.0/10));
-        runAlgorithm("watt_TEST5", LFU_Generator(8, 4, 1000, 50, 1,  true, 1, 1.0/10));
-        runAlgorithm("watt_TEST", LFU_Generator(8, 4, 10, 50, 1,  true, 1, 1.0/10));
+        advanced_with_variations_algos();
 
-        for(int i: {1,2,4,8,16,32,64}){
+        uint KR=1;                  // length of first list (read or access), 0 = infty
+        uint epoch_size=0;          // How many evictions are grouped to one epoch, 0 = infty, else RAMSIZE/epoch_size
+        uint randSize=8;            // How big is the random sample
+        uint randSelector=1;        // How many Elements should be evicted per sample
+
+        uint KW=1;                  // length of second list (write list), 0 = infty
+        bool write_as_read = true;  // use first lists for accesses (reads and writes) or only reads
+        float write_cost=0;         // how expensive are writes compared to reads
+
+        float first_value = 1.0;    // dampening factor of first access
+        modus mod = mod_max;        // what modus should be taken to aggregate 
+        int Z =0;                   // size of out of memory history -1 = infty
+
+        // Sampling
+        for(int randSize: {1,2,4,8,16,32,64}){
             string name = "watt_sampling_";
-            if(i < 10)
+            if(randSize < 10)
                 name += "0";
-            name += to_string(i);
-            runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, i, randSelector, write_as_read, write_cost,
+            name += to_string(randSize);
+            runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
                                                        first_value, mod, Z));
+            runAlgorithm("other"+name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
+                                                   first_value, mod, Z));
+            runAlgorithm("one"+name, LFU_1K_E_real_Generator(KR, epoch_size, randSize, randSelector, write_cost, Z));
         }
         randSize = 8;
+
         // Read Backlog Size
-        for(int i: {0, 1, 2, 4, 8, 16, 32, 64}){
+        int KR_max_value=0;
+        for(int KR: {1, 2, 4, 8, 16, 32, 64, KR_max_value}){
             string name = "watt_backlog_";
-            if(i==0) name+="max";
+            if(KR==KR_max_value) name+="max";
             else {
-                if(i<10) name+="0";
-                name+= to_string(i);
+                if(KR<10) name+="0";
+                name+= to_string(KR);
             }
 
-            runAlgorithm(name, LFU_2K_E_real_Generator(i, KW, epoch_size, randSize, randSelector, write_as_read,
-                                                       write_cost, first_value, mod, Z));
+            runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
+                                                       first_value, mod, Z));
+            runAlgorithm("other"+name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
+                                                   first_value, mod, Z));
+            runAlgorithm("one"+name, LFU_1K_E_real_Generator(KR, epoch_size, randSize, randSelector, write_cost, Z));
         }
         KR = 8;
+
         // Epochs
-        for(int i: {1, 2, 4, 8, 16, 32, 64, 128, 0}){
+        int epochs_max_value=0;
+        for(int epoch_size: {1, 2, 4, 8, 16, 32, 64, 128, epochs_max_value}){
             string name = "watt_epoch_";
-            if(i==0) name+= "max";
+            if(epoch_size==epochs_max_value) name+= "max";
             else {
-                if (i < 10) name += "0";
-                if (i < 100) name += "0";
-                name += to_string(i);
+                if (epoch_size < 10) name += "0";
+                if (epoch_size < 100) name += "0";
+                name += to_string(epoch_size);
             }
-            runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, i, randSize, randSelector, write_as_read, write_cost,
+            runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
                                                        first_value, mod, Z));
+            runAlgorithm("other"+name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
+                                                   first_value, mod, Z));
+            runAlgorithm("one"+name, LFU_1K_E_real_Generator(KR, epoch_size, randSize, randSelector, write_cost, Z));
+
         }
-        epoch_size = 64;
+        epoch_size = 4;
+
         // Dampening
         for(int i = 0; i<=100; i+=5){
+            first_value = i/100.0;
             string name = "watt_damp_";
             if (i<10) name+= "0";
             if (i<100) name+= "0";
             name+= to_string(i);
-            runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
-                                                       write_cost, i / 100.0, mod, Z));
+            runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
+                                                       first_value, mod, Z));
+            runAlgorithm("other"+name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
+                                                   first_value, mod, Z));
+            runAlgorithm("one"+name, LFU_1K_E_real_Generator(KR, epoch_size, randSize, randSelector, write_cost, Z));
         }
-        first_value = 0.2;
+        first_value = 0.1;
         // keep history
-        for(int i: {-1, 0, 1, 2, 4, 8, 16, 32, 64, 128}){
+        int Z_max_value=-1;
+        for(int Z: {0, 1, 2, 4, 8, 16, 32, 64, 128, Z_max_value}){
             string name = "watt_history_";
-            if (i==-1) name+= "max";
-            else if(i==0) name += "none";
+            if (Z==Z_max_value) name+= "max";
+            else if(Z==0) name += "none";
             else {
-                if (i < 10) name += "0";
-                if (i < 100) name += "0";
-                name += to_string(i);
+                if (Z < 10) name += "0";
+                if (Z < 100) name += "0";
+                name += to_string(Z);
             }
             runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
-                                                       first_value, mod, i));
+                                                       first_value, mod, Z));
+            runAlgorithm("other"+name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
+                                                   first_value, mod, Z));
+            runAlgorithm("one"+name, LFU_1K_E_real_Generator(KR, epoch_size, randSize, randSelector, write_cost, Z));
         }
         Z = 0;
         // avg min max
-        for(modus i: {mod_min, mod_avg, mod_median, mod_max, mod_lucas}){
+        for(modus mod: {mod_min, mod_avg, mod_median, mod_max, mod_lucas}){
             string name = "watt_modus_";
-            switch(i){
+            switch(mod){
                 case mod_avg: name += "avg"; break;
                 case mod_min: name += "min"; break;
                 case mod_max: name += "max"; break;
@@ -119,48 +146,50 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                 case mod_lucas: name += "lucas"; break;
             }
             runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
-                                                       write_cost, first_value, i, Z));
+                                                       write_cost, first_value, mod, Z));
+            runAlgorithm("other"+name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
+                                                   first_value, mod, Z));
+            runAlgorithm("one"+name, LFU_1K_E_real_Generator(KR, epoch_size, randSize, randSelector, write_cost, Z));
         }
         mod = mod_max;
         // read and writes
         write_cost = 1; // To enable writes;
-        for(uint  w: {0,1, 2, 4, 8, 16, 32, 64, 42}){
+        uint KW_max_value=0;
+        for(uint  KW: (std::initializer_list<uint>){1, 2, 4, 8, 16, 32, 64, KW_max_value}){
             string name = "watt_wr_";
-            if(w==42){
+            if(KW==KW_max_value){
                 name += "max";
             }else {
-                if (w < 10) name += "0";
-                name += to_string(w);
+                if (KW < 10) name += "0";
+                name += to_string(KW);
             }
-            if(w==0){
-                runAlgorithm(name, LFU_2K_E_real_Generator(KR, 1, epoch_size, randSize, randSelector, write_as_read,
-                                                           0, first_value, mod, Z));
-            }else if (w==42){
-                runAlgorithm(name, LFU_2K_E_real_Generator(KR, 0, epoch_size, randSize, randSelector, write_as_read,
-                                                           write_cost, first_value, mod, Z));
-            }else {
-                runAlgorithm(name, LFU_2K_E_real_Generator(KR, w, epoch_size, randSize, randSelector, write_as_read,
-                                                           write_cost, first_value, mod, Z));
-            }
+            runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
+                                                        write_cost, first_value, mod, Z));
+            runAlgorithm("other"+name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
+                                                    first_value, mod, Z));
+            runAlgorithm("one"+name, LFU_1K_E_real_Generator(KR, epoch_size, randSize, randSelector, write_cost, Z));
         }
         KW = 4;
         // vary write cost
-        for(int wc=0; wc<= 100; wc+=5){
+        for(int wc=0; wc<= 250; wc+=5){
             string name = "watt_wc_";
             if (wc<10) name+= "0";
             if (wc<100) name+= "0";
             name+= to_string(wc);
-            runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, wc/10.0,
+            write_cost = wc/10.0;
+            runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
                                                        first_value, mod, Z));
+            runAlgorithm("other"+name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
+                                                   first_value, mod, Z));
+            runAlgorithm("one"+name, LFU_1K_E_real_Generator(KR, epoch_size, randSize, randSelector, write_cost, Z));
         }
         write_cost = 1;
 
-        runAlgorithm("watt_write_not_as_read", LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
-                                                   first_value, mod, Z));
-        runAlgorithm("watt_one_listed", LFU_1K_E_real_Generator(16, epoch_size, randSize, randSelector, write_cost, Z));
-
-        advanced_with_variations_algos();
-
+        runAlgorithm("WATT", LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
+                                                       first_value, mod, Z));
+        runAlgorithm("OTHERWATT", LFU_2K_E_real_Generator(KR, KW, 2, randSize, randSelector, false, write_cost,
+                                                   0, mod, Z));
+        runAlgorithm("ONEWATT", LFU_1K_E_real_Generator(16, epoch_size, randSize, randSelector, write_cost, Z));
     }
     else {
         if (benchmark) {
@@ -277,11 +306,13 @@ void EvalAccessTable::advanced_with_variations_algos() {
     runAlgorithm("hyperbolic01", Hyperbolic_generator(1));
     runAlgorithm("hyperbolic05", Hyperbolic_generator(5));
     runAlgorithm("hyperbolic20", Hyperbolic_generator(20));
+    /*
     runAlgorithm("lrfu0.0", LRFU_Generator(0.0, 8));
     runAlgorithm("lrfu0.2", LRFU_Generator(0.2, 8));
     runAlgorithm("lrfu0.4", LRFU_Generator(0.4, 8));
     runAlgorithm("lrfu0.6", LRFU_Generator(0.6, 8));
     runAlgorithm("lrfu0.8", LRFU_Generator(0.8, 8));
+    */
 }
 
 void EvalAccessTable::advanced_compare_algos() {
@@ -291,7 +322,7 @@ void EvalAccessTable::advanced_compare_algos() {
     runAlgorithm("lru_wsr", LRU_WSR_Generator());
     runAlgorithm("cf_lru50", CfLRUGenerator(50));
     runAlgorithm("hyperbolic10", Hyperbolic_generator(10));
-    runAlgorithm("lrfu1.0", LRFU_Generator(1.0, 8));
+    //runAlgorithm("lrfu1.0", LRFU_Generator(1.0, 8));
 
 }
 
