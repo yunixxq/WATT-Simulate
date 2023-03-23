@@ -157,7 +157,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
 
         runAlgorithm("watt_write_not_as_read", LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
                                                    first_value, mod, Z));
-        runAlgorithm("watt_one_listed", LFU_1K_E_real_Generator(16, epoch_size, randSize, randSelector, write_cost));
+        runAlgorithm("watt_one_listed", LFU_1K_E_real_Generator(16, epoch_size, randSize, randSelector, write_cost, Z));
 
         advanced_with_variations_algos();
 
@@ -198,8 +198,8 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                                               + "_rsi" + to_string(rsi)
                                               + "_rsa" + to_string(rsa)
                                               + "_wc" + to_string(wc);
-                                runAlgorithm("lfu_k" + name, LFU_1K_E_real_Generator(k, e, rsi, rsa, wc));
-                                runAlgorithm("lfu_bla_k" + name, LFU_1K_E_Generator(k, e, rsi, rsa, wc));
+                                runAlgorithm("lfu_k" + name, LFU_1K_E_real_Generator(k, e, rsi, rsa, wc, 0));
+                                runAlgorithm("lfu_bla_k" + name, LFU_1K_E_Generator(k, e, rsi, rsa, wc, 0));
                             }
 
 

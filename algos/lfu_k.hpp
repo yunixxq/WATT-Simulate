@@ -318,8 +318,8 @@ struct LFU_2K_E_real_ver2: public EvictStrategyKeepHistoryReadWrite{
 struct LFU_1K_E_real: public EvictStrategyKeepHistoryCombined{
     using upper = EvictStrategyKeepHistoryCombined;
 
-    LFU_1K_E_real(uint K, uint randSize, uint randSelector = 1, uint epoch_size = 1, uint write_cost = 1) :
-            upper(K, -1, epoch_size),
+    LFU_1K_E_real(uint K, uint randSize, uint randSelector = 1, uint epoch_size = 1, uint write_cost = 1, int Z=-1) :
+            upper(K, Z, epoch_size),
             randSelector(randSelector), // how many do we want to evict?
             randSize(randSize), // how many are evaluated
             writeCost(write_cost){}
@@ -372,8 +372,8 @@ struct LFU_1K_E_real: public EvictStrategyKeepHistoryCombined{
 struct LFU_1K_E_real_vers2: public EvictStrategyKeepHistoryCombined{
     using upper = EvictStrategyKeepHistoryCombined;
 
-    LFU_1K_E_real_vers2(uint K, uint randSize, uint randSelector = 1, uint epoch_size = 1, uint write_cost = 1) :
-            upper(K, -1, epoch_size),
+    LFU_1K_E_real_vers2(uint K, uint randSize, uint randSelector = 1, uint epoch_size = 1, uint write_cost = 1, int Z =-1) :
+            upper(K, Z, epoch_size),
             randSelector(randSelector), // how many do we want to evict?
             randSize(randSize), // how many are evaluated
             writeCost(write_cost){}
