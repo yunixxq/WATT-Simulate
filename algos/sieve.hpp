@@ -18,7 +18,7 @@ struct sieve: public EvictStrategyHashList<clock_list_type> {
     }
     std::list<clock_list_type>::iterator insertElement(const Access& access, std::list<clock_list_type>& ram) override{
         ram.push_back({access.pid, false});
-        return ram.begin();
+        return std::prev(ram.end());
     }
     std::list<clock_list_type>::iterator updateElement(std::list<clock_list_type>::iterator old, [[maybe_unused]] const Access& access, [[maybe_unused]] std::list<clock_list_type>& ram) override{
         old->second = true;
@@ -32,12 +32,11 @@ struct sieve: public EvictStrategyHashList<clock_list_type> {
                 pointer = ram.begin();
             }
             if (pointer->second == false){
-                auto me = pointer;
-                PID removed = me->first;
+                PID removed = pointer->first;
                 pointer++;
+                upper::ram.erase(fast_finder[removed]);
                 fast_finder.erase(removed);
-                upper::ram.erase(me);
-
+                return removed;
 
             }
             pointer->second=false;
