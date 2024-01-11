@@ -54,14 +54,17 @@ public:
     }
 
     template<class T>
-    void runAlgorithm(const std::string &name, std::function<T()> generator) {
+    void runAlgorithm(const std::string &name, std::function<T()> generator, bool parallel = true) {
         if (!hasAllValues(name)) {
             // PRE
             std::cout << name << std::endl;
             auto t1 = std::chrono::high_resolution_clock::now();
 
             // RUN
-            runParallelEvictStrategy(read_write_list[name], generator, missingValues(name));
+            if(parallel)
+                runParallelEvictStrategy(read_write_list[name], generator, missingValues(name));
+            else
+                generator().evaluateRamList(data, ramSizes, read_write_list[name]);
 
             // POST
             printToFile();
