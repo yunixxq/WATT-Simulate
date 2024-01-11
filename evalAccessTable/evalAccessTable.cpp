@@ -193,27 +193,24 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
         }
         KW = 4;
         // vary write cost
-        for (int wc = 0; wc <= 250; wc += 5) {
+        for(int wc=0; wc<= 200; wc+=5){
             string name = "watt_wc_";
-            if (wc < 10) name += "0";
-            if (wc < 100) name += "0";
-            name += to_string(wc);
-            write_cost = wc / 10.0;
-            runAlgorithm(name,
-                         LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
-                                                 first_value, mod, Z));
-            runAlgorithm("other" + name,
-                         LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
-                                                 first_value, mod, Z));
-            runAlgorithm("one" + name, LFU_1K_E_real_Generator(KR, epoch_size, randSize, randSelector, write_cost, Z));
+            if (wc<10) name+= "0";
+            if (wc<100) name+= "0";
+            name+= to_string(wc);
+            write_cost = wc/10.0;
+            runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
+                                                       first_value, mod, Z));
+            //runAlgorithm("other"+name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
+            //                                       first_value, mod, Z));
+            //runAlgorithm("one"+name, LFU_1K_E_real_Generator(KR, epoch_size, randSize, randSelector, write_cost, Z));
         }
         write_cost = 1;
 
-        runAlgorithm("WATT",
-                     LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
-                                             first_value, mod, Z));
-        runAlgorithm("OTHERWATT", LFU_2K_E_real_Generator(KR, KW, 2, randSize, randSelector, false, write_cost,
-                                                          0, mod, Z));
+        runAlgorithm("WATT", LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
+                                                       first_value, mod, Z));
+        runAlgorithm("OTHERWATT", LFU_2K_E_real_Generator(KR, KW, 2, randSize, randSelector, false, write_cost+1,
+                                                   0, mod, Z));
         runAlgorithm("ONEWATT", LFU_1K_E_real_Generator(16, epoch_size, randSize, randSelector, write_cost, Z));
 
         // Test Correlations 1 = randSize, 2= KR, 3 = epochs, 4= dampening, 5 = agg_func, 6 = kw
