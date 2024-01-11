@@ -656,6 +656,7 @@ void EvalAccessTable::advanced_compare_algos() {
 
 void EvalAccessTable::default_compare_algos() {
     runAlgorithmNonParallel("StaticOpt", StaticOpt());
+    runAlgorithm("Sieve", Sieve_Generator());
     runAlgorithm("arc", ARC_Generator());
     runAlgorithm("opt", Opt_Generator());
     runAlgorithm("clock", CLOCK_Generator());

@@ -59,6 +59,7 @@ std::function<LFU_2K_E_real_ver2()>
 LFU_2K_E_real2_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read, uint writeCost) {
     return [KR, KW, randSize, randSelector, write_as_read, epoch_size, writeCost](){
         return LFU_2K_E_real_ver2(KR, KW, randSize, randSelector, write_as_read, epoch_size, writeCost);};}
+std::function<sieve()> Sieve_Generator() {return defGenerator<sieve>();}
 
 std::function<leanEvict()> Lean_Generator(uint cooling_percentage){
     return [cooling_percentage](){return leanEvict(cooling_percentage);};}

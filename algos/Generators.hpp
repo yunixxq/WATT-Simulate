@@ -18,6 +18,7 @@
 #include "CLOCK.hpp"
 #include "LRFU.hpp"
 #include "ARC.hpp"
+#include "sieve.hpp"
 
 // Here unused, but for good includes
 #include "lruStackDist.hpp"
@@ -59,6 +60,7 @@ LFU_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelecto
     return LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, writeCost, first_value,
                                    mod, Z);
 }
+std::function<sieve()> Sieve_Generator();
 
 std::function<leanEvict()> Lean_Generator(uint cooling_percentage);
 std::function<leanEvict2()> Lean_Generator2(uint cooling_percentage);
