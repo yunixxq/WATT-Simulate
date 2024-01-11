@@ -88,6 +88,26 @@ struct LRU2a: public EvictStrategyContainer<std::list<PID>>{
 struct LRU2b: public EvictStrategyHashList<PID> {
     using upper = EvictStrategyHashList<PID>;
     LRU2b(): upper() {}
+
+    PID evictOne(Access) override{
+        typename std::list<PID>::iterator min = upper::ram.begin();
+        PID pid = *min;
+        fast_finder.erase(pid);
+        upper::ram.erase(min);
+        return pid;
+    }
+
+    std::list<PID>::iterator insertElement(const Access& access, std::list<PID>& ram) override{
+        ram.push_back(access.pid);
+        return std::prev(ram.end());
+    }
+    std::list<PID>::iterator updateElement(std::list<PID>::iterator old, [[maybe_unused]] const Access& access, std::list<PID>& ram) override{
+        PID value = *old;
+        ram.erase(old);
+        ram.push_back(value);
+        return std::prev(ram.end());
+    }
+
 };
 
 // Map by reftime (autosort), getfirst

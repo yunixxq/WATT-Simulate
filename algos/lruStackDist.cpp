@@ -7,6 +7,7 @@
 #include <iostream>
 #include <list>
 #include "lruStackDist.hpp"
+#include <algorithm>
 
 void LruStackDist::evaluateRamList(const std::vector<Access> &data, ramListType &ramList,
                      rwListSubType &readWriteList){

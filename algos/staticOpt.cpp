@@ -1,7 +1,7 @@
 //
 // Created by dev on 06.10.21.
 //
-
+#include <algorithm>
 #include "staticOpt.hpp"
 void StaticOpt::evaluateRamList(const std::vector<Access> &data, const ramListType &ramList,
                                 rwListSubType &readWriteList) {

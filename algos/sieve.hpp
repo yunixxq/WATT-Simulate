@@ -16,11 +16,11 @@ struct sieve: public EvictStrategyHashList<clock_list_type> {
         upper::reInit(ram_size);
         pointer = ram.begin();
     }
-    virtual typename std::list<clock_list_type>::iterator insertElement(const Access& access, std::list<clock_list_type>& ram){
+    std::list<clock_list_type>::iterator insertElement(const Access& access, std::list<clock_list_type>& ram) override{
         ram.push_back({access.pid, false});
         return ram.begin();
     }
-    typename std::list<clock_list_type>::iterator updateElement(typename std::list<clock_list_type>::iterator old, const Access& access, std::list<T>& ram){
+    std::list<clock_list_type>::iterator updateElement(std::list<clock_list_type>::iterator old, [[maybe_unused]] const Access& access, [[maybe_unused]] std::list<clock_list_type>& ram) override{
         old->second = true;
         return old;
     }

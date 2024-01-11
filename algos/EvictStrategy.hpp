@@ -15,6 +15,7 @@
 #include <cassert>
 #include <unordered_map>
 #include "general.hpp"
+#include <algorithm>
 
 // Comparator for History vectors
 static bool keepFirst(const std::vector<RefTime>& l, const std::vector<RefTime>& r) {
@@ -290,34 +291,21 @@ protected:
             fast_finder[access.pid] = insertElement(access, upper::ram);
         }
     };
-    virtual PID evictOne(Access) override{
-        typename std::list<T>::iterator min = upper::ram.begin();
-        PID pid = *min;
-        fast_finder.erase(pid);
-        upper::ram.erase(min);
-        return pid;
-    }
+    virtual PID evictOne(Access) = 0;
 
     /**
      * Algorithm specific Insert Function
      * @param access
      * @return Iterator for pos in RAM
      */
-    virtual typename std::list<T>::iterator insertElement(const Access& access, std::list<T>& ram){
-        ram.push_back(access.pid);
-        return std::prev(ram.end());
-    }
+    virtual typename std::list<T>::iterator insertElement(const Access& access, std::list<T>& ram) = 0;
     /**
      * Algorithm specific update Function
      * @param old current position in RAM
      * @param access
      * @return Iterator for pos in RAM
      */
-    virtual typename std::list<T>::iterator updateElement(typename std::list<T>::iterator old, const Access& access, std::list<T>& ram){
-        ram.erase(old);
-        ram.push_back(access.pid);
-        return std::prev(ram.end());
-    }
+    virtual typename std::list<T>::iterator updateElement(typename std::list<T>::iterator old, [[maybe_unused]] const Access& access, std::list<T>& ram) = 0;
 
 };
 
