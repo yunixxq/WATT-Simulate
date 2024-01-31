@@ -56,7 +56,7 @@ double get_frequency_lucas(std::vector<RefTime>& array, RefTime now, float first
     return avg;
 }
 
-double get_frequency_sieve(std::vector<RefTime>& array, RefTime now, float first_value) {
+double get_frequency_sieve(std::vector<RefTime>& array, RefTime now, [[maybe_unused]] float _) {
     int length = array.size();
     if(length==0)
         return 0;

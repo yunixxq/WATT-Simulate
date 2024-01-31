@@ -164,6 +164,8 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                 case mod_lucas:
                     name += "lucas";
                     break;
+                case mod_sieve:
+                    name += "error";
             }
             runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
                                                        write_cost, first_value, mod, Z));
@@ -282,6 +284,8 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                     case mod_lucas:
                         name_inner += "lucas";
                         break;
+                    case mod_sieve:
+                        name_inner += "error";
                 }
                 runAlgorithm(name_inner,
                              LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
@@ -357,6 +361,8 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                     case mod_lucas:
                         name_inner += "lucas";
                         break;
+                    case mod_sieve:
+                        name_inner += "error";
                 }
                 runAlgorithm(name_inner,
                              LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
@@ -419,6 +425,8 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                     case mod_lucas:
                         name_inner += "lucas";
                         break;
+                    case mod_sieve:
+                        name_inner += "error";
                 }
                 runAlgorithm(name_inner,
                              LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
@@ -465,6 +473,8 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                     case mod_lucas:
                         name_inner += "lucas";
                         break;
+                    case mod_sieve:
+                        name_inner += "error";
                 }
                 runAlgorithm(name_inner,
                              LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
@@ -504,6 +514,8 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                 case mod_lucas:
                     name += "lucas";
                     break;
+                case mod_sieve:
+                    name += "error";
             }
             // 6
             for (uint KW: (std::initializer_list<uint>) {1, 2, 4, 8, 16, 32, 64, KW_max_value}) {
