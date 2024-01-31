@@ -8,9 +8,10 @@ double get_frequency_min(std::vector<RefTime>& candidate, RefTime curr_time, flo
 double get_frequency_avg(std::vector<RefTime>& candidate, RefTime curr_time, float first_value=1.0);
 double get_frequency_median(std::vector<RefTime>& array, RefTime now, float first_value=1.0);
 double get_frequency_lucas(std::vector<RefTime>& array, RefTime now, float first_value=1.0);
+double get_frequency_sieve(std::vector<RefTime>& array, RefTime now, float first_value=1.0);
 double get_frequency(std::vector<std::pair<RefTime, bool>>& candidate, RefTime curr_time, uint write_cost);
 
-enum modus { mod_min, mod_avg, mod_median, mod_max, mod_lucas };
+enum modus { mod_min, mod_avg, mod_median, mod_max, mod_lucas, mod_sieve };
 
 struct LFU_K: public EvictStrategyHistory{
     using upper = EvictStrategyHistory;
@@ -185,6 +186,9 @@ struct LFU_2K_E_real: public EvictStrategyKeepHistoryReadWrite{
                 break;
             case mod_lucas:
                 compare_funct = get_frequency_lucas;
+                break;
+            case mod_sieve:
+                compare_funct = get_frequency_sieve;
                 break;
         }
     }

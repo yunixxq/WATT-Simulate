@@ -56,6 +56,14 @@ double get_frequency_lucas(std::vector<RefTime>& array, RefTime now, float first
     return avg;
 }
 
+double get_frequency_sieve(std::vector<RefTime>& array, RefTime now, float first_value) {
+    int length = array.size();
+    if(length==0)
+        return 0;
+    RefTime last_duration = now - array[0];
+    return length * length * last_duration;
+}
+
 double get_frequency(std::vector<std::pair<RefTime, bool>>& candidate, RefTime curr_time, [[maybe_unused]] uint write_cost){
     if(candidate.empty()){
         return 0;

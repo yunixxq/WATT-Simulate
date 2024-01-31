@@ -209,6 +209,8 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
 
         runAlgorithm("WATT", LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
                                                        first_value, mod, Z));
+        runAlgorithm("WATT_TEST", LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
+                                                       first_value, mod_sieve, Z));
         runAlgorithm("OTHERWATT", LFU_2K_E_real_Generator(KR, KW, 2, randSize, randSelector, false, write_cost+1,
                                                    0, mod, Z));
         runAlgorithm("ONEWATT", LFU_1K_E_real_Generator(16, epoch_size, randSize, randSelector, write_cost, Z));
