@@ -208,6 +208,7 @@ struct LFU_2K_E_real: public EvictStrategyKeepHistoryReadWrite{
 
         // Sort elements by frequency; //std::min_element
         auto comperator = gt_compare_freq(compare_funct, curr_time, this->write_as_read, this->writeCost, first_value);
+        // If I just evict one element, take max_element: Else build heap
         if(randSelector<=1){
             std::vector<ram_type::iterator>::iterator min_iterator = std::max_element(elements.begin(), elements.end(), comperator);
             ram_type::iterator element = *min_iterator;
