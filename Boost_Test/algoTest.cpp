@@ -85,45 +85,45 @@ BOOST_AUTO_TEST_SUITE(compare_algo)
         int Z = 0;
         runAlgo(instance, WATT_RO_NoRAND_OneEVICT_Generator(K), "lfu_K" + std::to_string(K));
         BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Generator(K, Z), "lfu_K"+std::to_string(K)+"_Z"+std::to_string(Z), "lfu_K" + std::to_string(K)));
-        BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(K, Z), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z), "lfu_K" + std::to_string(K)));
+        BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(K, Z, true, 0), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z), "lfu_K" + std::to_string(K)));
 
         K = 2;
         Z = 0;
         runAlgo(instance, WATT_RO_NoRAND_OneEVICT_Generator(K), "lfu_K" + std::to_string(K));
         BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Generator(K, Z), "lfu_K"+std::to_string(K)+"_Z"+std::to_string(Z), "lfu_K" + std::to_string(K)));
-        BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(K, Z), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z), "lfu_K" + std::to_string(K)));
+        BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(K, Z, true, 0), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z), "lfu_K" + std::to_string(K)));
 
         K = 10;
         Z = 0;
         runAlgo(instance, WATT_RO_NoRAND_OneEVICT_Generator(K), "lfu_K" + std::to_string(K));
         BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Generator(K, Z), "lfu_K"+std::to_string(K)+"_Z"+std::to_string(Z), "lfu_K" + std::to_string(K)));
-        BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(K, Z), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z), "lfu_K" + std::to_string(K)));
+        BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(K, Z, true, 0), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z), "lfu_K" + std::to_string(K)));
 
         // Out of Ram History
         K = 1;
         Z = 1;
         runAlgo(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Generator(K, Z), "lfu_K"+std::to_string(K)+"_Z"+std::to_string(Z));
-        BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(K, Z), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z), "lfu_K" + std::to_string(K) + "_Z" + std::to_string(Z)));
+        BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(K, Z, true, 0), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z), "lfu_K" + std::to_string(K) + "_Z" + std::to_string(Z)));
 
         K = 1;
         Z = 10;
         runAlgo(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Generator(K, Z), "lfu_K"+std::to_string(K)+"_Z"+std::to_string(Z));
-        BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(K, Z), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z), "lfu_K" + std::to_string(K) + "_Z" + std::to_string(Z)));
+        BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(K, Z, true, 0), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z), "lfu_K" + std::to_string(K) + "_Z" + std::to_string(Z)));
 
         K = 2;
         Z = 10;
         runAlgo(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Generator(K, Z), "lfu_K"+std::to_string(K)+"_Z"+std::to_string(Z));
-        BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(K, Z), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z), "lfu_K" + std::to_string(K) + "_Z" + std::to_string(Z)));
+        BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(K, Z, true, 0), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z), "lfu_K" + std::to_string(K) + "_Z" + std::to_string(Z)));
 
         K = 2;
         Z = -10;
         runAlgo(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Generator(K, Z), "lfu_K"+std::to_string(K)+"_Z"+std::to_string(Z));
-        BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(K, Z), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z), "lfu_K" + std::to_string(K) + "_Z" + std::to_string(Z)));
+        BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(K, Z, true, 0), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z), "lfu_K" + std::to_string(K) + "_Z" + std::to_string(Z)));
 
         K = 10;
         Z = 10;
         runAlgo(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Generator(K, Z), "lfu_K"+std::to_string(K)+"_Z"+std::to_string(Z));
-        BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(K, Z), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z), "lfu_K" + std::to_string(K) + "_Z" + std::to_string(Z)));
+        BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(K, Z, true, 0), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z), "lfu_K" + std::to_string(K) + "_Z" + std::to_string(Z)));
         // BOOST_TEST(compareToOther(instance, LFU1_K_Z_D_Generator(K, Z, 10), "lfu2_K" + std::to_string(K) + "_Z" + std::to_string(Z) + "_D10", "lfu_K" + std::to_string(K) + "_Z" + std::to_string(Z)));
  }
     BOOST_AUTO_TEST_CASE(opt) {

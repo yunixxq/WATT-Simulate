@@ -21,9 +21,10 @@ struct WATT_RO_NoRAND_OneEVICT: public EvictStrategyHistory{
         container_type::iterator runner = ram.begin();
         PID candidate = runner->first;
         double candidate_freq = get_frequency_max(runner->second, curr_time);
+        ++runner;
         while(runner!= ram.end()){
             double runner_freq = get_frequency_max(runner->second, curr_time);
-            if(runner_freq < candidate_freq){
+            if(runner_freq <= candidate_freq){
                 candidate = runner->first;
                 candidate_freq = runner_freq;
             }

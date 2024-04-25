@@ -571,19 +571,19 @@ protected:
             entry.first.reserve(K_R);
             entry.second.reserve(K_W);
         }
-        if (!inRam || increment_epoch_on_each_access){
-            curr_epoch_size++;
-            if(curr_epoch_size >= epoch_size_iter){
-                curr_epoch++;
-                curr_epoch_size -= epoch_size_iter;
-            }
-        }
         // if is read or write is logged as read : push to readList
         if(write_as_read || !access.write){
             push_frontAndResize(ram[access.pid].first, K_R, curr_epoch);
         }
         if(access.write){
             push_frontAndResize(ram[access.pid].second, K_W, curr_epoch);
+        }
+        if (!inRam || increment_epoch_on_each_access){
+            curr_epoch_size++;
+            if(curr_epoch_size >= epoch_size_iter){
+                curr_epoch++;
+                curr_epoch_size -= epoch_size_iter;
+            }
         }
     };
 
