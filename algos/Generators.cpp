@@ -18,14 +18,14 @@ std::function<ARC()> ARC_Generator(){return defGenerator<ARC>();}
 std::function<CF_LRU()> CfLRUGenerator(int percentage) {return defGeneratorOne<CF_LRU>(percentage);}
 std::function<hyperbolic()> Hyperbolic_generator(uint randSize){return defGeneratorOne<hyperbolic>(randSize);}
 
-std::function<LFU_K()> LFU_K_Generator(int K){
-    return [K](){return LFU_K(K);};}
+std::function<WATT_RO_NoRAND_OneEVICT()> WATT_RO_NoRAND_OneEVICT_Generator(int K){
+    return [K](){return WATT_RO_NoRAND_OneEVICT(K);};}
 
-std::function<LFU_K_Z()> LFU_K_Z_Generator(int K, int Z){
-    return [K, Z](){return LFU_K_Z(K, Z);};}
+std::function<WATT_RO_NoRAND_OneEVICT_HISTORY()> WATT_RO_NoRAND_OneEVICT_HISTORY_Generator(int K, int Z){
+    return [K, Z](){return WATT_RO_NoRAND_OneEVICT_HISTORY(K, Z);};}
 
-std::function<LFU2_K_Z()> LFU2_K_Z_Generator(int K, int Z){
-    return [K, Z](){return LFU2_K_Z(K, Z);};}
+std::function<WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes()> WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(int K, int Z){
+    return [K, Z](){return WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes(K, Z);};}
 
 std::function<LFUalt_K()> LFUalt_K_Generator(int K){
     return [K](){return LFUalt_K(K);};}
@@ -33,32 +33,32 @@ std::function<LFUalt_K()> LFUalt_K_Generator(int K){
 std::function<LRU_K_Z()> LRU_K_Z_Generator(int K, int Z){
     return [K, Z](){return LRU_K_Z(K, Z);};}
 
-std::function<LFU_2K_Z()> LFU_2K_Z_Generator(uint K_read, uint K_write, int out_of_ram_history_length, bool writes_as_reads){
-    return [K_read, K_write, out_of_ram_history_length, writes_as_reads](){return LFU_2K_Z(K_read, K_write, out_of_ram_history_length, writes_as_reads);};}
+std::function<WATT_NoRAND_OneEVICT_HISTORY()> WATT_NoRAND_OneEVICT_HISTORY_Generator(uint K_read, uint K_write, int out_of_ram_history_length, bool writes_as_reads){
+    return [K_read, K_write, out_of_ram_history_length, writes_as_reads](){return WATT_NoRAND_OneEVICT_HISTORY(K_read, K_write, out_of_ram_history_length, writes_as_reads);};}
 
-std::function<LFU_2K_Z_rand()> LFU_2K_Z_rand_Generator(uint K_read, uint K_write, int out_of_ram_history_length, uint randSize, bool writes_as_reads){
-    return [K_read, K_write, out_of_ram_history_length, randSize, writes_as_reads](){return LFU_2K_Z_rand(K_read, K_write, out_of_ram_history_length, randSize, writes_as_reads);};}
+std::function<WATT_ScanRANDOM_OneEVICT_HISTORY()> WATT_ScanRANDOM_OneEVICT_HISTORY_Generator(uint K_read, uint K_write, int out_of_ram_history_length, uint randSize, bool writes_as_reads){
+    return [K_read, K_write, out_of_ram_history_length, randSize, writes_as_reads](){return WATT_ScanRANDOM_OneEVICT_HISTORY(K_read, K_write, out_of_ram_history_length, randSize, writes_as_reads);};}
 
-std::function<LFU_1K_E_real()>
-LFU_1K_E_real_Generator(uint K, uint epoch_size, uint randSize, uint randSelector, uint write_cost, int Z) {
+std::function<WATT_OneListBool_RANDOMHeap_N_EVICT_HISTORY()>
+WATT_OneListBool_RANDOMHeap_N_EVICT_HISTORY_Generator(uint K, uint epoch_size, uint randSize, uint randSelector, uint write_cost, int Z) {
     return [K, randSize, randSelector, epoch_size, write_cost, Z](){
-        return LFU_1K_E_real(K, randSize, randSelector, epoch_size, write_cost, Z);};}
+        return WATT_OneListBool_RANDOMHeap_N_EVICT_HISTORY(K, randSize, randSelector, epoch_size, write_cost, Z);};}
 
-std::function<LFU_1K_E_real_vers2()>
-LFU_1K_E_Generator(uint K, uint epoch_size, uint randSize, uint randSelector, uint write_cost, int Z){
+std::function<WATT_OneListDirty_RANDOMHeap_N_EVICT_HISTORY()>
+WATT_OneListDirty_RANDOMHeap_N_EVICT_HISTORY_Generator(uint K, uint epoch_size, uint randSize, uint randSelector, uint write_cost, int Z){
     return [K, randSize, randSelector, epoch_size, write_cost, Z](){
-        return LFU_1K_E_real_vers2(K, randSize, randSelector, epoch_size, write_cost, Z);};}
+        return WATT_OneListDirty_RANDOMHeap_N_EVICT_HISTORY(K, randSize, randSelector, epoch_size, write_cost, Z);};}
 
-std::function<LFU_2K_E_real()>
-LFU_2K_E_real_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read,
+std::function<WATT_RANDOMHeap_N_EVICT_HISTORY()>
+WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read,
                         float write_cost, float first_value, modus mod, int Z) {
     return [KR, KW, randSize, randSelector, write_as_read, epoch_size, write_cost, first_value, mod, Z](){
-        return LFU_2K_E_real(KR, KW, randSize, randSelector, write_as_read, epoch_size, write_cost, first_value, mod, Z);};}
+        return WATT_RANDOMHeap_N_EVICT_HISTORY(KR, KW, randSize, randSelector, write_as_read, epoch_size, write_cost, first_value, mod, Z);};}
 
-std::function<LFU_2K_E_real_ver2()>
-LFU_2K_E_real2_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read, uint writeCost) {
+std::function<WATT_RANDOMHeap_N_EVICT_IFDirty_HISTORY()>
+WATT_RANDOMHeap_N_EVICT_IFDirty_HISTORY_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read, uint writeCost) {
     return [KR, KW, randSize, randSelector, write_as_read, epoch_size, writeCost](){
-        return LFU_2K_E_real_ver2(KR, KW, randSize, randSelector, write_as_read, epoch_size, writeCost);};}
+        return WATT_RANDOMHeap_N_EVICT_IFDirty_HISTORY(KR, KW, randSize, randSelector, write_as_read, epoch_size, writeCost);};}
 std::function<sieve()> Sieve_Generator() {return defGenerator<sieve>();}
 
 std::function<leanEvict()> Lean_Generator(uint cooling_percentage){
@@ -84,7 +84,6 @@ std::function<LRU1()> LRU1_Generator() {return defGenerator<LRU1>();}
 std::function<LRU2()> LRU2_Generator() {return defGenerator<LRU2>();}
 std::function<LRU2a()> LRU2a_Generator() {return defGenerator<LRU2a>();}
 std::function<LRU2b()> LRU2b_Generator() {return defGenerator<LRU2b>();}
-std::function<LRU3()> LRU3_Generator() {return defGenerator<LRU3>();}
 
 //slooow
 std::function<OPT2()> Opt2_Generator() {return defGenerator<OPT2>();}

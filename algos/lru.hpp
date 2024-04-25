@@ -109,21 +109,3 @@ struct LRU2b: public EvictStrategyHashList<PID> {
     }
 
 };
-
-// Map by reftime (autosort), getfirst
-struct LRU3: public EvictStrategyContainer<std::map<RefTime, PID >> {
-    using upper = EvictStrategyContainer<std::map<RefTime, PID >>;
-    LRU3(): upper() {}
-
-    void access(const Access& access) override{
-        ram.erase(access.lastRef);
-        ram[access.pos]=access.pid;
-    };
-    PID evictOne(Access) override{
-        auto candidate = ram.begin();
-        PID pid = candidate->second;
-        ram.erase(candidate);
-        return pid;
-
-    }
-};

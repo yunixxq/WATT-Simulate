@@ -24,7 +24,6 @@ using rwListType = std::map<std::string, rwListSubType>;
 struct Access {
     PID pid=0;
     RefTime nextRef=0;
-    RefTime lastRef=-1;
     RefTime pos=0;
     bool write=false;
 };

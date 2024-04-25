@@ -575,13 +575,12 @@ protected:
                 curr_epoch_size -= epoch_size_iter;
             }
         }
-        push_frontAndResize(
-                access.write ? ram[access.pid].second : ram[access.pid].first,
-                access.write ? K_W : K_R,
-                curr_epoch);
-        // if is write and write is logged as read: push to readList
-        if(write_as_read && access.write){
+        // if is read or write is logged as read : push to readList
+        if(write_as_read || !access.write){
             push_frontAndResize(ram[access.pid].first, K_R, curr_epoch);
+        }
+        if(access.write){
+            push_frontAndResize(ram[access.pid].second, K_W, curr_epoch);
         }
     };
 

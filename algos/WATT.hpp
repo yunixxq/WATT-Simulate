@@ -13,9 +13,9 @@ double get_frequency(std::vector<std::pair<RefTime, bool>>& candidate, RefTime c
 
 enum modus { mod_min, mod_avg, mod_median, mod_max, mod_lucas, mod_sieve };
 
-struct LFU_K: public EvictStrategyHistory{
+struct WATT_RO_NoRAND_OneEVICT: public EvictStrategyHistory{
     using upper = EvictStrategyHistory;
-    LFU_K(int K): upper(K) {}
+    WATT_RO_NoRAND_OneEVICT(int K): upper(K) {}
 
     PID chooseEviction(RefTime curr_time) override{
         container_type::iterator runner = ram.begin();
@@ -33,10 +33,10 @@ struct LFU_K: public EvictStrategyHistory{
     }
 };
 
-struct LFU_K_Z: public EvictStrategyKeepHistoryOneList{
+struct WATT_RO_NoRAND_OneEVICT_HISTORY: public EvictStrategyKeepHistoryOneList{
     using upper = EvictStrategyKeepHistoryOneList;
     using container_type = EvictStrategyHistory::container_type;
-    LFU_K_Z(int K, int Z): upper(K,Z) {}
+    WATT_RO_NoRAND_OneEVICT_HISTORY(int K, int Z): upper(K,Z) {}
 
     PID chooseEviction(RefTime curr_time) override{
         container_type::iterator runner = ram.begin();
@@ -55,17 +55,18 @@ struct LFU_K_Z: public EvictStrategyKeepHistoryOneList{
     }
 };
 
-struct LFU2_K_Z: public EvictStrategyKeepHistoryReadWrite{
+struct WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes: public EvictStrategyKeepHistoryReadWrite{
     using upper = EvictStrategyKeepHistoryReadWrite;
-    LFU2_K_Z(int K, int Z): upper(K, 0, Z) {}
+    WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes(int K, int Z): upper(K, 0, Z, true, 0) {}
 
     PID chooseEviction(RefTime curr_time)  override{
         ram_type::iterator runner = ram.begin();
         PID candidate = runner->first;
         double candidate_freq = get_frequency_max(runner->second.first, curr_time);
+        ++ runner;
         while(runner!= ram.end()){
             double runner_freq = get_frequency_max(runner->second.first, curr_time);
-            if(runner_freq < candidate_freq){
+            if(runner_freq <= candidate_freq){
                 candidate = runner->first;
                 candidate_freq = runner_freq;
             }
@@ -76,10 +77,10 @@ struct LFU2_K_Z: public EvictStrategyKeepHistoryReadWrite{
 
 };
 
-struct LFU_2K_Z: public EvictStrategyKeepHistoryReadWrite{
+struct WATT_NoRAND_OneEVICT_HISTORY: public EvictStrategyKeepHistoryReadWrite{
     using upper = EvictStrategyKeepHistoryReadWrite;
 
-    LFU_2K_Z(uint KR, uint KW, int Z, bool write_as_read): upper(KR, KW, Z, write_as_read){}
+    WATT_NoRAND_OneEVICT_HISTORY(uint KR, uint KW, int Z, bool write_as_read): upper(KR, KW, Z, write_as_read, 0){}
 
     PID chooseEviction(RefTime curr_time) override{
         ram_type::iterator runner = ram.begin();
@@ -107,10 +108,10 @@ struct LFU_2K_Z: public EvictStrategyKeepHistoryReadWrite{
 
 };
 
-struct LFU_2K_Z_rand: public EvictStrategyKeepHistoryReadWrite{
+struct WATT_ScanRANDOM_OneEVICT_HISTORY: public EvictStrategyKeepHistoryReadWrite{
     using upper = EvictStrategyKeepHistoryReadWrite;
 
-    LFU_2K_Z_rand(uint KR, uint KW, int Z, uint randSize, bool write_as_read):
+    WATT_ScanRANDOM_OneEVICT_HISTORY(uint KR, uint KW, int Z, uint randSize, bool write_as_read):
         upper(KR, KW, Z, write_as_read),
         randSize(randSize){}
 
@@ -160,11 +161,11 @@ struct LFU_2K_Z_rand: public EvictStrategyKeepHistoryReadWrite{
 };
 
 // Current WATT Implementation
-struct LFU_2K_E_real: public EvictStrategyKeepHistoryReadWrite{
+struct WATT_RANDOMHeap_N_EVICT_HISTORY: public EvictStrategyKeepHistoryReadWrite{
     using upper = EvictStrategyKeepHistoryReadWrite;
     using compare_func = std::function<double(std::vector<RefTime>& , RefTime , float)>;
 
-    LFU_2K_E_real(uint KR, uint KW, uint randSize, uint randSelector = 1, bool write_as_read = true,
+    WATT_RANDOMHeap_N_EVICT_HISTORY(uint KR, uint KW, uint randSize, uint randSelector = 1, bool write_as_read = true,
                   uint epoch_size = 1, float write_cost = 1, float first_value = 1.0, modus modus = mod_max, int Z = -1) :
             upper(KR, KW, Z, write_as_read, epoch_size),
             randSelector(randSelector), // how many do we want to evict?
@@ -255,10 +256,10 @@ struct LFU_2K_E_real: public EvictStrategyKeepHistoryReadWrite{
 };
 
 // WATT but count Write_Freq only if page is dirty
-struct LFU_2K_E_real_ver2: public EvictStrategyKeepHistoryReadWrite{
+struct WATT_RANDOMHeap_N_EVICT_IFDirty_HISTORY: public EvictStrategyKeepHistoryReadWrite{
     using upper = EvictStrategyKeepHistoryReadWrite;
 
-    LFU_2K_E_real_ver2(uint KR, uint KW, uint randSize, uint randSelector = 1, bool write_as_read = true,
+    WATT_RANDOMHeap_N_EVICT_IFDirty_HISTORY(uint KR, uint KW, uint randSize, uint randSelector = 1, bool write_as_read = true,
                   uint epoch_size = 1, uint write_cost = 1) :
             upper(KR, KW, -1, write_as_read, epoch_size),
             randSelector(randSelector), // how many do we want to evict?
@@ -320,10 +321,10 @@ struct LFU_2K_E_real_ver2: public EvictStrategyKeepHistoryReadWrite{
 };
 
 // Current WATT, but use only one list & annotate writes with a bool
-struct LFU_1K_E_real: public EvictStrategyKeepHistoryCombined{
+struct WATT_OneListBool_RANDOMHeap_N_EVICT_HISTORY: public EvictStrategyKeepHistoryCombined{
     using upper = EvictStrategyKeepHistoryCombined;
 
-    LFU_1K_E_real(uint K, uint randSize, uint randSelector = 1, uint epoch_size = 1, uint write_cost = 1, int Z=-1) :
+    WATT_OneListBool_RANDOMHeap_N_EVICT_HISTORY(uint K, uint randSize, uint randSelector = 1, uint epoch_size = 1, uint write_cost = 1, int Z=-1) :
             upper(K, Z, epoch_size),
             randSelector(randSelector), // how many do we want to evict?
             randSize(randSize), // how many are evaluated
@@ -374,10 +375,10 @@ struct LFU_1K_E_real: public EvictStrategyKeepHistoryCombined{
 
 };
 // Like onelisted WATT, but ignore writes and just focus on "is dirty"
-struct LFU_1K_E_real_vers2: public EvictStrategyKeepHistoryCombined{
+struct WATT_OneListDirty_RANDOMHeap_N_EVICT_HISTORY: public EvictStrategyKeepHistoryCombined{
     using upper = EvictStrategyKeepHistoryCombined;
 
-    LFU_1K_E_real_vers2(uint K, uint randSize, uint randSelector = 1, uint epoch_size = 1, uint write_cost = 1, int Z =-1) :
+    WATT_OneListDirty_RANDOMHeap_N_EVICT_HISTORY(uint K, uint randSize, uint randSelector = 1, uint epoch_size = 1, uint write_cost = 1, int Z =-1) :
             upper(K, Z, epoch_size),
             randSelector(randSelector), // how many do we want to evict?
             randSize(randSize), // how many are evaluated

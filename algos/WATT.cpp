@@ -2,7 +2,7 @@
 // Created by dev on 27.10.21.
 //
 
-#include "lfu_k.hpp"
+#include "WATT.hpp"
 
 float minn(float a, float b) { return a<b ? a : b; }
 float maxx(float a, float b) { return a>b ? a : b; }

@@ -59,12 +59,12 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                 name += "0";
             name += to_string(randSize);
             runAlgorithm(name,
-                         LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
+                         WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
                                                  first_value, mod, Z));
             runAlgorithm("other" + name,
-                         LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
+                         WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
                                                  first_value, mod, Z));
-            runAlgorithm("one" + name, LFU_1K_E_real_Generator(KR, epoch_size, randSize, randSelector, write_cost, Z));
+            runAlgorithm("one" + name, WATT_OneListBool_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, epoch_size, randSize, randSelector, write_cost, Z));
         }
         randSize = 8;
 
@@ -79,12 +79,12 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
             }
 
             runAlgorithm(name,
-                         LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
+                         WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
                                                  first_value, mod, Z));
             runAlgorithm("other" + name,
-                         LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
+                         WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
                                                  first_value, mod, Z));
-            runAlgorithm("one" + name, LFU_1K_E_real_Generator(KR, epoch_size, randSize, randSelector, write_cost, Z));
+            runAlgorithm("one" + name, WATT_OneListBool_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, epoch_size, randSize, randSelector, write_cost, Z));
         }
         KR = 8;
 
@@ -99,12 +99,12 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                 name += to_string(epoch_size);
             }
             runAlgorithm(name,
-                         LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
+                         WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
                                                  first_value, mod, Z));
             runAlgorithm("other" + name,
-                         LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
+                         WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
                                                  first_value, mod, Z));
-            runAlgorithm("one" + name, LFU_1K_E_real_Generator(KR, epoch_size, randSize, randSelector, write_cost, Z));
+            runAlgorithm("one" + name, WATT_OneListBool_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, epoch_size, randSize, randSelector, write_cost, Z));
 
         }
         epoch_size = 4;
@@ -117,12 +117,12 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
             if (i < 100) name += "0";
             name += to_string(i);
             runAlgorithm(name,
-                         LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
+                         WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
                                                  first_value, mod, Z));
             runAlgorithm("other" + name,
-                         LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
+                         WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
                                                  first_value, mod, Z));
-            runAlgorithm("one" + name, LFU_1K_E_real_Generator(KR, epoch_size, randSize, randSelector, write_cost, Z));
+            runAlgorithm("one" + name, WATT_OneListBool_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, epoch_size, randSize, randSelector, write_cost, Z));
         }
         first_value = 0.1;
         // keep history
@@ -137,12 +137,12 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                 name += to_string(Z);
             }
             runAlgorithm(name,
-                         LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
+                         WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
                                                  first_value, mod, Z));
             runAlgorithm("other" + name,
-                         LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
+                         WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
                                                  first_value, mod, Z));
-            runAlgorithm("one" + name, LFU_1K_E_real_Generator(KR, epoch_size, randSize, randSelector, write_cost, Z));
+            runAlgorithm("one" + name, WATT_OneListBool_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, epoch_size, randSize, randSelector, write_cost, Z));
         }
         Z = 0;
         // avg min max
@@ -167,12 +167,12 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                 case mod_sieve:
                     name += "error";
             }
-            runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
+            runAlgorithm(name, WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
                                                        write_cost, first_value, mod, Z));
             runAlgorithm("other" + name,
-                         LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
+                         WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
                                                  first_value, mod, Z));
-            runAlgorithm("one" + name, LFU_1K_E_real_Generator(KR, epoch_size, randSize, randSelector, write_cost, Z));
+            runAlgorithm("one" + name, WATT_OneListBool_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, epoch_size, randSize, randSelector, write_cost, Z));
         }
         mod = mod_max;
         // read and writes
@@ -186,12 +186,12 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                 if (KW < 10) name += "0";
                 name += to_string(KW);
             }
-            runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
+            runAlgorithm(name, WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
                                                        write_cost, first_value, mod, Z));
             runAlgorithm("other" + name,
-                         LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
+                         WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
                                                  first_value, mod, Z));
-            runAlgorithm("one" + name, LFU_1K_E_real_Generator(KR, epoch_size, randSize, randSelector, write_cost, Z));
+            runAlgorithm("one" + name, WATT_OneListBool_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, epoch_size, randSize, randSelector, write_cost, Z));
         }
         KW = 4;
         // vary write cost
@@ -201,7 +201,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
             if (wc<100) name+= "0";
             name+= to_string(wc);
             write_cost = wc/10.0;
-            runAlgorithm(name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
+            runAlgorithm(name, WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
                                                        first_value, mod, Z));
             //runAlgorithm("other"+name, LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, false, write_cost,
             //                                       first_value, mod, Z));
@@ -209,13 +209,13 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
         }
         write_cost = 1;
 
-        runAlgorithm("WATT", LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
+        runAlgorithm("WATT", WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
                                                        first_value, mod, Z));
-        runAlgorithm("WATT_TEST", LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
+        runAlgorithm("WATT_TEST", WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, write_cost,
                                                        first_value, mod_sieve, Z));
-        runAlgorithm("OTHERWATT", LFU_2K_E_real_Generator(KR, KW, 2, randSize, randSelector, false, write_cost+1,
+        runAlgorithm("OTHERWATT", WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, 2, randSize, randSelector, false, write_cost+1,
                                                    0, mod, Z));
-        runAlgorithm("ONEWATT", LFU_1K_E_real_Generator(16, epoch_size, randSize, randSelector, write_cost, Z));
+        runAlgorithm("ONEWATT", WATT_OneListBool_RANDOMHeap_N_EVICT_HISTORY_Generator(16, epoch_size, randSize, randSelector, write_cost, Z));
 
         // Test Correlations 1 = randSize, 2= KR, 3 = epochs, 4= dampening, 5 = agg_func, 6 = kw
 
@@ -234,7 +234,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                     name_inner += to_string(KR);
                 }
                 runAlgorithm(name_inner,
-                             LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
+                             WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
                                                      write_cost,
                                                      first_value, mod, Z));
             }
@@ -248,7 +248,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                     name_inner += to_string(epoch_size);
                 }
                 runAlgorithm(name_inner,
-                             LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
+                             WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
                                                      write_cost,
                                                      first_value, mod, Z));
             }
@@ -260,7 +260,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                 if (i < 100) name_inner += "0";
                 name_inner += to_string(i);
                 runAlgorithm(name_inner,
-                             LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
+                             WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
                                                      write_cost,
                                                      first_value, mod, Z));
             }
@@ -288,7 +288,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                         name_inner += "error";
                 }
                 runAlgorithm(name_inner,
-                             LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
+                             WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
                                                      write_cost, first_value, mod, Z));
             }
 
@@ -302,7 +302,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                     name_inner += to_string(KW);
                 }
                 runAlgorithm(name_inner,
-                             LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
+                             WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
                                                      write_cost, first_value, mod, Z));
             }
         }
@@ -325,7 +325,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                     name_inner += to_string(epoch_size);
                 }
                 runAlgorithm(name_inner,
-                             LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
+                             WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
                                                      write_cost,
                                                      first_value, mod, Z));
             }
@@ -337,7 +337,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                 if (i < 100) name_inner += "0";
                 name_inner += to_string(i);
                 runAlgorithm(name_inner,
-                             LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
+                             WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
                                                      write_cost,
                                                      first_value, mod, Z));
             }
@@ -365,7 +365,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                         name_inner += "error";
                 }
                 runAlgorithm(name_inner,
-                             LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
+                             WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
                                                      write_cost, first_value, mod, Z));
             }
 
@@ -379,7 +379,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                     name_inner += to_string(KW);
                 }
                 runAlgorithm(name_inner,
-                             LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
+                             WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
                                                      write_cost, first_value, mod, Z));
             }
         }
@@ -401,7 +401,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                 if (i < 100) name_inner += "0";
                 name_inner += to_string(i);
                 runAlgorithm(name_inner,
-                             LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
+                             WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
                                                      write_cost,
                                                      first_value, mod, Z));
             }
@@ -429,7 +429,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                         name_inner += "error";
                 }
                 runAlgorithm(name_inner,
-                             LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
+                             WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
                                                      write_cost, first_value, mod, Z));
             }
 
@@ -443,7 +443,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                     name_inner += to_string(KW);
                 }
                 runAlgorithm(name_inner,
-                             LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
+                             WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
                                                      write_cost, first_value, mod, Z));
             }
         }
@@ -477,7 +477,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                         name_inner += "error";
                 }
                 runAlgorithm(name_inner,
-                             LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
+                             WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
                                                      write_cost, first_value, mod, Z));
             }
 
@@ -491,7 +491,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                     name_inner += to_string(KW);
                 }
                 runAlgorithm(name_inner,
-                             LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
+                             WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
                                                      write_cost, first_value, mod, Z));
             }
         }
@@ -527,7 +527,7 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                     name_inner += to_string(KW);
                 }
                 runAlgorithm(name_inner,
-                             LFU_2K_E_real_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
+                             WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read,
                                                      write_cost, first_value, mod, Z));
             }
         }
@@ -549,14 +549,14 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                                   + "_wc" + to_string(wc);
                     if (kw != 0) {
                         runAlgorithm("lfu_vers2_" + name,
-                                     LFU_Generator(kr, kw, e, rsi, rsa, false, wc));
+                                     WATT_Generator(kr, kw, e, rsi, rsa, false, wc));
                         runAlgorithm("lfu_vers3_" + name,
-                                     LFU_2K_E_real2_Generator(kr, kw, e, rsi, rsa, false, wc));
+                                     WATT_RANDOMHeap_N_EVICT_IFDirty_HISTORY_Generator(kr, kw, e, rsi, rsa, false, wc));
                     } else {
                         runAlgorithm("lfu_vers2_" + name + "_war",
-                                     LFU_Generator(kr, kw, e, rsi, rsa, true, wc));
+                                     WATT_Generator(kr, kw, e, rsi, rsa, true, wc));
                         runAlgorithm("lfu_vers3_" + name + "_war",
-                                     LFU_2K_E_real2_Generator(kr, kw, e, rsi, rsa, true, wc));
+                                     WATT_RANDOMHeap_N_EVICT_IFDirty_HISTORY_Generator(kr, kw, e, rsi, rsa, true, wc));
                     }
                 }
             for (int k: {32, 16, 8, 4, 2, 0})
@@ -569,8 +569,8 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                                               + "_rsi" + to_string(rsi)
                                               + "_rsa" + to_string(rsa)
                                               + "_wc" + to_string(wc);
-                                runAlgorithm("lfu_k" + name, LFU_1K_E_real_Generator(k, e, rsi, rsa, wc, 0));
-                                runAlgorithm("lfu_bla_k" + name, LFU_1K_E_Generator(k, e, rsi, rsa, wc, 0));
+                                runAlgorithm("lfu_k" + name, WATT_OneListBool_RANDOMHeap_N_EVICT_HISTORY_Generator(k, e, rsi, rsa, wc, 0));
+                                runAlgorithm("lfu_bla_k" + name, WATT_OneListDirty_RANDOMHeap_N_EVICT_HISTORY_Generator(k, e, rsi, rsa, wc, 0));
                             }
 
 
@@ -582,7 +582,6 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                 runAlgorithm("lru_alt1", LRU1_Generator());
                 runAlgorithm("lru_alt2a", LRU2a_Generator());
                 runAlgorithm("lru_alt2b", LRU2b_Generator());
-                runAlgorithm("lru_alt3", LRU3_Generator());
                 runAlgorithm("cf_lru10", CfLRUGenerator(10));
                 runAlgorithm("cf_lru20", CfLRUGenerator(20));
                 runAlgorithm("cf_lru70", CfLRUGenerator(70));
@@ -604,23 +603,23 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                 }
                 for (int k: {16, 8, 4, 2}) {
                     for (int z: {100, 10, 1, -1}) {
-                        runAlgorithm("lfu_k" + std::to_string(k) + "_z" + std::to_string(z), LFU_K_Z_Generator(k, z));
-                        // runAlgorithm("lfu2_k" + std::to_string(k) + "_z" + std::to_string(z), LFU2_K_Z_Generator(k, z));
+                        runAlgorithm("lfu_k" + std::to_string(k) + "_z" + std::to_string(z), WATT_RO_NoRAND_OneEVICT_HISTORY_Generator(k, z));
+                        runAlgorithm("lfu2_k" + std::to_string(k) + "_z" + std::to_string(z), WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(k, z));
                         runAlgorithm("lru_k" + std::to_string(k) + "_z" + std::to_string(z), LRU_K_Z_Generator(k, z));
                         runAlgorithm("lfu_2k" + std::to_string(k) + "_z" + std::to_string(z) + "_T",
-                                     LFU_2K_Z_Generator(k, k, z, true));
+                                     WATT_NoRAND_OneEVICT_HISTORY_Generator(k, k, z, true));
                         runAlgorithm("lfu_2k" + std::to_string(k) + "_z" + std::to_string(z) + "_F",
-                                     LFU_2K_Z_Generator(k, k, z, false));
+                                     WATT_NoRAND_OneEVICT_HISTORY_Generator(k, k, z, false));
                         runAlgorithm("lfu_2k" + std::to_string(k) + "_z" + std::to_string(z) + "_TR",
-                                     LFU_2K_Z_rand_Generator(k, k, z, 5, true));
+                                     WATT_ScanRANDOM_OneEVICT_HISTORY_Generator(k, k, z, 5, true));
                         runAlgorithm("lfu_2k" + std::to_string(k) + "_z" + std::to_string(z) + "_FR",
-                                     LFU_2K_Z_rand_Generator(k, k, z, 5, false));
+                                     WATT_ScanRANDOM_OneEVICT_HISTORY_Generator(k, k, z, 5, false));
                     }
-                    runAlgorithm("lfu_k_real_F_e" + std::to_string(k), LFU_2K_E_real_Generator(8, 4, k, 5, 5, false));
-                    runAlgorithm("lfu_k_real2_F_e" + std::to_string(k), LFU_2K_E_real_Generator(4, 8, k, 5, 5, false));
+                    runAlgorithm("lfu_k_real_F_e" + std::to_string(k), WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(8, 4, k, 5, 5, false));
+                    runAlgorithm("lfu_k_real2_F_e" + std::to_string(k), WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(4, 8, k, 5, 5, false));
                     runAlgorithm("lfu_k_real_F_e" + std::to_string(k) + "_wc" + std::to_string(8),
-                                 LFU_Generator(8, 4, k, 5, 5, false, 8));
-                    runAlgorithm("lfu_k_" + std::to_string(k), LFU_K_Generator(k));
+                                 WATT_Generator(8, 4, k, 5, 5, false, 8));
+                    runAlgorithm("lfu_k_" + std::to_string(k), WATT_RO_NoRAND_OneEVICT_Generator(k));
                 }
             }
         }
@@ -707,7 +706,6 @@ void EvalAccessTable::getDataFile() {
         assert(reader.good());
         string line;
         bool firstLine = true;
-        map<int, int> last_access;
         int i = 0;
         while (getline(reader, line)) {
             if (firstLine) {
@@ -723,9 +721,6 @@ void EvalAccessTable::getDataFile() {
             getline(ss, value);
             access.write = (value.find("rue") != std::string::npos);
             access.pos = i;
-
-            getOrDefaultAndSet(last_access, i, access.pid, -1, &access.lastRef);
-
             i++;
         }
     }
