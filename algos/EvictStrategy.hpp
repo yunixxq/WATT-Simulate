@@ -550,11 +550,12 @@ protected:
     using ram_type = std::unordered_map<PID, history_type>;
     using upper = EvictStrategyKeepHistory<history_type>;
 public:
-    EvictStrategyKeepHistoryReadWrite(uint KR=1, uint KW=1, int Z=0, bool write_as_read=false, uint epoch_size=1): upper(Z), K_R(KR), K_W(KW), write_as_read(write_as_read), epoch_size(epoch_size){}
+    EvictStrategyKeepHistoryReadWrite(uint KR=1, uint KW=1, int Z=0, bool write_as_read=false, uint epoch_size=1, bool increment_epoch_on_each_access = false): upper(Z), K_R(KR), K_W(KW), write_as_read(write_as_read), epoch_size(epoch_size), increment_epoch_on_each_access(increment_epoch_on_each_access){}
 protected:
     const uint K_R, K_W;
     const bool write_as_read; // write counts as read?
     const uint epoch_size;
+    const bool increment_epoch_on_each_access;
     uint epoch_size_iter, curr_epoch_size, curr_epoch;
     void reInit(RamSize ram_size) override{
         upper::reInit(ram_size);
@@ -569,6 +570,8 @@ protected:
             std::pair<std::vector<RefTime>, std::vector<RefTime>>& entry = ram[access.pid];
             entry.first.reserve(K_R);
             entry.second.reserve(K_W);
+        }
+        if (!inRam || increment_epoch_on_each_access){
             curr_epoch_size++;
             if(curr_epoch_size >= epoch_size_iter){
                 curr_epoch++;

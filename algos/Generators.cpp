@@ -24,8 +24,8 @@ std::function<WATT_RO_NoRAND_OneEVICT()> WATT_RO_NoRAND_OneEVICT_Generator(int K
 std::function<WATT_RO_NoRAND_OneEVICT_HISTORY()> WATT_RO_NoRAND_OneEVICT_HISTORY_Generator(int K, int Z){
     return [K, Z](){return WATT_RO_NoRAND_OneEVICT_HISTORY(K, Z);};}
 
-std::function<WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes()> WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(int K, int Z){
-    return [K, Z](){return WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes(K, Z);};}
+std::function<WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes()> WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(int K, int Z, bool writes_as_reads, uint epoch_size){
+    return [K, Z, writes_as_reads, epoch_size](){return WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes(K, Z, writes_as_reads, epoch_size);};}
 
 std::function<LFUalt_K()> LFUalt_K_Generator(int K){
     return [K](){return LFUalt_K(K);};}

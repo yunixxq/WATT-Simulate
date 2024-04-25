@@ -16,8 +16,19 @@ EvalAccessTable init(){
 template<class T>
 bool compareToOther(EvalAccessTable& instance, std::function<T()> generator, std::string name, std::string other){
     instance.runAlgorithm(name, generator);
-    return (instance.getValues(name) == instance.getValues(other));
-
+    if (instance.getValues(name) == instance.getValues(other)){
+        return true;
+    }
+    auto mine = instance.getValues(name);
+    auto other_iterator = instance.getValues(other).begin();
+    auto mine_iterator = mine.begin();
+    std::cout << "this, other" << std::endl;
+    while (mine_iterator != mine.end()){
+        std::cout << "(" << mine_iterator->second.first << ", " << mine_iterator->second.second << "), (" << other_iterator->second.first << ", " << other_iterator->second.second << ")" <<std::endl;
+        mine_iterator++;
+        other_iterator++;
+    }
+    return false;
 }
 
 template<class T>
@@ -47,9 +58,9 @@ BOOST_AUTO_TEST_SUITE(compare_algo)
         BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Generator(1,0), "lfu_K1_Z0", "lru"));
         BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Generator(1,10), "lfu_K1_Z10", "lru"));
         BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Generator(1,-10), "lfu_K1_Z-10", "lru"));
-        BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(1, 0), "lfu2_K1_Z0", "lru"));
-        BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(1, 10), "lfu2_K1_Z10", "lru"));
-        BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(1, -10), "lfu2_K1_Z-10", "lru"));
+        BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(1, 0, true, 0), "lfu2_K1_Z0", "lru"));
+        BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(1, 10, true, 0), "lfu2_K1_Z10", "lru"));
+        BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(1, -10, true, 0), "lfu2_K1_Z-10", "lru"));
         BOOST_TEST(compareToOther(instance, LFUalt_K_Generator(1), "lfu_K_ALT_1", "lru"));
         // BOOST_TEST(compareToOther(instance, LFU1_K_Z_D_Generator(1, 0, 10), "lfu_K1_Z0_D10", "lru"));
         // BOOST_TEST(compareToOther(instance, LFU1_K_Z_D_Generator(1, 10, 10), "lfu_K1_Z10_D10", "lru"));

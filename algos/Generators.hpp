@@ -42,7 +42,7 @@ std::function<LRU_WSR()> LRU_WSR_Generator();
 std::function<hyperbolic()> Hyperbolic_generator(uint randSize);
 std::function<WATT_RO_NoRAND_OneEVICT()> WATT_RO_NoRAND_OneEVICT_Generator(int K);
 std::function<WATT_RO_NoRAND_OneEVICT_HISTORY()> WATT_RO_NoRAND_OneEVICT_HISTORY_Generator(int K, int out_of_ram_history_length);
-std::function<WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes()> WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(int K, int out_of_ram_history_length);
+std::function<WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes()> WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(int K, int out_of_ram_history_length, bool writes_as_reads = false, uint epoch_size = 1);
 std::function<LFUalt_K()> LFUalt_K_Generator(int K);
 std::function<LRU_K_Z()> LRU_K_Z_Generator(int K, int out_of_ram_history_length);
 std::function<WATT_NoRAND_OneEVICT_HISTORY()> WATT_NoRAND_OneEVICT_HISTORY_Generator(uint K_read, uint K_write, int out_of_ram_history_length, bool writes_as_reads);

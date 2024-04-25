@@ -57,7 +57,7 @@ struct WATT_RO_NoRAND_OneEVICT_HISTORY: public EvictStrategyKeepHistoryOneList{
 
 struct WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes: public EvictStrategyKeepHistoryReadWrite{
     using upper = EvictStrategyKeepHistoryReadWrite;
-    WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes(int K, int Z): upper(K, 0, Z, true, 0) {}
+    WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes(int K, int Z, bool writes_as_reads = false, uint epoch_size = 1): upper(K, 0, Z, writes_as_reads, epoch_size, true) {}
 
     PID chooseEviction(RefTime curr_time)  override{
         ram_type::iterator runner = ram.begin();
