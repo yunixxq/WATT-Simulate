@@ -56,32 +56,11 @@ struct WATT_RO_NoRAND_OneEVICT_HISTORY: public EvictStrategyKeepHistoryOneList{
     }
 };
 
-struct WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes: public EvictStrategyKeepHistoryReadWrite{
-    using upper = EvictStrategyKeepHistoryReadWrite;
-    WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes(int K, int Z, bool writes_as_reads = false, uint epoch_size = 1): upper(K, 0, Z, writes_as_reads, epoch_size, true) {}
-
-    PID chooseEviction(RefTime curr_time)  override{
-        ram_type::iterator runner = ram.begin();
-        PID candidate = runner->first;
-        double candidate_freq = get_frequency_max(runner->second.first, curr_time);
-        ++ runner;
-        while(runner!= ram.end()){
-            double runner_freq = get_frequency_max(runner->second.first, curr_time);
-            if(runner_freq <= candidate_freq){
-                candidate = runner->first;
-                candidate_freq = runner_freq;
-            }
-            ++runner;
-        }
-        return candidate;
-    }
-
-};
-
 struct WATT_NoRAND_OneEVICT_HISTORY: public EvictStrategyKeepHistoryReadWrite{
     using upper = EvictStrategyKeepHistoryReadWrite;
 
-    WATT_NoRAND_OneEVICT_HISTORY(uint KR, uint KW, int Z, bool write_as_read): upper(KR, KW, Z, write_as_read, 0){}
+    WATT_NoRAND_OneEVICT_HISTORY(uint KR, uint KW, int Z, bool write_as_read, uint epoch_size = 1, bool increment_epoch_on_access=true, bool ignore_write_freq = false): upper(KR, KW, Z, write_as_read, epoch_size, increment_epoch_on_access), ignore_write_freq(ignore_write_freq){}
+    const bool ignore_write_freq;
 
     PID chooseEviction(RefTime curr_time) override{
         ram_type::iterator runner = ram.begin();
@@ -89,7 +68,7 @@ struct WATT_NoRAND_OneEVICT_HISTORY: public EvictStrategyKeepHistoryReadWrite{
         double candidate_freq = eval_freq(runner, curr_time);
         while(runner!= ram.end()){
             double runner_freq = eval_freq(runner, curr_time);
-            if(runner_freq < candidate_freq){
+            if(runner_freq <= candidate_freq){
                 candidate = runner->first;
                 candidate_freq = runner_freq;
             }
@@ -100,6 +79,9 @@ struct WATT_NoRAND_OneEVICT_HISTORY: public EvictStrategyKeepHistoryReadWrite{
     double eval_freq(ram_type::iterator candidate, RefTime curr_time){
         double candidate_freq_R = get_frequency_max(candidate->second.first, curr_time);
         double candidate_freq_W = get_frequency_max(candidate->second.second, curr_time);
+        if(ignore_write_freq){
+            candidate_freq_W=0;
+        }
         double candidate_freq = candidate_freq_R + candidate_freq_W;
         if(!write_as_read){
             candidate_freq += candidate_freq_W;
@@ -448,37 +430,5 @@ struct WATT_OneListDirty_RANDOMHeap_N_EVICT_HISTORY: public EvictStrategyKeepHis
             best_value*=write_cost;
         }
         return best_value * 1.0 /best_age;
-    }
-};
-
-
-struct LFUalt_K: public EvictStrategyContainer<std::unordered_set<PID>> {
-    using upper = EvictStrategyContainer<std::unordered_set<PID>>;
-    LFUalt_K(int K): upper(), K(K) {}
-    uint K;
-
-    std::unordered_map<PID, std::vector<RefTime>> history;
-    void access(const Access& access) override{
-        if(!in_ram[access.pid]){
-            std::vector<RefTime>& list = history[access.pid];
-            list.reserve(K);
-        }
-        push_frontAndResize(history[access.pid], K, access.pos);
-        ram.insert(access.pid);
-    };
-    PID evictOne(Access access) override{
-        PID candidate = *ram.begin();
-        double candidate_freq = get_frequency_max(history[candidate], access.pos);
-        for(PID runner: ram){
-            double runner_freq = get_frequency_max(history[runner], access.pos);
-            if(runner_freq < candidate_freq){
-                candidate = runner;
-                candidate_freq = runner_freq;
-            }
-        }
-        PID pid = candidate;
-        ram.erase(candidate);
-        history.erase(pid);
-        return pid;
     }
 };

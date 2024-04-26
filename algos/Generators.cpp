@@ -24,17 +24,12 @@ std::function<WATT_RO_NoRAND_OneEVICT()> WATT_RO_NoRAND_OneEVICT_Generator(int K
 std::function<WATT_RO_NoRAND_OneEVICT_HISTORY()> WATT_RO_NoRAND_OneEVICT_HISTORY_Generator(int K, int Z){
     return [K, Z](){return WATT_RO_NoRAND_OneEVICT_HISTORY(K, Z);};}
 
-std::function<WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes()> WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(int K, int Z, bool writes_as_reads, uint epoch_size){
-    return [K, Z, writes_as_reads, epoch_size](){return WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes(K, Z, writes_as_reads, epoch_size);};}
-
-std::function<LFUalt_K()> LFUalt_K_Generator(int K){
-    return [K](){return LFUalt_K(K);};}
-
 std::function<LRU_K_Z()> LRU_K_Z_Generator(int K, int Z){
     return [K, Z](){return LRU_K_Z(K, Z);};}
 
-std::function<WATT_NoRAND_OneEVICT_HISTORY()> WATT_NoRAND_OneEVICT_HISTORY_Generator(uint K_read, uint K_write, int out_of_ram_history_length, bool writes_as_reads){
-    return [K_read, K_write, out_of_ram_history_length, writes_as_reads](){return WATT_NoRAND_OneEVICT_HISTORY(K_read, K_write, out_of_ram_history_length, writes_as_reads);};}
+std::function<WATT_NoRAND_OneEVICT_HISTORY()> WATT_NoRAND_OneEVICT_HISTORY_Generator(uint K_read, uint K_write, int out_of_ram_history_length, bool writes_as_reads, uint epoch_size, bool increment_epoch_for_all_accesses, bool ignore_write_freq){
+    return [K_read, K_write, out_of_ram_history_length, writes_as_reads, epoch_size, increment_epoch_for_all_accesses, ignore_write_freq](){
+        return WATT_NoRAND_OneEVICT_HISTORY(K_read, K_write, out_of_ram_history_length, writes_as_reads, epoch_size, increment_epoch_for_all_accesses, ignore_write_freq);};}
 
 std::function<WATT_ScanRANDOM_OneEVICT_HISTORY()> WATT_ScanRANDOM_OneEVICT_HISTORY_Generator(uint K_read, uint K_write, int out_of_ram_history_length, uint randSize, bool writes_as_reads){
     return [K_read, K_write, out_of_ram_history_length, randSize, writes_as_reads](){return WATT_ScanRANDOM_OneEVICT_HISTORY(K_read, K_write, out_of_ram_history_length, randSize, writes_as_reads);};}

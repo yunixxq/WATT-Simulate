@@ -19,12 +19,12 @@ EvalAccessTable::EvalAccessTable(std::string  filename, std::string  out_dir, bo
         runFromFilename(test, benchmark);
     };
 
-void EvalAccessTable::init(bool ignore_last_run, int max_ram){
+void EvalAccessTable::init(bool ignore_last_run, int max_ram, bool silent){
     getDataFile();
     if(ignore_last_run){
         max_ram = -1;
     }
-    createLists(ignore_last_run, max_ram); // this runs "lru" (lru_stack_trace)
+    createLists(ignore_last_run, max_ram, silent); // this runs "lru" (lru_stack_trace)
 }
 void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
     // in case of full run (not test or benchmark)
@@ -587,10 +587,6 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                 runAlgorithm("cf_lru70", CfLRUGenerator(70));
                 runAlgorithm("cf_lru80", CfLRUGenerator(80));
                 runAlgorithm("cf_lru90", CfLRUGenerator(90));
-                runAlgorithm("lfu_k_alt01", LFUalt_K_Generator(1));
-                runAlgorithm("lfu_k_alt02", LFUalt_K_Generator(2));
-                runAlgorithm("lfu_k_alt10", LFUalt_K_Generator(10));
-                runAlgorithm("lfu_k_alt20", LFUalt_K_Generator(20));
                 runAlgorithm("lru_k_alt01", LRUalt_K_Generator(1));
                 runAlgorithm("lru_k_alt02", LRUalt_K_Generator(2));
                 runAlgorithm("lru_k_alt10", LRUalt_K_Generator(10));
@@ -604,7 +600,6 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
                 for (int k: {16, 8, 4, 2}) {
                     for (int z: {100, 10, 1, -1}) {
                         runAlgorithm("lfu_k" + std::to_string(k) + "_z" + std::to_string(z), WATT_RO_NoRAND_OneEVICT_HISTORY_Generator(k, z));
-                        runAlgorithm("lfu2_k" + std::to_string(k) + "_z" + std::to_string(z), WATT_RO_NoRAND_OneEVICT_HISTORY_Track_writes_Generator(k, z));
                         runAlgorithm("lru_k" + std::to_string(k) + "_z" + std::to_string(z), LRU_K_Z_Generator(k, z));
                         runAlgorithm("lfu_2k" + std::to_string(k) + "_z" + std::to_string(z) + "_T",
                                      WATT_NoRAND_OneEVICT_HISTORY_Generator(k, k, z, true));
@@ -734,16 +729,18 @@ void EvalAccessTable::getDataFile() {
     }
 }
 
-void EvalAccessTable::createLists(bool ignore_last_run, int max_ram) {
+void EvalAccessTable::createLists(bool ignore_last_run, int max_ram, bool silent) {
     ifstream reader;
     reader.open(output_file);
     if (reader.good() && !ignore_last_run) {
         handleCsv(reader);
     } else {
-        cout << "No old files found" << endl;
+        if(!silent){
+            cout << "No old files found" << endl;
+        }
         filesystem::create_directory(output_dir);
     }
-    runAlgorithmNonParallel("lru", LruStackDist(max_ram));
+    runAlgorithmNonParallel("lru", LruStackDist(max_ram), silent);
 }
 
 const rwListSubType& EvalAccessTable::getValues(std::string name) {

@@ -227,7 +227,7 @@ protected:
     template <class type>
     std::vector<type> getElementsFromRam(uint rand_list_length) {
         std::vector<type> elements;
-        if(rand_list_length==0){ // Pick all ram
+        if(rand_list_length==0 || rand_list_length >= RAM_SIZE){ // Pick all ram
             elements.reserve(RAM_SIZE);
             type candidate = ram.begin();
             while(candidate != ram.end()){
@@ -237,15 +237,17 @@ protected:
             return elements;
         }
 
-        elements.reserve(rand_list_length);
         // Pick positions
         std::set<uint> positions;
+        uint tries = 0;
         do{
             uint next_pos = ram_distro(ran_engine);
             positions.insert(next_pos);
-        }while (positions.size() < rand_list_length);
+            tries ++;
+        }while (positions.size() < rand_list_length && tries < rand_list_length*4);
 
         // Get elements for positions
+        elements.reserve(positions.size());
         type candidate = ram.begin();
         uint candidate_pos = 0;
         for(auto pos: positions){

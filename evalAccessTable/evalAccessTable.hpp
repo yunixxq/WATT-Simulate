@@ -26,7 +26,7 @@ private:
     void runFromFilename(bool test, bool benchmark);
     void printToFile();
     void getDataFile();
-    void createLists(bool ignore_last_run, int max_ram = -1);
+    void createLists(bool ignore_last_run, int max_ram = -1, bool silent=false);
 
     const std::string filename;
     const std::string output_dir;
@@ -37,27 +37,33 @@ private:
     rwListType read_write_list;
     void handleCsv(std::ifstream &filestream);
 public:
-    void init(bool ignore_last_run, int max_ram = -1);
+    void init(bool ignore_last_run, int max_ram = -1, bool silent=false);
     template<class T>
-    void runAlgorithmNonParallel(const std::string &name, T executor) {
+    void runAlgorithmNonParallel(const std::string &name, T executor, bool silent=false) {
         if (!hasAllValues(name)) {
-            std::cout << name << std::endl;
+            if (!silent){
+                std::cout << name << std::endl;
+            }
             auto t1 = std::chrono::high_resolution_clock::now();
             executor.evaluateRamList(data, ramSizes, read_write_list[name]);
             printToFile();
 
-            auto t2 = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double> seconds_double = t2 - t1;
-            std::cout << seconds_double.count() << " seconds" << std::endl;
+            if (!silent){
+                auto t2 = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double> seconds_double = t2 - t1;
+                std::cout << seconds_double.count() << " seconds" << std::endl;
+            }
 
         }
     }
 
     template<class T>
-    void runAlgorithm(const std::string &name, std::function<T()> generator, bool parallel = true) {
+    void runAlgorithm(const std::string &name, std::function<T()> generator, bool parallel = true, bool silent=false) {
         if (!hasAllValues(name)) {
             // PRE
-            std::cout << name << std::endl;
+            if(!silent){
+                std::cout << name << std::endl;
+            }
             auto t1 = std::chrono::high_resolution_clock::now();
 
             // RUN
@@ -68,10 +74,11 @@ public:
 
             // POST
             printToFile();
-            auto t2 = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double> seconds_double = t2 - t1;
-            std::cout << seconds_double.count() << " seconds" << std::endl;
-
+            if(!silent){
+                auto t2 = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double> seconds_double = t2 - t1;
+                std::cout << seconds_double.count() << " seconds" << std::endl;
+            }
         }
     }
 
