@@ -724,7 +724,7 @@ void EvalAccessTable::getDataFile() {
         int data_size = data.size();
         for (uint i = 0; i < data.size(); i++) {
             int pos = data_size - (i + 1);
-            getOrDefaultAndSet(next_access, pos, data[pos].pid, data_size, &data[pos].nextRef);
+            getOrDefaultAndSet(next_access, pos, data[pos].pid, data_size+1, &data[pos].nextRef);
         }
     }
 }

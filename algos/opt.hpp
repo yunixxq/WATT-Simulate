@@ -40,6 +40,7 @@ struct OPT2: public EvictStrategyContainer<std::vector<std::pair<PID, RefTime>>>
     }
 };
 
+// Ram is list sorted by next access
 struct OPT3: public EvictStrategyContainer<std::map<RefTime, PID>> {
     using upper = EvictStrategyContainer<std::map<RefTime, PID>>;
     OPT3(): upper() {}
@@ -48,7 +49,7 @@ struct OPT3: public EvictStrategyContainer<std::map<RefTime, PID>> {
     void access(const Access& access) override{
         ram.erase(access.pos);
         // this is only relevant, when multiple elements are not used anymore
-        if(ram.contains(access.pos)){
+        if(ram.contains(access.nextRef)){
             evictionList.push_back(access.pid);
             return;
         }
