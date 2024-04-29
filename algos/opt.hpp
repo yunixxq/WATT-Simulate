@@ -48,7 +48,7 @@ struct OPT3: public EvictStrategyContainer<std::map<RefTime, PID>> {
     void access(const Access& access) override{
         ram.erase(access.pos);
         // this is only relevant, when multiple elements are not used anymore
-        if(ram.contains(access.nextRef)){
+        if(ram.contains(access.pos)){
             evictionList.push_back(access.pid);
             return;
         }
