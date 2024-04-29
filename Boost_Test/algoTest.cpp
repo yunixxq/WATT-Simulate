@@ -56,6 +56,7 @@ BOOST_AUTO_TEST_SUITE(compare_algo)
             BOOST_TEST(compareToOther(instance, LRU_K_Z_Generator(1,Z), "lru_K1_Z" + std::to_string(Z),  "lru"));
             BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Generator(1,Z), "lfu_K1_Z" + std::to_string(Z), "lru"));
             BOOST_TEST(compareToOther(instance, WATT_NoRAND_OneEVICT_HISTORY_Generator(1, 1, Z, true, 0, true, true), "lfu2_K1_Z" + std::to_string(Z), "lru"));
+            BOOST_TEST(compareToOther(instance, WATT_ScanRANDOM_OneEVICT_HISTORY_Generator(1, 1, Z, 0, true, 0, true, true), "WATT_one_K1_Z" + std::to_string(Z), "lru"));
         }
         BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_Generator(1), "lfu_K1", "lru"));
 

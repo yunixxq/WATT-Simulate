@@ -31,8 +31,8 @@ std::function<WATT_NoRAND_OneEVICT_HISTORY()> WATT_NoRAND_OneEVICT_HISTORY_Gener
     return [K_read, K_write, out_of_ram_history_length, writes_as_reads, epoch_size, increment_epoch_for_all_accesses, ignore_write_freq](){
         return WATT_NoRAND_OneEVICT_HISTORY(K_read, K_write, out_of_ram_history_length, writes_as_reads, epoch_size, increment_epoch_for_all_accesses, ignore_write_freq);};}
 
-std::function<WATT_ScanRANDOM_OneEVICT_HISTORY()> WATT_ScanRANDOM_OneEVICT_HISTORY_Generator(uint K_read, uint K_write, int out_of_ram_history_length, uint randSize, bool writes_as_reads){
-    return [K_read, K_write, out_of_ram_history_length, randSize, writes_as_reads](){return WATT_ScanRANDOM_OneEVICT_HISTORY(K_read, K_write, out_of_ram_history_length, randSize, writes_as_reads);};}
+std::function<WATT_ScanRANDOM_OneEVICT_HISTORY()> WATT_ScanRANDOM_OneEVICT_HISTORY_Generator(uint K_read, uint K_write, int out_of_ram_history_length, uint randSize, bool writes_as_reads, uint epoch_size, bool increment_epoch_on_access, bool ignore_write_freq){
+    return [K_read, K_write, out_of_ram_history_length, randSize, writes_as_reads, epoch_size, increment_epoch_on_access, ignore_write_freq](){return WATT_ScanRANDOM_OneEVICT_HISTORY(K_read, K_write, out_of_ram_history_length, randSize, writes_as_reads, epoch_size, increment_epoch_on_access, ignore_write_freq);};}
 
 std::function<WATT_OneListBool_RANDOMHeap_N_EVICT_HISTORY()>
 WATT_OneListBool_RANDOMHeap_N_EVICT_HISTORY_Generator(uint K, uint epoch_size, uint randSize, uint randSelector, uint write_cost, int Z) {

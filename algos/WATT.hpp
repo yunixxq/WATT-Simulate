@@ -94,11 +94,12 @@ struct WATT_NoRAND_OneEVICT_HISTORY: public EvictStrategyKeepHistoryReadWrite{
 struct WATT_ScanRANDOM_OneEVICT_HISTORY: public EvictStrategyKeepHistoryReadWrite{
     using upper = EvictStrategyKeepHistoryReadWrite;
 
-    WATT_ScanRANDOM_OneEVICT_HISTORY(uint KR, uint KW, int Z, uint randSize, bool write_as_read):
-        upper(KR, KW, Z, write_as_read),
-        randSize(randSize){}
+    WATT_ScanRANDOM_OneEVICT_HISTORY(uint KR, uint KW, int Z, uint randSize, bool write_as_read, uint epoch_size = 1, bool increment_epoch_on_access=false, bool ignore_write_freq = false):
+        upper(KR, KW, Z, write_as_read, epoch_size, increment_epoch_on_access),
+        randSize(randSize), ignore_write_freq(ignore_write_freq){}
 
     const uint randSize;
+    const bool ignore_write_freq;
 
     uint rand_list_length;
     void reInit(RamSize ram_size) override{
@@ -120,7 +121,8 @@ struct WATT_ScanRANDOM_OneEVICT_HISTORY: public EvictStrategyKeepHistoryReadWrit
     PID chooseEvictionLOCAL(RefTime curr_time, std::vector<ram_type::iterator> elements){
         std::vector<ram_type::iterator>::iterator runner = elements.begin();
         double candidate_freq = eval_freq(*runner, curr_time);
-        PID evict = 0;
+        PID evict = (*runner)->first;
+        runner ++;
         while(runner!= elements.end()){
             double runner_freq = eval_freq(*runner, curr_time);
             if(runner_freq < candidate_freq){
@@ -134,6 +136,9 @@ struct WATT_ScanRANDOM_OneEVICT_HISTORY: public EvictStrategyKeepHistoryReadWrit
     double eval_freq(ram_type::iterator candidate, RefTime curr_time){
         double candidate_freq_R = get_frequency_max(candidate->second.first, curr_time);
         double candidate_freq_W = get_frequency_max(candidate->second.second, curr_time);
+        if (ignore_write_freq){
+            candidate_freq_W =0;
+        }
         double candidate_freq = candidate_freq_R + candidate_freq_W;
         if(!write_as_read){
             candidate_freq += candidate_freq_W;
@@ -149,8 +154,8 @@ struct WATT_RANDOMHeap_N_EVICT_HISTORY: public EvictStrategyKeepHistoryReadWrite
     using compare_func = std::function<double(std::vector<RefTime>& , RefTime , float)>;
 
     WATT_RANDOMHeap_N_EVICT_HISTORY(uint KR, uint KW, uint randSize, uint randSelector = 1, bool write_as_read = true,
-                  uint epoch_size = 1, float write_cost = 1, float first_value = 1.0, modus modus = mod_max, int Z = -1) :
-            upper(KR, KW, Z, write_as_read, epoch_size),
+                  uint epoch_size = 1, float write_cost = 1, float first_value = 1.0, modus modus = mod_max, int Z = -1, bool increment_epoch_on_access=false) :
+            upper(KR, KW, Z, write_as_read, epoch_size, increment_epoch_on_access),
             randSelector(randSelector), // how many do we want to evict?
             randSize(randSize), // how many are evaluated
             writeCost(write_cost),
