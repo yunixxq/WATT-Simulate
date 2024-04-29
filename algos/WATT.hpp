@@ -24,7 +24,7 @@ struct WATT_RO_NoRAND_OneEVICT: public EvictStrategyHistory{
         ++runner;
         while(runner!= ram.end()){
             double runner_freq = get_frequency_max(runner->second, curr_time);
-            if(runner_freq <= candidate_freq){
+            if(runner_freq < candidate_freq){
                 candidate = runner->first;
                 candidate_freq = runner_freq;
             }
@@ -46,7 +46,7 @@ struct WATT_RO_NoRAND_OneEVICT_HISTORY: public EvictStrategyKeepHistoryOneList{
         ++runner;
         while(runner!= ram.end()){
             double runner_freq = get_frequency_max(runner->second, curr_time);
-            if(runner_freq <= candidate_freq){
+            if(runner_freq < candidate_freq){
                 candidate = runner->first;
                 candidate_freq = runner_freq;
             }
@@ -68,7 +68,7 @@ struct WATT_NoRAND_OneEVICT_HISTORY: public EvictStrategyKeepHistoryReadWrite{
         double candidate_freq = eval_freq(runner, curr_time);
         while(runner!= ram.end()){
             double runner_freq = eval_freq(runner, curr_time);
-            if(runner_freq <= candidate_freq){
+            if(runner_freq < candidate_freq){
                 candidate = runner->first;
                 candidate_freq = runner_freq;
             }
@@ -78,10 +78,10 @@ struct WATT_NoRAND_OneEVICT_HISTORY: public EvictStrategyKeepHistoryReadWrite{
     }
     double eval_freq(ram_type::iterator candidate, RefTime curr_time){
         double candidate_freq_R = get_frequency_max(candidate->second.first, curr_time);
-        double candidate_freq_W = get_frequency_max(candidate->second.second, curr_time);
-        if(ignore_write_freq){
-            candidate_freq_W=0;
+        if (ignore_write_freq){
+            return candidate_freq_R;
         }
+        double candidate_freq_W = get_frequency_max(candidate->second.second, curr_time);
         double candidate_freq = candidate_freq_R + candidate_freq_W;
         if(!write_as_read){
             candidate_freq += candidate_freq_W;
@@ -110,7 +110,7 @@ struct WATT_ScanRANDOM_OneEVICT_HISTORY: public EvictStrategyKeepHistoryReadWrit
     PID evictOne(Access access) override{
         std::vector<ram_type::iterator> elements = getElementsFromRam<ram_type::iterator>(rand_list_length);
 
-        PID evict = chooseEvictionLOCAL(access.pos, elements);
+        PID evict = (*(std::min_element(elements.begin(), elements.end(), lt_compare_freq(access.pos))))->first;
 
         handle_out_of_ram(evict);
 
@@ -118,33 +118,25 @@ struct WATT_ScanRANDOM_OneEVICT_HISTORY: public EvictStrategyKeepHistoryReadWrit
         return evict;
     }
 
-    PID chooseEvictionLOCAL(RefTime curr_time, std::vector<ram_type::iterator> elements){
-        std::vector<ram_type::iterator>::iterator runner = elements.begin();
-        double candidate_freq = eval_freq(*runner, curr_time);
-        PID evict = (*runner)->first;
-        runner ++;
-        while(runner!= elements.end()){
-            double runner_freq = eval_freq(*runner, curr_time);
-            if(runner_freq < candidate_freq){
-                evict = (*runner)->first;
-                candidate_freq = runner_freq;
-            }
-            ++runner;
-        }
-        return evict;
-    }
     double eval_freq(ram_type::iterator candidate, RefTime curr_time){
         double candidate_freq_R = get_frequency_max(candidate->second.first, curr_time);
-        double candidate_freq_W = get_frequency_max(candidate->second.second, curr_time);
         if (ignore_write_freq){
-            candidate_freq_W =0;
+            return candidate_freq_R;
         }
+        double candidate_freq_W = get_frequency_max(candidate->second.second, curr_time);
         double candidate_freq = candidate_freq_R + candidate_freq_W;
         if(!write_as_read){
             candidate_freq += candidate_freq_W;
         }
         return candidate_freq;
     }
+    std::function<double(ram_type::iterator &, ram_type::iterator &)>
+    lt_compare_freq(RefTime curr_time) {
+        return [this, curr_time](ram_type::iterator& l, ram_type::iterator& r) {
+            return eval_freq(l, curr_time)
+                   < eval_freq(r, curr_time);
+        };
+    };
 
 };
 
@@ -195,22 +187,19 @@ struct WATT_RANDOMHeap_N_EVICT_HISTORY: public EvictStrategyKeepHistoryReadWrite
         RefTime curr_time = curr_epoch;
         std::vector<ram_type::iterator> elements = getElementsFromRam<ram_type::iterator>(rand_list_length);
 
-        // Sort elements by frequency; //std::min_element
-        auto comperator = gt_compare_freq(compare_funct, curr_time, this->write_as_read, this->writeCost, first_value);
         // If I just evict one element, take max_element: Else build heap
         if(randSelector<=1){
-            std::vector<ram_type::iterator>::iterator min_iterator = std::max_element(elements.begin(), elements.end(), comperator);
-            ram_type::iterator element = *min_iterator;
+            ram_type::iterator element = *std::max_element(elements.begin(), elements.end(), gt_compare_freq(curr_time));
             PID pid = element->first;
             handle_out_of_ram(pid);
             ram.erase(element);
             return postRemove(pid);
         }
-        std::make_heap(elements.begin(), elements.end(), comperator);
+        std::make_heap(elements.begin(), elements.end(), gt_compare_freq(curr_time));
 
         uint dirtyEvicts = 0;
         for(uint i = 0; i< randSelector && !elements.empty(); i++){
-            std::pop_heap(elements.begin(), elements.end(), comperator);
+            std::pop_heap(elements.begin(), elements.end(), gt_compare_freq(curr_time));
             ram_type::iterator element = elements.back();
             PID pid = element->first;
             elements.pop_back();
@@ -221,24 +210,23 @@ struct WATT_RANDOMHeap_N_EVICT_HISTORY: public EvictStrategyKeepHistoryReadWrite
         return dirtyEvicts;
     }
 
-    static double
-    eval_freq(compare_func f, ram_type::iterator& candidate, RefTime curr_time, bool write_as_read, float write_cost = 1, float first_value = 1.0) {
-        double candidate_freq_R = f(candidate->second.first, curr_time, first_value);
-        if(write_cost == 0)
+    double
+    eval_freq(ram_type::iterator& candidate, RefTime curr_time) {
+        double candidate_freq_R = compare_funct(candidate->second.first, curr_time, first_value);
+        if(writeCost == 0)
             return candidate_freq_R;
-        double candidate_freq_W = f(candidate->second.second, curr_time, first_value);
-        double candidate_freq = candidate_freq_R + candidate_freq_W * write_cost;
+        double candidate_freq_W = compare_funct(candidate->second.second, curr_time, first_value);
+        double candidate_freq = candidate_freq_R + candidate_freq_W * writeCost;
         if(!write_as_read){
             candidate_freq += candidate_freq_W;
         }
         return candidate_freq;
     }
 
-    static std::function<double(ram_type::iterator &, ram_type::iterator &)>
-    gt_compare_freq(compare_func compare_funct, RefTime curr_time, bool write_as_read, float write_cost, float first_value) {
-        return [compare_funct, curr_time, write_as_read, write_cost, first_value](ram_type::iterator& l, ram_type::iterator& r) {
-            return eval_freq(compare_funct, l, curr_time, write_as_read, write_cost, first_value)
-                   > eval_freq(compare_funct, r, curr_time, write_as_read, write_cost, first_value);
+    std::function<double(ram_type::iterator &, ram_type::iterator &)>
+    gt_compare_freq(RefTime curr_time) {
+        return [this, curr_time](ram_type::iterator& l, ram_type::iterator& r) {
+            return eval_freq(l, curr_time) > eval_freq(r, curr_time);
         };
     };
 };

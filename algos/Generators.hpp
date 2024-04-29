@@ -52,11 +52,11 @@ WATT_RANDOMHeap_N_EVICT_IFDirty_HISTORY_Generator(uint KR, uint KW, uint epoch_s
                          uint writeCost);
 std::function<WATT_RANDOMHeap_N_EVICT_HISTORY()>
 WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read,
-                        float write_cost=1, float first_value=1.0, modus mod=mod_max, int Z=-1);
+                        float write_cost=1, float first_value=1.0, modus mod=mod_max, int Z=-1, bool increment_epoch_on_access=false);
 inline std::function<WATT_RANDOMHeap_N_EVICT_HISTORY()>
-WATT_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read, float writeCost=1, float first_value=1.0, modus mod=mod_max, int Z=-1){
+WATT_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read, float writeCost=1, float first_value=1.0, modus mod=mod_max, int Z=-1, bool increment_epoch_on_access=false){
     return WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(KR, KW, epoch_size, randSize, randSelector, write_as_read, writeCost, first_value,
-                                   mod, Z);
+                                   mod, Z, increment_epoch_on_access);
 }
 std::function<sieve()> Sieve_Generator();
 

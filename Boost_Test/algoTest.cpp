@@ -57,6 +57,7 @@ BOOST_AUTO_TEST_SUITE(compare_algo)
             BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Generator(1,Z), "lfu_K1_Z" + std::to_string(Z), "lru"));
             BOOST_TEST(compareToOther(instance, WATT_NoRAND_OneEVICT_HISTORY_Generator(1, 1, Z, true, 0, true, true), "lfu2_K1_Z" + std::to_string(Z), "lru"));
             BOOST_TEST(compareToOther(instance, WATT_ScanRANDOM_OneEVICT_HISTORY_Generator(1, 1, Z, 0, true, 0, true, true), "WATT_one_K1_Z" + std::to_string(Z), "lru"));
+            BOOST_TEST(compareToOther(instance, WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(1,1,0,0,1,true,0,1.0,mod_max,Z, true), "WATT_real_one_K1_Z" + std::to_string(Z), "lru"));
         }
         BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_Generator(1), "lfu_K1", "lru"));
 
@@ -76,14 +77,30 @@ BOOST_AUTO_TEST_SUITE(compare_algo)
         EvalAccessTable instance = init();
         // InRam History
         for(int K: {1, 2, 10}){
+
             int Z = 0;
-            runAlgo(instance, WATT_RO_NoRAND_OneEVICT_Generator(K), "lfu_K" + std::to_string(K));
-            BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Generator(K, Z), "lfu_K"+std::to_string(K)+"_Z"+std::to_string(Z), "lfu_K" + std::to_string(K)));
-            BOOST_TEST(compareToOther(instance, WATT_NoRAND_OneEVICT_HISTORY_Generator(K, 1, Z, true, 0, true, true), "lfu_2K" + std::to_string(K) + "_0_Z" + std::to_string(Z), "lfu_K" + std::to_string(K)));
+            std::string compare_name =  "lfu_K" + std::to_string(K);
+            runAlgo(instance, WATT_RO_NoRAND_OneEVICT_Generator(K), compare_name);
+            BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Generator(K, Z), "lfu_K"+std::to_string(K)+"_Z"+std::to_string(Z), compare_name));
+            BOOST_TEST(compareToOther(instance, WATT_NoRAND_OneEVICT_HISTORY_Generator(K, 1, Z, true, 0, true, true), "lfu_2K" + std::to_string(K) + "_0_Z" + std::to_string(Z), compare_name));
+            BOOST_TEST(compareToOther(instance, WATT_ScanRANDOM_OneEVICT_HISTORY_Generator(K, 1, Z, 0, true, 0, true, true), "WATT_one_K"+ std::to_string(K) +"_Z" + std::to_string(Z), compare_name));
+            BOOST_TEST(compareToOther(instance, WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(K,1,0,0,1,true,0,1.0,mod_max,Z, true), "WATT_real_one_K" + std::to_string(K) + "_Z" + std::to_string(Z), compare_name));
+
             // Out of Ram History
             for(int Z: {1,10, -10}){
-                runAlgo(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Generator(K, Z), "lfu_K"+std::to_string(K)+"_Z"+std::to_string(Z));
-                BOOST_TEST(compareToOther(instance, WATT_NoRAND_OneEVICT_HISTORY_Generator(K, 1, Z, true, 0, true, true), "lfu_2K" + std::to_string(K) + "_0_Z" + std::to_string(Z), "lfu_K" + std::to_string(K) + "_Z" + std::to_string(Z)));
+                std::string compare_name =  "lfu_K"+std::to_string(K)+"_Z"+std::to_string(Z);
+                runAlgo(instance, WATT_RO_NoRAND_OneEVICT_HISTORY_Generator(K, Z), compare_name);
+                BOOST_TEST(compareToOther(instance, WATT_NoRAND_OneEVICT_HISTORY_Generator(K, 1, Z, true, 0, true, true), "lfu_2K" + std::to_string(K) + "_0_Z" + std::to_string(Z), compare_name));
+                BOOST_TEST(compareToOther(instance, WATT_ScanRANDOM_OneEVICT_HISTORY_Generator(K, 1, Z, 0, true, 0, true, true), "WATT_one_K"+ std::to_string(K) +"_Z" + std::to_string(Z), compare_name));
+                BOOST_TEST(compareToOther(instance, WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(K,1,0,0,1,true,0,1.0,mod_max,Z, true), "WATT_real_one_K" + std::to_string(K) + "_Z" + std::to_string(Z), compare_name));
+                
+                // With Writes
+                for(int W: {1, 2, 10}){
+                    std::string compare_name =  "lfu_2K" + std::to_string(K) + "_" + std::to_string(W) + "_Z" + std::to_string(Z);
+                    runAlgo(instance, WATT_NoRAND_OneEVICT_HISTORY_Generator(K, W, Z, true, 0, true, false), compare_name);
+                    BOOST_TEST(compareToOther(instance, WATT_ScanRANDOM_OneEVICT_HISTORY_Generator(K, W, Z, 0, true, 0, true, false), "WATT_one_K"+ std::to_string(K) + "_" + std::to_string(W)+"_Z" + std::to_string(Z), compare_name));
+                    BOOST_TEST(compareToOther(instance, WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(K,W,0,0,1,true,1,1.0,mod_max,Z, true), "WATT_real_one_K" + std::to_string(K) + "_" + std::to_string(W)+ "_Z" + std::to_string(Z), compare_name));
+                }
             }
         }
  }

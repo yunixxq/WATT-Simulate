@@ -46,9 +46,9 @@ WATT_OneListDirty_RANDOMHeap_N_EVICT_HISTORY_Generator(uint K, uint epoch_size, 
 
 std::function<WATT_RANDOMHeap_N_EVICT_HISTORY()>
 WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read,
-                        float write_cost, float first_value, modus mod, int Z) {
-    return [KR, KW, randSize, randSelector, write_as_read, epoch_size, write_cost, first_value, mod, Z](){
-        return WATT_RANDOMHeap_N_EVICT_HISTORY(KR, KW, randSize, randSelector, write_as_read, epoch_size, write_cost, first_value, mod, Z);};}
+                        float write_cost, float first_value, modus mod, int Z, bool increment_epoch_on_access) {
+    return [KR, KW, randSize, randSelector, write_as_read, epoch_size, write_cost, first_value, mod, Z, increment_epoch_on_access](){
+        return WATT_RANDOMHeap_N_EVICT_HISTORY(KR, KW, randSize, randSelector, write_as_read, epoch_size, write_cost, first_value, mod, Z, increment_epoch_on_access);};}
 
 std::function<WATT_RANDOMHeap_N_EVICT_IFDirty_HISTORY()>
 WATT_RANDOMHeap_N_EVICT_IFDirty_HISTORY_Generator(uint KR, uint KW, uint epoch_size, uint randSize, uint randSelector, bool write_as_read, uint writeCost) {
