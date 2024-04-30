@@ -59,7 +59,7 @@ struct WATT_RO_NoRAND_OneEVICT_HISTORY: public EvictStrategyKeepHistoryOneList{
 struct WATT_NoRAND_OneEVICT_HISTORY: public EvictStrategyKeepHistoryReadWrite{
     using upper = EvictStrategyKeepHistoryReadWrite;
 
-    WATT_NoRAND_OneEVICT_HISTORY(uint KR, uint KW, int Z, bool write_as_read, uint epoch_size = 1, bool increment_epoch_on_access=true, bool ignore_write_freq = false): upper(KR, KW, Z, write_as_read, epoch_size, increment_epoch_on_access), ignore_write_freq(ignore_write_freq){}
+    WATT_NoRAND_OneEVICT_HISTORY(uint KR, uint KW, int Z, bool write_as_read, uint epoch_size = 1, bool increment_epoch_on_access=false, bool ignore_write_freq = false): upper(KR, KW, Z, write_as_read, epoch_size, increment_epoch_on_access), ignore_write_freq(ignore_write_freq){}
     const bool ignore_write_freq;
 
     PID chooseEviction(RefTime curr_time) override{
