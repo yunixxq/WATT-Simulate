@@ -20,7 +20,7 @@ struct CF_LRU: public EvictStrategy {
     }
 
     void access(const Access& access) override{
-        if(in_ram[access.pid]){
+        if(isInRam(access.pid)){
             ram_list.erase(hash_for_list[access.pid]);
         }
         ram_list.push_back(access);
@@ -31,7 +31,7 @@ struct CF_LRU: public EvictStrategy {
         std::list<Access>::iterator candidate = ram_list.begin();
         bool found = false;
         for(uint i= 0; i < window_length; i++){
-            if(!dirty_in_ram[candidate->pid]){
+            if(!isDirty(candidate->pid)){
                 found=true;
                 break;
             }

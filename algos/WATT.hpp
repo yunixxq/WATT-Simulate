@@ -254,8 +254,7 @@ struct WATT_RANDOMHeap_N_EVICT_IFDirty_HISTORY: public EvictStrategyKeepHistoryR
         std::vector<ram_type::iterator> elements = getElementsFromRam<ram_type::iterator>(rand_list_length);
 
         // Sort elements by frequency; //std::min_element
-        auto comperator = gt_compare_freq(curr_time, this->write_as_read, this->writeCost,
-                                          this->dirty_in_ram);
+        auto comperator = gt_compare_freq(curr_time, this->write_as_read, this->writeCost);
         std::make_heap(elements.begin(), elements.end(), comperator);
 
         uint dirtyEvicts = 0;
@@ -285,11 +284,11 @@ struct WATT_RANDOMHeap_N_EVICT_IFDirty_HISTORY: public EvictStrategyKeepHistoryR
     }
 
 
-    static std::function<double(ram_type::iterator &, ram_type::iterator &)>
-    gt_compare_freq(RefTime curr_time, bool write_as_read, uint write_cost, std::vector<bool>& dirty_in_ram) {
-        return [curr_time, write_as_read, write_cost, &dirty_in_ram](ram_type::iterator& l, ram_type::iterator& r) {
-            return eval_freq(l, curr_time, write_as_read, write_cost, dirty_in_ram[l->first]) > eval_freq(r, curr_time, write_as_read,
-                                                                                             write_cost, dirty_in_ram[r->first]);
+    std::function<double(ram_type::iterator &, ram_type::iterator &)>
+    gt_compare_freq(RefTime curr_time, bool write_as_read, uint write_cost) {
+        return [this, curr_time, write_as_read, write_cost](ram_type::iterator& l, ram_type::iterator& r) {
+            return eval_freq(l, curr_time, write_as_read, write_cost, isDirty(l->first)) 
+                    > eval_freq(r, curr_time, write_as_read, write_cost, isDirty(r->first));
         };
     };
 
@@ -373,7 +372,7 @@ struct WATT_OneListDirty_RANDOMHeap_N_EVICT_HISTORY: public EvictStrategyKeepHis
         std::vector<ram_type::iterator> elements = getElementsFromRam<ram_type::iterator>(rand_list_length);
 
         // Sort elements by frequency; //std::min_element
-        auto comperator = gt_compare_freq(curr_time, this->writeCost, dirty_in_ram);
+        auto comperator = gt_compare_freq(curr_time, this->writeCost);
         std::make_heap(elements.begin(), elements.end(), comperator);
 
         uint dirtyEvicts = 0;
@@ -395,11 +394,10 @@ struct WATT_OneListDirty_RANDOMHeap_N_EVICT_HISTORY: public EvictStrategyKeepHis
     }
 
 
-    static std::function<double(const ram_type::iterator, const ram_type::iterator)>
-    gt_compare_freq(RefTime curr_time, uint write_cost,
-                    std::vector<bool>& map) {
-        return [curr_time, write_cost, &map](const ram_type::iterator l, const ram_type::iterator r) {
-            return eval_freq(l, curr_time, write_cost, map[l->first]) > eval_freq(r, curr_time, write_cost, map[r->first]);
+    std::function<double(const ram_type::iterator, const ram_type::iterator)>
+    gt_compare_freq(RefTime curr_time, uint write_cost) {
+        return [this, curr_time, write_cost](const ram_type::iterator l, const ram_type::iterator r) {
+            return eval_freq(l, curr_time, write_cost, isDirty(l->first)) > eval_freq(r, curr_time, write_cost, isDirty(r->first));
         };
     };
 

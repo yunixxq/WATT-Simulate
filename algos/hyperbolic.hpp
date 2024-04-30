@@ -24,7 +24,7 @@ public:
     }
 
     void access(const Access& access) override{
-        if(upper::in_ram[access.pid]){
+        if(upper::isInRam(access.pid)){
             ram[access.pid].second++;
 
         }else{

@@ -45,7 +45,7 @@ struct LRU2: public EvictStrategyContainer<std::vector<Access>> {
 
     void access(const Access& access) override{
         PID pid = access.pid;
-        if(in_ram[access.pid]){
+        if(isInRam(access.pid)){
             auto it = std::find_if(ram.begin(), ram.end(), [pid](const Access& elem) { return elem.pid == pid; });
             ram.erase(it);
         }
@@ -69,7 +69,7 @@ struct LRU2a: public EvictStrategyContainer<std::list<PID>>{
         EvictStrategyContainer::reInit(ram_size);
     }
     void access(const Access& access) override{
-        if(in_ram[access.pid]){
+        if(isInRam(access.pid)){
             ram.erase(hash_for_list[access.pid]);
         }
         ram.push_back(access.pid);

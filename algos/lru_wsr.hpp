@@ -15,7 +15,7 @@ struct LRU_WSR: public EvictStrategy {
         EvictStrategy::reInit(ram_size);
     }
     void access(const Access& access) override{
-        if(in_ram[access.pid]){
+        if(isInRam(access.pid)){
             ram_list.erase(hash_for_list[access.pid]);
         }
         ram_list.push_back(std::make_tuple(access.pid, false));
@@ -27,7 +27,7 @@ struct LRU_WSR: public EvictStrategy {
             bool second;
             std::tie(pid, second) = *ram_list.begin();
             ram_list.erase(ram_list.begin());
-            if (!dirty_in_ram[pid] || second){
+            if (!isDirty(pid) || second){
                 hash_for_list.erase(pid);
                 return pid;
             }

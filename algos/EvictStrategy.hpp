@@ -28,6 +28,11 @@ static bool keepFirst(const std::vector<RefTime>& l, const std::vector<RefTime>&
     }
 };
 
+template<class iterthing>
+static bool contains(iterthing container, PID pid){
+    return container.find(pid) != container.end();
+}
+
 static bool keepFirst(const std::vector<std::pair<RefTime, bool>>& l, const std::vector<std::pair<RefTime, bool>>& r) {
     uint lsize = l.size();
     uint rsize = r.size();
@@ -86,9 +91,26 @@ public:
         }
     }
     std::pair<uint, uint> evaluateOne(const std::vector<Access> &data, RamSize ram_size){
+        init_for_steps(ram_size);
+        return do_all_steps(data);
+    }
+    virtual void init_for_steps(RamSize ram_size){
         reInit(ram_size);
         checkConditions(ram_size);
-        return executeStrategy(data);
+    }
+    virtual void one_step(Access single_access){
+        if(!isInRam(single_access.pid)){
+            page_misses++;
+            if(curr_count >= RAM_SIZE){
+                dirty_evicts += evict(single_access);
+            }
+            curr_count ++;
+        }
+        access(single_access);
+        if(single_access.write){
+            dirty_in_ram.emplace(single_access.pid);
+        }
+        in_ram.emplace(single_access.pid);
     }
 protected:
     /**
@@ -117,27 +139,17 @@ protected:
      * @param access_data list of accesses
      * @return
      */
-    std::pair<uint, uint> executeStrategy(const std::vector<Access>& access_data){
-        uint page_misses = 0, dirty_evicts = 0;
+    std::pair<uint, uint> do_all_steps(const std::vector<Access>& access_data){
         for(const Access& single_access: access_data){
-            checkSizes(single_access.pid);
-            if(!in_ram[single_access.pid]){
-                page_misses++;
-                if(curr_count >= RAM_SIZE){
-                    dirty_evicts += evict(single_access);
-                }
-                curr_count ++;
-            }
-            access(single_access);
-            dirty_in_ram[single_access.pid] = dirty_in_ram[single_access.pid] || single_access.write;
-            in_ram[single_access.pid] = true;
+            one_step(single_access);
         }
-        return std::pair(page_misses, dirty_evicts + dirtyPages());
+        return std::pair<uint, uint>(page_misses, dirty_evicts + dirtyPages());
     }
 
     RamSize RAM_SIZE=0, curr_count=0;
-    std::vector<bool> dirty_in_ram;
-    std::vector<bool> in_ram;
+    std::unordered_set<PID> dirty_in_ram;
+    std::unordered_set<PID> in_ram;
+    uint page_misses = 0, dirty_evicts = 0;
 
     /**
      * Handle the access in the internal structure
@@ -163,25 +175,20 @@ protected:
     virtual PID evictOne(Access access) = 0;
 
     /**
-     * Checks ALL pages, if they are dirty and in ram (slow)
+     * Checks how many pages are dirty in RAM
      * @return
      */
     int dirtyPages(){
-        return std::count(dirty_in_ram.begin(), dirty_in_ram.end(), true);
+        return dirty_in_ram.size();
     }
 
-    /**
-     * Validates, that vectors are big enough
-     * @param pid
-     */
-    void checkSizes(PID pid){
-        if(pid < maxPID){
-            return;
-        }
-        maxPID = pid;
-        dirty_in_ram.resize(pid+1, false);
-        in_ram.resize(pid+1, false);
+    bool isInRam(PID pid){
+        return contains(in_ram, pid);
     }
+    bool isDirty(PID pid){
+        return contains(dirty_in_ram, pid);
+    }
+
     /**
      * handles eviction of one page.
      * changes structures
@@ -189,14 +196,10 @@ protected:
      * @return
      */
     uint postRemove(PID pid){
-        assert(in_ram[pid]);
-        in_ram[pid]=false;
+        assert(isInRam(pid));
+        in_ram.erase(pid);
         curr_count--;
-        if (dirty_in_ram[pid]){
-            dirty_in_ram[pid] = false;
-            return 1;
-        }
-        return 0;
+        return dirty_in_ram.erase(pid);
     }
 private:
     PID maxPID = 0;
@@ -286,7 +289,7 @@ protected:
         fast_finder.clear();
     }
     void access(const Access& access) override{
-        if(upper::in_ram[access.pid]){
+        if(upper::isInRam(access.pid)){
             fast_finder[access.pid] = updateElement(fast_finder[access.pid], access, upper::ram);
 
         }else{
@@ -324,7 +327,7 @@ protected:
         fast_finder.clear();
     }
     void access(const Access& access) override{
-        if(upper::in_ram[access.pid]){
+        if(upper::isInRam(access.pid)){
             updateElement(fast_finder[access.pid], access);
 
         }else{
@@ -364,7 +367,7 @@ protected:
         upper::reInit(ram_size);
     }
     void access(const Access& access) override{
-        if(!in_ram[access.pid]){
+        if(!isInRam(access.pid)){
             std::vector<RefTime>& list = ram[access.pid];
             list.reserve(K);
         }
@@ -412,7 +415,7 @@ protected:
     }
     void access(const Access& access) override{
         // Load out_of_mem_values (if exists)
-        bool inRam = upper::in_ram[access.pid];
+        bool inRam = upper::isInRam(access.pid);
         if(!inRam){
             auto old_value = out_of_mem_history.find(access.pid);
             if(old_value!= out_of_mem_history.end()){

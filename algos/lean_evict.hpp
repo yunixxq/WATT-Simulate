@@ -33,7 +33,7 @@ private:
     }
 
     void access(const Access& access) override{
-        if((cooling_list_pointer.find(access.pid))!=cooling_list_pointer.end()){
+        if(contains(cooling_list_pointer, access.pid)){
             // Remove from cooling list
             cooling_list.erase(cooling_list_pointer[access.pid]);
             cooling_list_pointer.erase(access.pid);
@@ -84,7 +84,7 @@ private:
         if(touched.size() <= access.pid){
             touched.resize(access.pid + 1, false);
         }
-        if(!in_ram[access.pid]){ // Fresh pages into hot list
+        if(!isInRam(access.pid)){ // Fresh pages into hot list
             ram.insert(access.pid);
         }
         touched[access.pid]=true;

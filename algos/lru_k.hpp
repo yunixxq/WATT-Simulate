@@ -15,7 +15,7 @@ struct LRUalt_K: public EvictStrategyContainer<std::unordered_map<PID, std::vect
     uint K;
 
     void access(const Access& access) override{
-        if(!in_ram[access.pid]){
+        if(!isInRam(access.pid)){
             std::vector<RefTime>& list = ram[access.pid];
             list.reserve(K);
         }

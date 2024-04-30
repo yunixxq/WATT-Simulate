@@ -29,29 +29,29 @@ protected:
         p=0;
     }
     void access(const Access& access) override{
-        if(upper::in_ram[access.pid]){
+        if(upper::isInRam(access.pid)){
             // Cache hit; Move to not_so_fresh_ram;
-            if (T2_p.find(access.pid) != T2_p.end()) {
+            if (contains(T2_p, access.pid)){
                 // in hot ram
                 // Put to front;
                 T2_p[access.pid] = updateElement(T2_p[access.pid], access, T2);
             } else {
                 // in fresh ram
                 // Put to hot ram
-                assert(T1_p.find(access.pid) != T1_p.end());
+                assert(contains(T1_p, access.pid));
 
                 T1.erase(T1_p[access.pid]);
                 T1_p.erase(access.pid);
                 T2_p[access.pid] = insertElement(access, T2);
             }
 
-        }else if (B1_p.find(access.pid) != B1_p.end()){ // Case II
+        }else if (contains(B1_p, access.pid)){ // Case II
             // Hit in fresh ram History;
             // Adapt (done in evict); move to Hot ram
             B1.erase(B1_p[access.pid]);
             B1_p.erase(access.pid);
             T2_p[access.pid] = insertElement(access, T2);
-        } else if (B2_p.find(access.pid) != B2_p.end()){ // Case III
+        } else if (contains(B2_p, access.pid)){ // Case III
             // Hit hot ram History;
             // Adapt (done in evict); move to Hot ram
             B2.erase(B2_p[access.pid]);
@@ -86,7 +86,7 @@ protected:
         };
 
         // Replace (Access is not in current ram, check for cases)
-        if (B1_p.find(access.pid) != B1_p.end()){ // Case II
+        if (contains(B1_p, access.pid)){ // Case II
             // Hit in fresh ram History;
             // Adapt p= min{p+delta_1,c}; delta_1 = {1 (b1>= b2) | b2/b1 sonst}; replace(p);
             uint b2 = B2_p.size(), b1 = B1_p.size();
@@ -94,7 +94,7 @@ protected:
             p=std::min(p + inner, RAM_SIZE);
             return replace();
 
-        } else if (B2_p.find(access.pid) != B2_p.end()){ // Case III
+        } else if (contains(B2_p, access.pid)){ // Case III
             // Hit hot ram History;
             // Adapt p= max{p-delta_2,0}; delta_2 = {1 (b2>= b1) | b1/b2 sonst}; replace(p)
             uint b2 = B2_p.size(), b1 = B1_p.size();
