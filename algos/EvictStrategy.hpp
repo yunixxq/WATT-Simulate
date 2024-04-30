@@ -99,6 +99,7 @@ public:
         checkConditions(ram_size);
     }
     virtual void one_step(Access single_access){
+        checkSizes(single_access.pid);
         if(!isInRam(single_access.pid)){
             page_misses++;
             if(curr_count >= RAM_SIZE){
@@ -107,10 +108,8 @@ public:
             curr_count ++;
         }
         access(single_access);
-        if(single_access.write){
-            dirty_in_ram.emplace(single_access.pid);
-        }
-        in_ram.emplace(single_access.pid);
+        dirty_in_ram[single_access.pid] = dirty_in_ram[single_access.pid] || single_access.write;
+        in_ram[single_access.pid] = true;
     }
 protected:
     /**
@@ -147,8 +146,8 @@ protected:
     }
 
     RamSize RAM_SIZE=0, curr_count=0;
-    std::unordered_set<PID> dirty_in_ram;
-    std::unordered_set<PID> in_ram;
+    std::vector<bool> dirty_in_ram;
+    std::vector<bool> in_ram;
     uint page_misses = 0, dirty_evicts = 0;
 
     /**
@@ -175,18 +174,31 @@ protected:
     virtual PID evictOne(Access access) = 0;
 
     /**
-     * Checks how many pages are dirty in RAM
+     * Checks ALL pages, if they are dirty and in ram (slow)
      * @return
      */
     int dirtyPages(){
-        return dirty_in_ram.size();
+        return std::count(dirty_in_ram.begin(), dirty_in_ram.end(), true);
+    }
+
+    /**
+     * Validates, that vectors are big enough
+     * @param pid
+     */
+    void checkSizes(PID pid){
+        if(pid < maxPID){
+            return;
+        }
+        maxPID = pid;
+        dirty_in_ram.resize(pid+1, false);
+        in_ram.resize(pid+1, false);
     }
 
     bool isInRam(PID pid){
-        return contains(in_ram, pid);
+        return in_ram[pid];
     }
     bool isDirty(PID pid){
-        return contains(dirty_in_ram, pid);
+        return dirty_in_ram[pid];
     }
 
     /**
@@ -196,10 +208,14 @@ protected:
      * @return
      */
     uint postRemove(PID pid){
-        assert(isInRam(pid));
-        in_ram.erase(pid);
+        assert(in_ram[pid]);
+        in_ram[pid]=false;
         curr_count--;
-        return dirty_in_ram.erase(pid);
+        if (dirty_in_ram[pid]){
+            dirty_in_ram[pid] = false;
+            return 1;
+        }
+        return 0;
     }
 private:
     PID maxPID = 0;
