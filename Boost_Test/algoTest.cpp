@@ -60,6 +60,7 @@ BOOST_AUTO_TEST_SUITE(compare_algo)
             BOOST_TEST(compareToOther(instance, WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(1,1,0,0,1,true,0,1.0,mod_max,Z, true), "WATT_real_one_K1_Z" + std::to_string(Z), "lru"));
         }
         BOOST_TEST(compareToOther(instance, WATT_RO_NoRAND_OneEVICT_Generator(1), "lfu_K1", "lru"));
+        BOOST_TEST(compareToOther(instance, CfLRUGenerator(0), "CF_LRU00", "lru"));
 
     }
     BOOST_AUTO_TEST_CASE(lru_ks) {

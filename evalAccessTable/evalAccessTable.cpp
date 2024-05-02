@@ -12,11 +12,11 @@ using namespace std;
 static void getOrDefaultAndSet(map<int, int> &history, int new_value, int pageRef,
                                int default_value, int* value);
 
-EvalAccessTable::EvalAccessTable(std::string  filename, std::string  out_dir, bool do_run, bool test, bool benchmark): filename(std::move(filename)), output_dir(std::move(out_dir)){
+EvalAccessTable::EvalAccessTable(std::string  filename, std::string  out_dir, bool do_run, bool test, bool full_benchmark): filename(std::move(filename)), output_dir(std::move(out_dir)){
         if(!do_run){
             return;
         }
-        runFromFilename(test, benchmark);
+        runFromFilename(test, full_benchmark);
     };
 
 void EvalAccessTable::init(bool ignore_last_run, int max_ram, bool silent){
@@ -26,17 +26,13 @@ void EvalAccessTable::init(bool ignore_last_run, int max_ram, bool silent){
     }
     createLists(ignore_last_run, max_ram, silent); // this runs "lru" (lru_stack_trace)
 }
-void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
-    // in case of full run (not test or benchmark)
-    bool run_slow = false;
-    bool full_run = false;
+void EvalAccessTable::runFromFilename(bool test, bool full_benchmark) {
+    // in case of full run (not test or full_benchmark)
+
     // Ignore last if test run, else not!
     init(test, 100000);
 
-    // default_compare_algos();
-    // advanced_compare_algos();
-    bool do_it = true;
-    if(do_it) {
+    if(!full_benchmark) {
         advanced_with_variations_algos();
 
         uint KR = 1;                  // length of first list (read or access), 0 = infty
@@ -534,90 +530,45 @@ void EvalAccessTable::runFromFilename(bool test, bool benchmark) {
 
     }
     else {
-        if (benchmark) {
-            advanced_with_variations_algos();
+        advanced_with_variations_algos();
 
-            for (int kr: {16, 8, 4, 2, 0}) for (int kw: {16, 8, 4, 2, 0}) for (int e: {0, 20, 10, 5, 1})
-                for (int rsi: {10}) for (int rsa: {1, 5, 10}) for (int wc: {0, 1, 2, 4, 8, 2048}) {
-                    if ((kw == 0 && wc != 1) || (kr == 0 && kw == 0))
-                        continue;
-                    string name = "kr" + to_string(kr)
-                                  + "_kw" + to_string(kw)
-                                  + "_e" + to_string(e)
-                                  + "_rsi" + to_string(rsi)
-                                  + "_rsa" + to_string(rsa)
-                                  + "_wc" + to_string(wc);
-                    if (kw != 0) {
-                        runAlgorithm("lfu_vers2_" + name,
-                                     WATT_Generator(kr, kw, e, rsi, rsa, false, wc));
-                        runAlgorithm("lfu_vers3_" + name,
-                                     WATT_RANDOMHeap_N_EVICT_IFDirty_HISTORY_Generator(kr, kw, e, rsi, rsa, false, wc));
-                    } else {
-                        runAlgorithm("lfu_vers2_" + name + "_war",
-                                     WATT_Generator(kr, kw, e, rsi, rsa, true, wc));
-                        runAlgorithm("lfu_vers3_" + name + "_war",
-                                     WATT_RANDOMHeap_N_EVICT_IFDirty_HISTORY_Generator(kr, kw, e, rsi, rsa, true, wc));
-                    }
-                }
-            for (int k: {32, 16, 8, 4, 2, 0})
-                for (int e: {0, 20, 10, 5, 1})
-                    for (int rsi: {10})
-                        for (int rsa: {1, 5, 10})
-                            for (int wc: {0, 1, 2, 4, 8, 2048}) {
-                                string name = to_string(k)
-                                              + "_e" + to_string(e)
-                                              + "_rsi" + to_string(rsi)
-                                              + "_rsa" + to_string(rsa)
-                                              + "_wc" + to_string(wc);
-                                runAlgorithm("lfu_k" + name, WATT_OneListBool_RANDOMHeap_N_EVICT_HISTORY_Generator(k, e, rsi, rsa, wc, 0));
-                                runAlgorithm("lfu_bla_k" + name, WATT_OneListDirty_RANDOMHeap_N_EVICT_HISTORY_Generator(k, e, rsi, rsa, wc, 0));
-                            }
-
-
-        }
-        if (!test && !benchmark) {
-            advanced_with_variations_algos();
-            if (full_run) {
-                runAlgorithm("lru_alt", LRU_Generator());
-                runAlgorithm("lru_alt1", LRU1_Generator());
-                runAlgorithm("lru_alt2a", LRU2a_Generator());
-                runAlgorithm("lru_alt2b", LRU2b_Generator());
-                runAlgorithm("cf_lru10", CfLRUGenerator(10));
-                runAlgorithm("cf_lru20", CfLRUGenerator(20));
-                runAlgorithm("cf_lru70", CfLRUGenerator(70));
-                runAlgorithm("cf_lru80", CfLRUGenerator(80));
-                runAlgorithm("cf_lru90", CfLRUGenerator(90));
-                runAlgorithm("lru_k_alt01", LRUalt_K_Generator(1));
-                runAlgorithm("lru_k_alt02", LRUalt_K_Generator(2));
-                runAlgorithm("lru_k_alt10", LRUalt_K_Generator(10));
-                runAlgorithm("lru_k_alt20", LRUalt_K_Generator(20));
-                // runAlgorithm("opt3", Opt3_Generator());// broken
-                if (run_slow) {
-                    runAlgorithm("opt2", Opt2_Generator());
-                    runAlgorithm("lru_alt2", LRU2_Generator());
-                    runAlgorithm("cf_lru100", CfLRUGenerator(100));
-                }
-                for (int k: {16, 8, 4, 2}) {
-                    for (int z: {100, 10, 1, -1}) {
-                        runAlgorithm("lfu_k" + std::to_string(k) + "_z" + std::to_string(z), WATT_RO_NoRAND_OneEVICT_HISTORY_Generator(k, z));
-                        runAlgorithm("lru_k" + std::to_string(k) + "_z" + std::to_string(z), LRU_K_Z_Generator(k, z));
-                        runAlgorithm("lfu_2k" + std::to_string(k) + "_z" + std::to_string(z) + "_T",
-                                     WATT_NoRAND_OneEVICT_HISTORY_Generator(k, k, z, true));
-                        runAlgorithm("lfu_2k" + std::to_string(k) + "_z" + std::to_string(z) + "_F",
-                                     WATT_NoRAND_OneEVICT_HISTORY_Generator(k, k, z, false));
-                        runAlgorithm("lfu_2k" + std::to_string(k) + "_z" + std::to_string(z) + "_TR",
-                                     WATT_ScanRANDOM_OneEVICT_HISTORY_Generator(k, k, z, 5, true));
-                        runAlgorithm("lfu_2k" + std::to_string(k) + "_z" + std::to_string(z) + "_FR",
-                                     WATT_ScanRANDOM_OneEVICT_HISTORY_Generator(k, k, z, 5, false));
-                    }
-                    runAlgorithm("lfu_k_real_F_e" + std::to_string(k), WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(8, 4, k, 5, 5, false));
-                    runAlgorithm("lfu_k_real2_F_e" + std::to_string(k), WATT_RANDOMHeap_N_EVICT_HISTORY_Generator(4, 8, k, 5, 5, false));
-                    runAlgorithm("lfu_k_real_F_e" + std::to_string(k) + "_wc" + std::to_string(8),
-                                 WATT_Generator(8, 4, k, 5, 5, false, 8));
-                    runAlgorithm("lfu_k_" + std::to_string(k), WATT_RO_NoRAND_OneEVICT_Generator(k));
+        for (int kr: {16, 8, 4, 2, 0}) for (int kw: {16, 8, 4, 2, 0}) for (int e: {0, 20, 10, 5, 1})
+            for (int rsi: {10}) for (int rsa: {1, 5, 10}) for (int wc: {0, 1, 2, 4, 8, 2048}) {
+                if ((kw == 0 && wc != 1) || (kr == 0 && kw == 0))
+                    continue;
+                string name = "kr" + to_string(kr)
+                                + "_kw" + to_string(kw)
+                                + "_e" + to_string(e)
+                                + "_rsi" + to_string(rsi)
+                                + "_rsa" + to_string(rsa)
+                                + "_wc" + to_string(wc);
+                if (kw != 0) {
+                    runAlgorithm("lfu_vers2_" + name,
+                                    WATT_Generator(kr, kw, e, rsi, rsa, false, wc));
+                    runAlgorithm("lfu_vers3_" + name,
+                                    WATT_RANDOMHeap_N_EVICT_IFDirty_HISTORY_Generator(kr, kw, e, rsi, rsa, false, wc));
+                } else {
+                    runAlgorithm("lfu_vers2_" + name + "_war",
+                                    WATT_Generator(kr, kw, e, rsi, rsa, true, wc));
+                    runAlgorithm("lfu_vers3_" + name + "_war",
+                                    WATT_RANDOMHeap_N_EVICT_IFDirty_HISTORY_Generator(kr, kw, e, rsi, rsa, true, wc));
                 }
             }
-        }
+        for (int k: {32, 16, 8, 4, 2, 0})
+            for (int e: {0, 20, 10, 5, 1})
+                for (int rsi: {10})
+                    for (int rsa: {1, 5, 10})
+                        for (int wc: {0, 1, 2, 4, 8, 2048}) {
+                            string name = to_string(k)
+                                            + "_e" + to_string(e)
+                                            + "_rsi" + to_string(rsi)
+                                            + "_rsa" + to_string(rsa)
+                                            + "_wc" + to_string(wc);
+                            runAlgorithm("lfu_k" + name, WATT_OneListBool_RANDOMHeap_N_EVICT_HISTORY_Generator(k, e, rsi, rsa, wc, 0));
+                            runAlgorithm("lfu_bla_k" + name, WATT_OneListDirty_RANDOMHeap_N_EVICT_HISTORY_Generator(k, e, rsi, rsa, wc, 0));
+                        }
+
+
     }
     printToFile();
 }
