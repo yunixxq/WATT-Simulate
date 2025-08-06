@@ -19,6 +19,7 @@
 #include "LRFU.hpp"
 #include "ARC.hpp"
 #include "sieve.hpp"
+#include "LLRU_SH.hpp"  
 
 // Here unused, but for good includes
 #include "lruStackDist.hpp"
@@ -86,3 +87,6 @@ std::function<LRUalt_K()> LRUalt_K_Generator(int K);
 
 // Broken ones
 std::function<OPT3()> Opt3_Generator();
+
+// yunixxq 增加 LLRU_SH
+std::function<LLRU_SH()> LLRU_SH_Generator();

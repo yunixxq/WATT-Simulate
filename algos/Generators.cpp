@@ -91,3 +91,6 @@ std::function<LRUalt_K()> LRUalt_K_Generator(int K){
 
 // Broken ones
 std::function<OPT3()> Opt3_Generator() {return defGenerator<OPT3>();}
+
+// yunixxq 增加 LLRU_SH 定义
+std::function<LLRU_SH()> LLRU_SH_Generator() {return defGenerator<LLRU_SH>();};

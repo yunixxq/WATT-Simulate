@@ -622,6 +622,9 @@ void EvalAccessTable::default_compare_algos() {
     runAlgorithm("second_chance", SECOND_CHANCE_Generator());
     runAlgorithm("random", Random_Generator());
     runAlgorithm("lru_k2_z-1", LRU_K_Z_Generator(2, -1));
+
+    // xxq 增加 LLRU_SH 算法
+    runAlgorithm("LLRU_SH", LLRU_SH_Generator());
 }
 
 void EvalAccessTable::printToFile() {
